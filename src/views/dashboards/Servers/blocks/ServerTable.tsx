@@ -5,6 +5,8 @@ import axiosClient from "src/lib/axios";
 import { Badge } from "src/components/ui/badge";
 import { Button } from "src/components/ui/button";
 import CreateServerFormModal from "./CreateServerFormModal";
+import { Trash2 } from "lucide-react";
+import { formatDistanceToNow, differenceInMinutes } from "date-fns";
 
 const ServerTable = () => {
   const [rows, setRows] = useState<Record<string, any>[]>([]);
@@ -15,6 +17,7 @@ const ServerTable = () => {
   const [search, setSearch] = useState<string>("");
 
   const [openCreateServer, setOpenCreateServer] = useState(false);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   const fetchData = async () => {
     const res = await axiosClient.get("/trader/servers/paginated", {
@@ -26,6 +29,21 @@ const ServerTable = () => {
 
     setRows(res.data.data);
     setTotalRows(res.data.total);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this server?")) return;
+
+    setIsDeleting(id);
+    try {
+      await axiosClient.delete(`/trader/servers/${id}`);
+      fetchData();
+    } catch (error) {
+      console.error("Failed to delete server:", error);
+      alert("Failed to delete server. Please try again.");
+    } finally {
+      setIsDeleting(null);
+    }
   };
 
   useEffect(() => {
@@ -77,6 +95,42 @@ const ServerTable = () => {
                   ? "failed"
                   : "-"}
           </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: "updatedAt",
+      header: "Last Update",
+      cell: ({ row }) => {
+        const updatedAt = row.original.updatedAt;
+        if (!updatedAt) return "-";
+
+        // Force UTC parsing by appending 'Z' if not present
+        const date = new Date(updatedAt.endsWith("Z") ? updatedAt : `${updatedAt}Z`);
+        const diff = differenceInMinutes(new Date(), date);
+        const relativeTime = formatDistanceToNow(date, { addSuffix: true });
+
+        return (
+          <Badge variant={diff >= 5 ? "error" : "lightSuccess"}>
+            {relativeTime}
+          </Badge>
+        );
+      },
+    },
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => {
+        const id = row.original.id;
+        return (
+          <Button
+            variant="lighterror"
+            size="icon"
+            onClick={() => handleDelete(id)}
+            disabled={isDeleting === id}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
         );
       },
     },
