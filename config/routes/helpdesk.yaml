@@ -1,0 +1,4 @@
+helpdesk:
+  resource: ../../src/HelpdeskBundle/Controller/
+  type: annotation
+  prefix: /helpdesk

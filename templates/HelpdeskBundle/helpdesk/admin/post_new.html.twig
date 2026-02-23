@@ -1,0 +1,20 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin - New FAQ Post{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <h6>New FAQ Post</h6>
+            </div>
+            <div class="card-body">
+                {{ form_start(form) }}
+                {{ form_widget(form) }}
+                <button type="submit" class="btn btn-primary mt-3">Create Post</button>
+                {{ form_end(form) }}
+                <a href="{{ path('app_helpdesk_faq') }}" class="btn btn-outline-none mt-3">Back to FAQ</a>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,23 @@
+parameters:
+    metaapi.base_url: 'https://api.metaapi.cloud'
+    metaapi.token: 'eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiJkZDJmZTFjMjBlZjhhNzNhMjg0MTI1ZjEzOTAxNGY3MyIsInBlcm1pc3Npb25zIjpbXSwiYWNjZXNzUnVsZXMiOlt7ImlkIjoidHJhZGluZy1hY2NvdW50LW1hbmFnZW1lbnQtYXBpIiwibWV0aG9kcyI6WyJ0cmFkaW5nLWFjY291bnQtbWFuYWdlbWVudC1hcGk6cmVzdDpwdWJsaWM6KjoqIl0sInJvbGVzIjpbInJlYWRlciIsIndyaXRlciJdLCJyZXNvdXJjZXMiOlsiKjokVVNFUl9JRCQ6KiJdfSx7ImlkIjoibWV0YWFwaS1yZXN0LWFwaSIsIm1ldGhvZHMiOlsibWV0YWFwaS1hcGk6cmVzdDpwdWJsaWM6KjoqIl0sInJvbGVzIjpbInJlYWRlciIsIndyaXRlciJdLCJyZXNvdXJjZXMiOlsiKjokVVNFUl9JRCQ6KiJdfSx7ImlkIjoibWV0YWFwaS1ycGMtYXBpIiwibWV0aG9kcyI6WyJtZXRhYXBpLWFwaTp3czpwdWJsaWM6KjoqIl0sInJvbGVzIjpbInJlYWRlciIsIndyaXRlciJdLCJyZXNvdXJjZXMiOlsiKjokVVNFUl9JRCQ6KiJdfSx7ImlkIjoibWV0YWFwaS1yZWFsLXRpbWUtc3RyZWFtaW5nLWFwaSIsIm1ldGhvZHMiOlsibWV0YWFwaS1hcGk6d3M6cHVibGljOio6KiJdLCJyb2xlcyI6WyJyZWFkZXIiLCJ3cml0ZXIiXSwicmVzb3VyY2VzIjpbIio6JFVTRVJfSUQkOioiXX0seyJpZCI6Im1ldGFzdGF0cy1hcGkiLCJtZXRob2RzIjpbIm1ldGFzdGF0cy1hcGk6cmVzdDpwdWJsaWM6KjoqIl0sInJvbGVzIjpbInJlYWRlciIsIndyaXRlciJdLCJyZXNvdXJjZXMiOlsiKjokVVNFUl9JRCQ6KiJdfSx7ImlkIjoiY29weWZhY3RvcnktYXBpIiwibWV0aG9kcyI6WyJjb3B5ZmFjdG9yeS1hcGk6cmVzdDpwdWJsaWM6KjoqIl0sInJvbGVzIjpbInJlYWRlciIsIndyaXRlciJdLCJyZXNvdXJjZXMiOlsiKjokVVNFUl9JRCQ6KiJdfV0sImlnbm9yZVJhdGVMaW1pdHMiOmZhbHNlLCJ0b2tlbklkIjoiMjAyMTAyMTMiLCJpbXBlcnNvbmF0ZWQiOmZhbHNlLCJyZWFsVXNlcklkIjoiZGQyZmUxYzIwZWY4YTczYTI4NDEyNWYxMzkwMTRmNzMiLCJpYXQiOjE3MzU0MjAzOTN9.ISMe0IexmzR9OkOm6AjlDgEZMW7s9MBBPOfd6Eu2CMTmwQVw6lMQFpexzXLXNA1cqxeVEqp9CxHnXc6S7srBlp36HigKGiuPCIzQ6gz37AC11jNiNFuCWzZmDpucgW9AwTDtR7eM6m4KqqCVPQ6B-Ni9XKq8mv9EH-2eFnHQStB4xSAWSaT6w_EuWLGRqLz1nVQBQT-BOBTcpNGUpfeMnjfTqwhdX6GmUOz3fBIbKGpj1jmrzPmojZljhDG4hrQxKJCslf7hezM8pe0hXH9aoWOemrBlJFNgybvJyciJaTOkulSuoutKP-ILYeS4YjbUkEeNAMOr5cpx-1K2AU7S6stXXdDndGec7Q9NIR4pvCSnPcJVT77Pa8ktnW0o1Qjj1kff2n4_HbD8BMuVSGdVsFoebJGnDuig_Z5VvXRTniplk0Cof-Jo4JX5LR9PSYhMXmWbJGZwlGZ_QqiU1tssg94VBFlSUYNUeRU3BDFiUu2uIzYcwp70IdGcHyYOVsJq2XT3J2PMaUFN2zjtFw-_YYdI0jovh1gfZSZVHG9iqZtFnzAVSEi6WQOPB7GnUBr_baiJOKReIjTdtamMtRz0gv3Rd7IPMrY9qVbLoUdtDH6rHczgI7IzSXeTXURDsPKnQezx-gE9Ht8WxqFhE-FXt7uFsrluNSH8ojb4GBuLMlY'
+    parameters:
+        recaptcha_secret_key: '%env(GOOGLE_RECAPTCHA_SECRET)%'
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: true
+
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+
+    # Falls der MetaApiClient explizit konfiguriert werden soll
+    App\Service\MetaApiClient:
+        arguments:
+            $baseUrl: '%metaapi.base_url%'
+            $token: '%metaapi.token%'

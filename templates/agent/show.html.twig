@@ -1,0 +1,875 @@
+{# templates/account/show.html.twig #}
+{% extends 'base.html.twig' %}
+
+{% block title %}Account Details - {{ account.name }}{% endblock %}
+
+{% block body %}
+    <div class="wrapper">
+        <div class="container mt-5">
+            <div class="container my-4 mx-0 p-4 card">
+                <h3>
+                    {% if is_granted('ROLE_ADMIN') %}
+                        {{ account.user.username }} {% if account.user.firstname|length > 1 %} - {{ account.user.firstname }} {{ account.user.lastname }}{% endif %} |
+                    {% endif %}
+
+                    {{ account.name }} #{{ account.login }}
+                    <span class="text-xs badge badge-sm bg-gradient-success text-uppercase mx-1">{{ account.platform }}</span>{{ account.type == 1 ? '<span class="text-xs badge badge-sm bg-gradient-success mx-1">Agent</span>' : (account.type == 2 ? '<span class="text-xs badge badge-sm bg-gradient-primary mx-1">Leader</span>' : '<span class="text-xs badge badge-sm bg-gradient-info mx-1">Subscriber</span>') }}
+                    {{ account.isActive ? '<span class="float-sm-end text-xs badge badge-sm bg-gradient-success">Online</span>' : '<span class="badge text-xs badge-sm bg-gradient-secondary">Pausiert</span>' }}</h3>
+                <p class="mb-0 font-weight-normal text-sm">
+                    {{ account.tradeServer }} <i class="material-symbols-rounded text-xs my-auto mx-1">schedule</i>aktualisiert am {{ account.lastUpdate|date('d.m.Y H:i:s') }}
+                </p>
+            </div>
+
+            {% if account.error|length < 1 %}
+                {% if agent|length > 0 and multiplier.multiplier > 0 %}
+                    <div class="container my-4 mx-0 p-0">
+                        <div class="row">
+                            <div class="col-12 mb-1">
+                                <div class="p-4 ps-3 badge-info border-radius-2xl">
+                                    Dieser Account ist mit dem Agent <strong>{{ agent.name }}</strong> und einem Multiplikator <strong>{{ multiplier.multiplier }}</strong> verbunden. <a href="/agents" class="ms-auto btn bg-gradient-dark mb-0 float-end">Zu den Agents <i class="fas fa-arrow-right ms-1" aria-hidden="true"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="container my-4 mx-0 p-0">
+                        <div class="row">
+                            <div class="col-12 mb-1">
+                                <div class="p-4 ps-3 badge-danger border-radius-2xl">
+                                {% if agent|length > 0 and multiplier.multiplier > 0 %}
+                                    Dieser Account ist mit keinem Agent verbunden. Du musst diesen Account mit einem Agent verbinden um die Automatisierung zu nutzen. <a href="/agents" class="ms-auto btn bg-gradient-dark mb-0 float-end">Zu den Agents <i class="fas fa-arrow-right ms-1" aria-hidden="true"></i></a>
+                                {% else %}
+                                    Bei der Verbindung mit dem Agent gab es ein Problem. Bitte den Agent trennen und neu verbinden um die Automatisierung zu nutzen. <a href="/agents" class="ms-auto btn bg-gradient-dark mb-0 float-end">Zu den Agents <i class="fas fa-arrow-right ms-1" aria-hidden="true"></i></a>
+                                {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endif %}
+
+            {% if account.host != 'metapi' %}
+            {% if account.error|length > 0  %}
+            <div class="container my-4 mx-0 p-0">
+                <div class="row">
+                    <div class="col-12 mb-1">
+                        {% if account.error != 'NONE' %}
+                        <div class="p-4 ps-3 badge-danger border-radius-2xl">
+                            {% if account.error == "EMPTY_EWALLET" %}
+                                Dein Account wird derzeit aktualisiert ...
+                            {% else %}
+                            Fehler beim Verbinden mit dem Account auf {{ account.tradeServer }} ({{ account.platform }}): <strong>{{ account.error }}</strong>.
+                            <form method="post" action="{{ path('app_account_delete', {'meta_id': account.metaId}) }}" style="display:inline;">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ account.metaId) }}">
+                                <button class="ms-auto btn bg-gradient-dark mb-0 float-end" type="submit" data-bs-toggle="tooltip" data-bs-placement="bottom" aria-label="löschen" data-bs-original-title="löschen">Account löschen</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="p-4 ps-3 badge-info border-radius-2xl">
+                        Account wird derzeit verbunden ...
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        {% endif %}
+
+        <div class="container my-4 mx-0 p-0">
+            <div class="row">
+                <div class="col-6 mb-4">
+                    <div class="card">
+                        <div class="card-header p-2 ps-3">
+                            <h6 class="text-sm mb-0 text-capitalize pt-2">Balance</h6>
+                            <h4 class="mb-0">{{ account.balance|number_format(2, ',', '.') }}</h4>
+                            {% if account.host != 'metapi' %}
+                                <span class="text-sm"><i class="material-symbols-rounded text-xs my-auto mx-1">schedule</i> Aktualisierung alle 15 Minuten</span>
+                            {% endif %}
+                        </div>
+                        {% if account.host == 'metapi' %}
+                            <hr class="dark horizontal my-0">
+                            <div class="card-footer p-2 ps-3">
+                                {% set totalYesterdayProfit = 0 %}
+                                {% set totalYesterdayGain = 0 %}
+
+                                {% set yesterday = "now"|date_modify("-1 day")|date("Y-m-d") %}
+
+                                {% for growth in account.dailyGrowth %}
+                                    {% if growth.date == yesterday %}
+                                        {% set totalYesterdayProfit = totalYesterdayProfit + (growth.profit ?? 0) %}
+                                        {% set totalYesterdayGain = totalYesterdayGain + (growth.gain ?? 0) %}
+                                    {% endif %}
+                                {% endfor %}
+                                <p class="mb-0 text-sm">
+                                        <span class="{% if totalYesterdayProfit >= 0 %}text-success{% else %}text-danger{% endif %} font-weight-bolder">
+                                            {% if totalYesterdayProfit > 0 %}+{% endif %}{{ totalYesterdayProfit|number_format(2, ',', '.') }}
+                                        </span> am Vortag
+                                </p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-6 mb-4">
+                    <div class="card">
+                        <div class="card-header p-2 ps-3">
+                            <h6 class="text-sm mb-0 text-capitalize pt-2">Equity</h6>
+                            <h4 class="mb-0">{{ account.equity|number_format(2, ',', '.') }}</h4>
+                            {% if account.host != 'metapi' %}
+                                <span class="text-sm"><i class="material-symbols-rounded text-xs my-auto mx-1">schedule</i> Aktualisierung alle 15 Minuten</span>
+                            {% endif %}
+                        </div>
+                        {% if account.host == 'metapi' %}
+                            <hr class="dark horizontal my-0">
+                            <div class="card-footer p-2 ps-3">
+                                {% set totalYesterdayProfit = 0 %}
+                                {% set totalYesterdayGain = 0 %}
+
+                                {% set yesterday = "now"|date_modify("-1 day")|date("Y-m-d") %}
+
+                                {% for growth in account.dailyGrowth %}
+                                    {% if growth.date == yesterday %}
+                                        {% set totalYesterdayProfit = totalYesterdayProfit + (growth.profit ?? 0) %}
+                                        {% set totalYesterdayGain = totalYesterdayGain + (growth.gain ?? 0) %}
+                                    {% endif %}
+                                {% endfor %}
+                                <p class="mb-0 text-sm">
+                                        <span class="{% if totalYesterdayProfit >= 0 %}text-success{% else %}text-danger{% endif %} font-weight-bolder">
+                                            {% if totalYesterdayProfit > 0 %}+{% endif %}{{ totalYesterdayProfit|number_format(2, ',', '.') }}
+                                        </span> am Vortag
+                                </p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card">
+                        <div class="card-header p-2 ps-3">
+                            <h6 class="text-sm mb-0 text-capitalize pt-2">Offener Profit</h6>
+                            <h4 class="mb-0">
+                                {{ (account.equity - account.balance)|number_format(2, ',', '.') }}
+
+                                {% set equity = account.equity|default(0) %}
+                                {% set balance = account.balance|default(1) %}
+                                {% set openProfit = equity - balance %}
+                                {% set openProfitPercent = balance > 0 ? ((openProfit / balance) * 100) : 0 %}
+
+                                {% if openProfitPercent > 0 %}
+                                    <span class="badge badge-success my-auto">
+                                            <i class="material-symbols-rounded text-xs">arrow_upward</i>
+                                            <span class="text-lg">{{ openProfitPercent|number_format(2, ',', '.') }}%</span>
+                                        </span>
+                                {% elseif openProfitPercent|round(0) == 0 %}
+                                    <span class="badge badge-secondary">
+                                            <i class="material-symbols-rounded text-xs">swap_horiz</i>
+                                            <span class="text-lg">{{ openProfitPercent|number_format(2, ',', '.') }}%</span>
+                                        </span>
+                                {% else %}
+                                    <span class="badge badge-danger">
+                                            <i class="material-symbols-rounded text-xs">arrow_downward</i>
+                                            <span class="text-lg">{{ openProfitPercent|number_format(2, ',', '.') }}%</span>
+                                        </span>
+                                {% endif %}
+                            </h4>
+                            {% if account.host != 'metapi' %}
+                                <span class="text-sm"><i class="material-symbols-rounded text-xs my-auto mx-1">schedule</i> Aktualisierung alle 15 Minuten</span>
+                            {% endif %}
+                        </div>
+                        <hr class="dark horizontal my-0">
+                        <div class="card-footer p-2 ps-3">
+                            {#                            <p class="mb-0 text-sm"><span class="text-success font-weight-bolder">+55% </span>than last week</p>#}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="card">
+                        <div class="card-header p-2 ps-3">
+                            <h6 class="text-sm mb-0 text-capitalize pt-2">Offene Positionen</h6>
+                            <h4 class="mb-0">{{ openPositions|length }}</h4>
+                            {% if account.host != 'metapi' %}
+                                <span class="text-sm"><i class="material-symbols-rounded text-xs my-auto mx-1">schedule</i> Aktualisierung alle 15 Minuten</span>
+                            {% endif %}
+                        </div>
+                        <hr class="dark horizontal my-0">
+                        <div class="card-footer p-2 ps-3">
+                            {#                            <p class="mb-0 text-sm"><span class="text-success font-weight-bolder">+55% </span>than last week</p>#}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <h3>Analytics Report</h3>
+
+        <div class="row">
+            <div class="{% if account.host == 'metapi' %}col-lg-6 col-md-6{% else %}col-lg-12 col-md-12{% endif %} mt-0 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="mb-0 ">Wachstum</h6>
+                        {% if account.host == 'metapi' %} <p class="text-sm ">Wachstum hat <strong>{{ account.absoluteGain|round(2) }}%</strong> erreicht</p>{% endif %}
+                        <div class="pe-2">
+                            <div class="chart">
+                                <div style="width: 100%; margin: auto;">
+                                    <canvas id="profitChart"></canvas>
+                                </div>
+
+                                <script>
+                                    // Extrahiere die Daten aus Twig
+                                    const dailyGrowth = {{ dailyGrowth|json_encode|raw }};
+
+                                    // Bereite die Daten für die Chart.js-Konfiguration vor
+                                    const labels = dailyGrowth.map(entry => entry.date); // x-Achse: "date"
+
+                                    {% if account.host == 'metapi' %}
+                                    const data = dailyGrowth.map(entry => entry.balance || 0); // y-Achse: "balance"
+                                    {% else %}
+                                    const data = dailyGrowth.map(entry => entry.profit || 0); // y-Achse: "profit"
+                                    {% endif %}
+
+                                    // Berechne die akkumulierten Profite/Verluste
+                                    let accumulatedProfit = 0;
+                                    const accumulatedData = dailyGrowth.map(entry => {
+                                        accumulatedProfit += entry.profit || 0;
+                                        return accumulatedProfit;
+                                    });
+
+                                    // Initialisierung des Charts
+                                    const ctx = document.getElementById('profitChart').getContext('2d');
+                                    const profitChart = new Chart(ctx, {
+                                        type: 'line',
+                                        data: {
+                                            labels: labels,
+                                            datasets: [
+                                                {
+                                                    label: '{% if account.host == "metapi" %}Balance{% else %}Tagesprofit{% endif %}',
+                                                    data: data,
+                                                    borderColor: 'rgba(75, 220, 192, 1)',
+                                                    backgroundColor: 'rgba(75, 192, 192, 0.4)',
+                                                    tension: 0.2,
+                                                    fill: true,
+                                                    pointRadius: 2,
+                                                },
+                                                {
+                                                    label: 'Akkumulierter Profit/Verlust',
+                                                    data: accumulatedData,
+                                                    borderColor: 'rgba(75, 192, 180, 1)',
+                                                    backgroundColor: 'rgba(75, 145, 180, 0.1)',
+                                                    tension: 0.2,
+                                                    fill: true,
+                                                    pointRadius: 2,
+                                                }
+                                            ]
+                                        },
+                                        options: {
+                                            responsive: true,
+                                            plugins: {
+                                                legend: {
+                                                    position: 'top'
+                                                },
+                                                title: {
+                                                    display: false,
+                                                    text: 'Wachstum'
+                                                }
+                                            },
+                                            scales: {
+                                                x: {
+                                                    title: {
+                                                        display: false,
+                                                        text: 'Datum'
+                                                    },
+                                                    grid: {
+                                                        display: false // Vertikales Grid entfernen
+                                                    },
+                                                    ticks: {
+                                                        display: false // Beschriftung auf der x-Achse entfernen
+                                                    }
+                                                },
+                                                y: {
+                                                    title: {
+                                                        display: false,
+                                                        text: '{% if account.host == "metapi" %}Balance{% else %}Tagesprofit{% endif %}'
+                                                    },
+                                                    beginAtZero: true // Startet die y-Achse bei 0
+                                                }
+                                            }
+                                        }
+                                    });
+                                </script>
+                            </div>
+                        </div>
+                        <hr class="dark horizontal">
+                        <div class="d-flex ">
+                            <i class="material-symbols-rounded text-sm my-auto me-1">schedule</i>
+                            <p class="mb-0 text-sm"> aktualisiert am {{ account.lastUpdate|date('d.m.Y H:i:s') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {# <div class="col-lg-4 col-md-6 mt-0 mb-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h6 class="mb-0 ">Drawdown</h6>
+                            <p class="text-sm ">max. Drawdown liegt bei <strong class="text-danger">-{{ account.maxDrawdown|round(3) }}%</strong></p>
+                            <div class="pe-2">
+                                <div class="chart">
+                                    <div style="width: 100%; margin: auto;">
+                                        <canvas id="profitChart2" ></canvas>
+                                    </div>
+
+                                    <script>
+                                        // Daten für profitChart2 (Drawdown Prozentual relativ zur vorherigen Balance)
+                                        const drawdownPercentData = dailyGrowth.map((entry, index, array) => {
+                                            if (entry.drawdownProfit && index > 0 && array[index - 1].balance) {
+                                                // Berechnung: Drawdown in Prozent relativ zur Balance des vorherigen Eintrags (negativ)
+                                                const value = -(entry.drawdownProfit / array[index - 1].balance) * 100;
+                                                const roundedValue = value.toFixed(3); // Gibt eine String-Repräsentation des gerundeten Werts zurück
+                                                return roundedValue;
+                                            }
+                                            return 0; // Wenn keine Daten oder vorheriger Eintrag vorhanden sind, 0 setzen
+                                        });
+
+                                        // Initialisierung des Drawdown-Prozent-Diagramms
+                                        const ctx2 = document.getElementById('profitChart2').getContext('2d');
+                                        const profitChart2 = new Chart(ctx2, {
+                                            type: 'line',
+                                            data: {
+                                                labels: labels,
+                                                datasets: [{
+                                                    label: 'Drawdown (%)',
+                                                    data: drawdownPercentData,
+                                                    borderColor: 'rgba(255, 99, 132, 1)',
+                                                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                                                    tension: 0.5,
+                                                    fill: true,
+                                                    pointRadius: 2,
+                                                }]
+                                            },
+                                            options: {
+                                                responsive: true,
+                                                plugins: {
+                                                    legend: {
+                                                        position: 'top'
+                                                    },
+                                                    title: {
+                                                        display: false,
+                                                        text: 'Drawdown (%)'
+                                                    }
+                                                },
+                                                scales: {
+                                                    x: {
+                                                        title: {
+                                                            display: false,
+                                                            text: 'Date'
+                                                        },
+                                                        grid: {
+                                                            display: false // Vertikales Grid entfernen
+                                                        },
+                                                        ticks: {
+                                                            display: false // Beschriftung auf der x-Achse entfernen
+                                                        }
+                                                    },
+                                                    y: {
+                                                        title: {
+                                                            display: false,
+                                                            text: 'Drawdown (%)'
+                                                        },
+                                                        ticks: {
+                                                            callback: function(value) {
+                                                                return value + '%'; // Prozent-Symbol anzeigen
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        });
+                                    </script>
+                                </div>
+                            </div>
+                            <hr class="dark horizontal">
+                            <div class="d-flex ">
+                                <i class="material-symbols-rounded text-sm my-auto me-1">schedule</i>
+                                <p class="mb-0 text-sm"> aktualisiert am {{ account.lastUpdate|date('d.m.Y H:i:s') }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>#}
+            {% if account.host == 'metapi' %}
+            <div class="col-lg-6 mt-0 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="mb-0 ">Risk to Reward</h6>
+                        <p class="text-sm ">Profit Faktor liegt bei <strong>{{ account.profitFactor|round(2) }}</strong></p>
+                        <div class="pe-2">
+                            <div class="chart">
+                                <div style="width: 100%; margin: auto;">
+                                    <canvas id="profitChart3"></canvas>
+                                </div>
+
+                                <script>
+                                    // Extrahiere die Daten aus Twig
+                                    const monthlyAnalytics = {{ account.monthlyAnalytics|json_encode|raw }};
+
+                                    // Labels (x-Achse): Monate
+                                    const months = monthlyAnalytics.map(entry => entry.date);
+
+                                    // Daten für jede Währung vorbereiten
+                                    const currencies = [...new Set(monthlyAnalytics.flatMap(entry => entry.currencies.map(c => c.currency)))];
+                                    const datasets = currencies.map(currency => {
+                                        const data = monthlyAnalytics.map(entry => {
+                                            const currencyData = entry.currencies.find(c => c.currency === currency);
+                                            return currencyData ? currencyData.rewardToRiskRatio : null;
+                                        });
+                                        return {
+                                            label: currency,
+                                            data: data,
+                                            borderColor: `hsl(${Math.random() * 360}, 70%, 50%)`,
+                                            backgroundColor: `hsl(${Math.random() * 360}, 70%, 70%)`,
+                                            tension: 0.1, // Glättung der Linie
+                                            spanGaps: true // Verbindet Punkte mit fehlenden Daten
+                                        };
+                                    });
+
+                                    // Initialisierung des dritten Charts (Reward to Risk Ratio Chart)
+                                    const ctx3 = document.getElementById('profitChart3').getContext('2d');
+                                    const profitChart3 = new Chart(ctx3, {
+                                        type: 'line',
+                                        data: {
+                                            labels: months,
+                                            datasets: datasets,
+                                            pointRadius: 2,
+                                        },
+                                        options: {
+                                            responsive: true,
+                                            plugins: {
+                                                legend: {
+                                                    position: 'top'
+                                                },
+                                                title: {
+                                                    display: false,
+                                                    text: 'Risk to Reward pro Asset'
+                                                }
+                                            },
+                                            scales: {
+                                                x: {
+                                                    title: {
+                                                        display: false,
+                                                        text: 'Monat'
+                                                    },
+                                                    grid: {
+                                                        display: false // Vertikales Grid entfernen
+                                                    },
+                                                    ticks: {
+                                                        display: false // Beschriftung auf der x-Achse entfernen
+                                                    }
+                                                },
+                                                y: {
+                                                    title: {
+                                                        display: false,
+                                                        text: 'Risk to Reward'
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    });
+                                </script>
+                            </div>
+                        </div>
+                        <hr class="dark horizontal">
+                        <div class="d-flex ">
+                            <i class="material-symbols-rounded text-sm my-auto me-1">schedule</i>
+                            <p class="mb-0 text-sm"> aktualisiert am {{ account.lastUpdate|date('d.m.Y H:i:s') }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="container-fluid my-4 mb-5 mx-0 p-0">
+            <div class="row">
+                <div class="col-xl-6 col-sm-12 mb-xl-0 mb-5">
+                    <div class="card">
+                        <table class="table">
+                            <tbody>
+                            <tr>
+                                <td><strong>Anzahl Trades</strong></td>
+                                <td>{{ closedPositions|length }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Trefferquote</strong></td>
+                                <td>{{ account.wonTradesPercent|round(2) }}%</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Profit Faktor</strong></td>
+                                <td>{{ account.profitFactor|round(2) }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Longs Win</strong></td>
+                                <td>{{ account.longWonTradesPercent|round(2) }}%</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Shorts Win</strong></td>
+                                <td>{{ account.shortWonTradesPercent|round(2) }}%</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="col-xl-6 col-sm-12 mb-xl-0 mb-5">
+                    <div class="card">
+                        <table class="table">
+                            <tbody>
+                            <tr>
+                                <td><strong>Volumen</strong></td>
+                                <td>{{ account.lots|round(2) }} Lots</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Bester Trade</strong></td>
+                                <td>{{ account.bestTrade|round(2) }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Größter Verlust</strong></td>
+                                <td>{{ account.worstTrade|round(2) }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Durchschnitts Gewinn</strong></td>
+                                <td>{{ account.averageWin|round(2) }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Durchschnitts Verlust</strong></td>
+                                <td>{{ account.averageLoss|round(2) }}</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+        <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+        <!-- Füge html2canvas hinzu -->
+        <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+        <style>
+            .fc-view-harness {
+                min-height: 750px !important;
+            }
+        </style>
+
+        <h4 class="w-100">Trade-Kalender <button id="shareButton" class="btn btn-sm btn-outline-dark mx-3 my-2">Teilen <i class="material-symbols-rounded text-xs">share</i></button></h4>
+
+        <div class="row" id="calendarWrapper" style="background-color: #eae8e1">
+            <div class="col-12 mb-5">
+                <!-- Logo, das nur im Export sichtbar sein soll -->
+                <div id="exportLogo" class="mt-3" style="display: none; width:100%; z-index: 1000; text-align: center;">
+                    <img src="{{ asset('assets/img/elvtd_logo.png') }}" alt="Logo" style="width: 100px; height: auto; margin: 0 auto; display: block">
+                    <span class="ms-1 text-bolder pt-3" style="font-size: 2em;">ELVTD Finance</span><br>
+                    <hr>
+                    <br>
+                </div>
+                <div class="pt-3 px-5" style="box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); border-radius: 0.5rem; background: linear-gradient(180deg, #f9f7f6 0%, rgba(247, 244, 242, 0) 80%)">
+                    <h3 class="w-100 align-content-center" style="text-align: center">Statistik</h3>
+                    <div id="calendar-stats"></div>
+                    <div id="calendar"></div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Die dailyGrowth-Daten aus der Twig-Variable holen
+                const dailyGrowth = {{ dailyGrowth|json_encode|raw }};
+
+                // Events für FullCalendar erstellen
+                const events = dailyGrowth
+                    .filter(day => day.profit !== undefined) // Nur Tage mit Profit anzeigen
+                    .map(day => {
+                        // Profit formatieren (z. B. $443, $1.78K, -$4.99K)
+                        let profit = day.profit || 0;
+                        let formattedProfit = '';
+                        if (profit < 0) {
+                            formattedProfit = '-$' + Math.abs(profit).toFixed(2);
+                        } else {
+                            formattedProfit = '$' + profit.toFixed(2);
+                        }
+                        if (Math.abs(profit) >= 1000) {
+                            formattedProfit = (profit < 0 ? '-$' : '$') + (Math.abs(profit) / 1000).toFixed(2) + 'K';
+                        }
+
+                        // Prozentsatz (gains)
+                        const percent = (day.gains || 0).toFixed(2) + '%';
+
+                        // Hintergrundfarbe basierend auf Profit
+                        const backgroundColor = profit < 0 ? '#f8d7da' : '#d4edda'; // Rot für Verluste, Grün für Gewinne
+
+                        return {
+                            title: formattedProfit,
+                            start: day.date,
+                            backgroundColor: backgroundColor,
+                            borderColor: backgroundColor,
+                            extendedProps: {
+                                percent: percent
+                            }
+                        };
+                    });
+
+                // Kalender initialisieren
+                var calendarEl = document.getElementById('calendar');
+                var calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'dayGridMonth',
+                    headerToolbar: {
+                        left: 'prev,next',
+                        center: 'title',
+                        right: 'today'
+                    },
+                    events: events,
+                    eventContent: function(arg) {
+                        let title = arg.event.title;
+                        let percent = arg.event.extendedProps.percent;
+                        let colorClass = title.startsWith('-') ? 'text-dark' : 'text-dark';
+
+                        return {
+                            html: `
+                                    <div class="${colorClass} text-xs py-4">
+                                        <div class="text-bolder">${title}</div>
+                                        <div>${percent}</div>
+                                    </div>
+                                `
+                        };
+                    },
+                    datesSet: function(dateInfo) {
+                        calculateStats(dateInfo.start, dateInfo.end);
+                    }
+                });
+                calendar.render();
+
+                // Funktion zum Berechnen der Statistiken
+                function calculateStats(startDate, endDate) {
+                    const monthData = dailyGrowth.filter(day => {
+                        const dayDate = new Date(day.date);
+                        return dayDate >= startDate && dayDate <= endDate && day.profit !== undefined;
+                    });
+
+                    const monthlyProfit = monthData.reduce((sum, day) => sum + (day.profit || 0), 0);
+                    const tradingDays = monthData.length;
+
+                    const weeks = {};
+                    monthData.forEach(day => {
+                        const date = new Date(day.date);
+                        const weekNumber = Math.ceil((date.getDate() + (new Date(date.getFullYear(), date.getMonth(), 1).getDay() + 6) % 7) / 7);
+                        if (!weeks[weekNumber]) {
+                            weeks[weekNumber] = { profit: 0, days: 0 };
+                        }
+                        weeks[weekNumber].profit += day.profit || 0;
+                        weeks[weekNumber].days += 1;
+                    });
+
+                    let formattedMonthlyProfit = monthlyProfit >= 1000 ? (monthlyProfit < 0 ? '-$' : '$') + (Math.abs(monthlyProfit) / 1000).toFixed(2) + 'K' : (monthlyProfit < 0 ? '-$' : '$') + monthlyProfit.toFixed(2);
+                    let statsHtml = `
+                            <p><strong>Dieser Monat:</strong> ${formattedMonthlyProfit}, ${tradingDays} Tage</p>
+                            <div class="row">
+                        `;
+                    for (const [week, data] of Object.entries(weeks)) {
+                        let formattedWeekProfit = data.profit >= 1000 ? (data.profit < 0 ? '-$' : '$') + (Math.abs(data.profit) / 1000).toFixed(2) + 'K' : (data.profit < 0 ? '-$' : '$') + data.profit.toFixed(2);
+                        statsHtml += `<div class="col-xl-6 col-sm-6 mb-4"><div class="card px-3 py-2"><strong>Woche ${week}:</strong> ${formattedWeekProfit}, ${data.days} Tage</div></div>`;
+                    }
+                    statsHtml += '</div>';
+
+                    document.getElementById('calendar-stats').innerHTML = statsHtml;
+                }
+
+                // Teilen-Button-Handler
+                document.getElementById('shareButton').addEventListener('click', function() {
+                    const calendarWrapper = document.getElementById('calendarWrapper');
+                    if (calendarWrapper) {
+                        // Speichere die ursprüngliche Breite
+                        const calendarElement = document.getElementById('calendar');
+                        const calendarHeader = calendarWrapper.querySelector('.fc-col-header ');
+                        const calendarDays = calendarWrapper.querySelector('.fc-scrollgrid-sync-table');
+                        const originalWidth = calendarWrapper.style.width || calendarWrapper.offsetWidth + 'px';
+                        const originalWidthCalendar = calendarHeader.style.width || calendarHeader.offsetWidth + 'px';
+                        const printWith = '1550px';
+                        const elementWith = '1410px';
+
+                        // Setze eine minimale Breite für den Export (z. B. 800px)
+                        calendarWrapper.style.minWidth = printWith;
+                        calendarWrapper.style.width = printWith;
+                        calendarElement.style.minWidth = elementWith;
+                        calendarElement.style.width = elementWith;
+                        calendarHeader.style.minWidth = elementWith;
+                        calendarHeader.style.width = elementWith;
+                        calendarDays.style.minWidth = elementWith;
+                        calendarDays.style.width = elementWith;
+
+                        // Temporäre CSS-Klassen hinzufügen, um Button-Gruppe und Today-Button auszublenden
+                        const buttonGroup = calendarWrapper.querySelector('.fc-button-group');
+                        const todayButton = calendarWrapper.querySelector('.fc-today-button');
+                        if (buttonGroup) buttonGroup.style.display = 'none';
+                        if (todayButton) todayButton.style.display = 'none';
+                        document.getElementById('exportLogo').style.display = 'block'; // Logo für den Export sichtbar machen
+
+                        setTimeout(() => {
+                            html2canvas(calendarWrapper, {
+                                scale: 2, // Erhöht die Auflösung
+                                useCORS: true // Für externe Ressourcen (falls vorhanden)
+                            }).then(canvas => {
+                                const link = document.createElement('a');
+                                link.download = 'trade_calendar_{{ account.name|replace({" ": "_"}) }}_' + new Date().toISOString().slice(0, 10) + '.png';
+                                link.href = canvas.toDataURL('image/png');
+                                link.click();
+
+                                // Nach dem Export wiederherstellen
+                                calendarWrapper.style.minWidth = originalWidth;
+                                calendarWrapper.style.width = originalWidth;
+                                calendarElement.style.minWidth = originalWidthCalendar;
+                                calendarElement.style.width = originalWidthCalendar;
+                                calendarHeader.style.minWidth = originalWidthCalendar;
+                                calendarHeader.style.width = originalWidthCalendar;
+                                calendarDays.style.minWidth = originalWidthCalendar;
+                                calendarDays.style.width = originalWidthCalendar;
+                                if (buttonGroup) buttonGroup.style.display = '';
+                                if (todayButton) todayButton.style.display = '';
+                                document.getElementById('exportLogo').style.display = 'none';
+                            }).catch(error => {
+                                console.error('Fehler beim Erstellen des Bildes:', error);
+                            });
+                        }, 500); // Verzögerung, um sicherzustellen, dass der Kalender geladen ist
+                    } else {
+                        console.error('Kalender-Wrapper-Element nicht gefunden!');
+                    }
+                });
+            });
+        </script>
+
+        <style>
+            #calendar {
+                max-width: 100%;
+                margin: 0 auto;
+            }
+            .fc .fc-daygrid-day-frame {
+                background-color: #ffffffbd;
+            }
+            .fc-daygrid-day {
+                height: 100px; /* Höhe der Zellen anpassen */
+            }
+            .fc-daygrid-day-number {
+                font-size: 14px;
+            }
+            .fc-event {
+                font-size: 12px;
+                padding: 2px;
+                border-radius: 4px; /* Abgerundete Ecken */
+            }
+            .text-dark {
+                color: #343a40 !important; /* Dunkler Text für bessere Lesbarkeit */
+            }
+        </style>
+
+        {% if openPositions|length > 0 %}
+            <div class="container-fluid mb-5 mx-0 card p-0">
+                <div class="card">
+                    <div class="card-header pb-0">
+                        <h6 class="mb-0">offene Positionen</h6>
+                    </div>
+                    <div class="card-body px-0 table-responsive">
+                        <table class="table">
+                            <thead>
+                            <tr>
+                                <th class="w-15">Asset</th>
+                                <th class="text-center align-middle">Typ</th>
+                                <th class="text-center align-middle">Volumen</th>
+                                <th class="text-center align-middle">Preis</th>
+                                {% if account.host == 'metapi' %}
+                                    <th class="text-center align-middle">Profit</th>
+                                {% endif %}
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for order in openPositions %}
+                                <tr>
+                                    <td class="w-15"><strong>{{ order.symbol }}</strong><br><small>{{ order.openTime|date('d.m.Y H:i:s') }} - {{ order.ticket }} </small></td>
+                                    <td class="text-center align-middle">{{ order.cmd == 1 ? '<span class="badge badge-success">Buy</span>' : '<span class="badge badge-danger">Sell</span>' }}</td>
+                                    <td class="text-center align-middle">{{ order.volume }}</td>
+                                    <td class="text-center align-middle">{{ order.price }}</td>
+                                    {% if account.host == 'metapi' %}
+                                        <td class="text-center align-middle">
+                                            {% if order.profit >= 0 %}
+                                                <span class="text-success text-bold">{{ order.profit }}</span><br>
+                                                <span class="badge badge-success my-auto">
+                                                    <i class="material-symbols-rounded text-xs">arrow_upward</i>
+                                                    <span class="text-xs">{{ order.gain|round(2) }}%</span>
+                                                </span>
+                                            {% else %}
+                                                <span class="text-danger text-bold">{{ order.profit }}</span><br>
+                                                <span class="badge badge-danger">
+                                                    <i class="material-symbols-rounded text-xs">arrow_downward</i>
+                                                    <span class="text-xs">{{ order.gain|round(2) }}%</span>
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                    {% endif %}
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="8">Keine offenen Positionen vorhanden.</td></tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="container-fluid my-0 mx-0 card p-0">
+            <div class="card">
+                <div class="card-header pb-0">
+                    <h6 class="mb-0">Geschlossene Positionen</h6>
+                </div>
+                <div class="card-body px-0 table-responsive">
+                    <table class="table">
+                        <thead>
+                        <tr>
+                            <th class="w-15">Asset</th>
+                            <th class="text-center align-middle">Typ</th>
+                            <th class="text-center align-middle">Volumen</th>
+                            <th class="text-center align-middle">Preis</th>
+                            <th class="text-center align-middle">Profit</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for order in closedPositions %}
+                            <tr>
+                                <td class="w-15"><strong>{{ order.symbol }}</strong><small> - {{ order.ticket }}</small><br><small>{{ order.openTime|date('d.m.Y H:i:s') }} bis {{ order.closeTime|date('d.m.Y H:i:s') }} </small></td>
+                                <td class="text-center align-middle">{{ order.cmd == 1 ? '<span class="badge badge-success">Buy</span>' : '<span class="badge badge-danger">Sell</span>' }}</td>
+                                <td class="text-center align-middle">{{ order.volume }}</td>
+                                <td class="text-center align-middle">{{ order.price }}</td>
+                                <td class="text-center align-middle">
+                                    {% if order.profit >= 0 %}
+                                        <span class="text-success text-bold">{{ order.profit }}</span><br>
+                                        <span class="badge badge-success my-auto">
+                                            <i class="material-symbols-rounded text-xs">arrow_upward</i>
+                                            <span class="text-xs">{{ order.gain|round(2) }}%</span>
+                                        </span>
+                                    {% else %}
+                                        <span class="text-danger text-bold">{{ order.profit }}</span><br>
+                                        <span class="badge badge-danger">
+                                            <i class="material-symbols-rounded text-xs">arrow_downward</i>
+                                            <span class="text-xs">{{ order.gain|round(2) }}%</span>
+                                        </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr><td colspan="8">Keine geschlossenen Positionen vorhanden.</td></tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+{% endblock %}

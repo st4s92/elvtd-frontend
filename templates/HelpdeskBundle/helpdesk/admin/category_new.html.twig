@@ -1,0 +1,14 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin - New FAQ Category{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <h1>New FAQ Category</h1>
+        {{ form_start(form) }}
+        {{ form_widget(form) }}
+        <button type="submit" class="btn btn-primary mt-3">Create Category</button>
+        {{ form_end(form) }}
+        <a href="{{ path('app_helpdesk_faq') }}" class="btn btn-secondary mt-3">Back to FAQ</a>
+    </div>
+{% endblock %}

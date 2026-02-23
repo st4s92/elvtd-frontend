@@ -1,0 +1,65 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Helpdesk - Tickets{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <h3 class="mt-4 mb-4">Help Center</h3>
+        <div class="card">
+            <div class="card-header">
+                <h6 class="float-start">Deine Tickets</h6>
+                <a href="{{ path('app_helpdesk_new') }}" class="btn btn-primary float-end">Neues Ticket</a>
+            </div>
+            <table class="table table-responsive">
+                <thead>
+                <tr>
+                    <th>Titel</th>
+                    <th>Status</th>
+                    <th>Erstellt am</th>
+                    <th>Letzte Antwort von</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for ticket in tickets %}
+                    <tr {% if ticket.status == 'closed' %}style="opacity: 0.2"{% endif %} {% if ticket.status == 'in_progress' %}style="opacity: 0.8"{% endif %}>
+                        <td>
+                            <strong>{{ ticket.title }}</strong><br>
+                            <small>{{ ticket.user.firstname }} {{ ticket.user.lastname }} ({{ ticket.user.username }})</small>
+                        </td>
+                        <td>
+                            {% if ticket.status == 'open' %}offen{% endif %}
+                            {% if ticket.status == 'in_progress' %}wird bearbeitet{% endif %}
+                            {% if ticket.status == 'closed' %}geschlossen{% endif %}
+                        </td>
+                        <td>{{ ticket.createdAt|date('d.m.Y H:i:s') }}</td>
+                        <td>
+                            {% if ticket.latestComment %} {# Use camelCase to match getLatestComment() #}
+                                {{ ticket.latestComment.user.firstname }} {{ ticket.latestComment.user.lastname }}<br>
+                            <small>{{ ticket.latestComment.createdAt|date('d.m.Y H:i:s') }}</small>
+                            {% else %}
+                                Keine Antwort
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if is_granted('ROLE_ADMIN') %}
+                                <form action="{{ path('app_helpdesk_change_state', {'id': ticket.id}) }}" method="POST" style="display:inline;">
+                                    <select name="state" onchange="this.form.submit()">
+                                        <option value="open" {% if ticket.status == 'open' %}selected{% endif %}>offen</option>
+                                        <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>wird bearbeitet</option>
+                                        <option value="closed" {% if ticket.status == 'closed' %}selected{% endif %}>geschlossen</option>
+                                    </select>
+                                </form>
+                                <form action="{{ path('app_helpdesk_delete', {'id': ticket.id}) }}" method="POST" style="display:inline;" onsubmit="return confirm('Bist du sicher, dass du dieses Ticket löschen möchtest?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-none text-dark px-3 mb-0">Löschen</button>
+                                </form>
+                            {% endif %}
+                            <a href="{{ path('app_helpdesk_show', {'id': ticket.id}) }}" class="btn btn-sm btn-dark px-3 mb-0 float-end">Ansehen</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

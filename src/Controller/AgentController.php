@@ -1,0 +1,371 @@
+<?php
+
+namespace App\Controller;
+
+use App\Entity\Account;
+use App\Entity\Agent;
+use App\Form\AccountType;
+use App\Repository\AccountRepository;
+use App\Repository\AgentRepository;
+use App\Repository\OrderRepository;
+use App\Service\DuplikiumClient;
+use App\Service\MetaApiClient;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Annotation\Route;
+use App\Repository\AccountAgentSubscriptionRepository;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Session\Flash\FlashBagInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Security\Core\Security;
+
+class AgentController extends AbstractController
+{
+    private FlashBagInterface $flashBag;
+    private UrlGeneratorInterface $urlGenerator;
+
+    public function __construct(MetaApiClient $metaApiClient,
+                                FlashBagInterface $flashBag,
+                                UrlGeneratorInterface $urlGenerator
+    )
+    {
+        $this->flashBag = $flashBag;
+        $this->urlGenerator = $urlGenerator;
+    }
+
+    /**
+     * @Route("/admin_agents", name="app_admin_agents_index", methods={"GET"})
+     */
+    public function admin_agents(AccountRepository $accountRepository, AgentRepository $agentRepository, MetaApiClient $metaApiClient, DuplikiumClient $duplikiumClient): Response
+    {
+        // Alle Agent Accounts finden
+        $accounts = $accountRepository->findBy(['id' => [998]]);
+
+        // Alle Agents finden
+        $agents = $agentRepository->findAll();
+
+        // Alle Accounts des aktuellen Nutzers finden
+        $userAccounts = $accountRepository->findBy(['user' => $this->getUser()]);
+
+        if ($this->isGranted('ROLE_ADMIN')) {
+            // $userAccounts = $accountRepository->findBy(['host' => 'metapi', 'platform' => 'mt5']);
+            $userAccounts = $accountRepository->findAll();
+        }
+
+
+        // Datenstruktur für die Tabelle vorbereiten (nur Verbindungen mit Nutzer-Accounts)
+        $accountAgentConnections = [];
+        foreach ($userAccounts as $userAccount) {
+            $user_agents = $agentRepository->findAgentsByUserAccounts(['from_account_id' => $userAccount]);
+            foreach ($user_agents as $agent) {
+                $multiplier = $userAccount->getHost() == 'duplikium' ? $duplikiumClient->getMultiplier($userAccount->getMetaId()) : $metaApiClient->getMultiplier($userAccount->getMetaId());
+
+                var_dump($userAccount->getMetaId()); die;
+
+                $accountAgentConnections[] = [
+                    'account' => $userAccount,
+                    'agent' => $agent,
+                    'multiplier' => $userAccount->getHost() == 'duplikium' ? $multiplier['multiplier'] : $multiplier,
+                    'name' => $userAccount->getHost() == 'duplikium' ? $multiplier['templateFullName'] : 'Agent',
+                ];
+            }
+        }
+        return $this->render('agent/index.html.twig', [
+            'accounts' => $accounts,
+            'agents' => $agents,
+            'user_accounts' => $userAccounts,
+            'account_agent_connections' => $accountAgentConnections,
+        ]);
+    }
+
+    /**
+     * @Route("/agents", name="app_agents_index", methods={"GET"})
+     */
+    public function index(AccountRepository $accountRepository, AgentRepository $agentRepository, MetaApiClient $metaApiClient, DuplikiumClient $duplikiumClient): Response
+    {
+        // Alle Agent Accounts finden
+        $accounts = $accountRepository->findBy(['type' => [1]]);
+
+        // Alle Agents finden
+        $agents = $agentRepository->findAll();
+
+        // Alle Accounts des aktuellen Nutzers finden
+        $userAccounts = $accountRepository->findBy(['user' => $this->getUser()]);
+
+        if ($this->isGranted('ROLE_ADMIN')) {
+            //$userAccounts = $accountRepository->findBy(['host' => 'metapi', 'platform' => 'mt5']);
+        }
+
+        // Datenstruktur für die Tabelle vorbereiten (nur Verbindungen mit Nutzer-Accounts)
+        $accountAgentConnections = [];
+        foreach ($userAccounts as $userAccount) {
+            $user_agents = $agentRepository->findAgentsByUserAccounts(['from_account_id' => $userAccount]);
+            foreach ($user_agents as $agent) {
+                $multiplier = $userAccount->getHost() == 'duplikium' ? $duplikiumClient->getMultiplier($userAccount->getMetaId()) : $metaApiClient->getMultiplier($userAccount->getMetaId());
+
+                $accountAgentConnections[] = [
+                    'account' => $userAccount,
+                    'agent' => $agent,
+                    'multiplier' => $userAccount->getHost() == 'duplikium' ? $multiplier['multiplier'] : $multiplier,
+                    'name' => $userAccount->getHost() == 'duplikium' ? $multiplier['templateFullName'] : 'Agent',
+                ];
+            }
+        }
+        return $this->render('agent/index.html.twig', [
+            'accounts' => $accounts,
+            'agents' => $agents,
+            'user_accounts' => $userAccounts,
+            'account_agent_connections' => $accountAgentConnections,
+        ]);
+    }
+
+    /**
+     * @Route("/agents/{id}", name="app_agents_show", methods={"GET"})
+     */
+    public function show(Account $account, OrderRepository $orderRepository): Response
+    {
+        // Fetch orders for the account
+        $allOrders = $orderRepository->findBy(['account' => $account]);
+
+        // Group orders by state
+        $openPositions = array_filter($allOrders, fn($order) => $order->getState() === 1);
+        $openOrders = array_filter($allOrders, fn($order) => $order->getState() === 0);
+        $closedPositions = array_filter($allOrders, fn($order) => !in_array($order->getState(), [0, 1]));
+
+        return $this->render('account/show.html.twig', [
+            'account' => $account,
+            'openPositions' => $openPositions,
+            'openOrders' => $openOrders,
+            'closedPositions' => $closedPositions,
+        ]);
+    }
+
+    /**
+     * @Route("/agents/update_subscriber", name="app_agents_update_subscriber", methods={"POST"})
+     */
+    public function updateSubscriber(Request $request,
+                                     AccountRepository $accountRepository,
+                                     AgentRepository $agentRepository,
+                                     AccountAgentSubscriptionRepository $accountAgentSubscriptionRepository,
+                                     MetaApiClient $metaApiClient,
+                                     DuplikiumClient $duplikiumClient
+    ): RedirectResponse
+    {
+        $subscriberId = $request->request->get('subscriberId');
+        $strategyId = $request->request->get('strategyId');
+        $multiplier = (float) $request->request->get('multiplier');
+
+        if (!$subscriberId || !$strategyId || !$multiplier) {
+            $this->flashBag->add('primary', 'Invalid data provided.');
+            return new RedirectResponse($this->urlGenerator->generate('app_agents_index'));
+        }
+
+        $account = $accountRepository->findOneBy(['meta_id' => $subscriberId]);
+        $agent = $agentRepository->findOneBy(['meta_id' => $strategyId]);
+        $user = $account->getUser();
+
+        try {
+            if ($account && $agent) {
+                $accountAgentSubscriptionRepository->subscribe($account, $agent);
+            }
+
+            if ($account->getHost() == 'duplikium') {
+                $groupId = null;
+
+                switch ($strategyId) {
+                    case '58uT': // DailyGrowthFX
+                        switch ($multiplier) {
+                            case 1:
+                                if (stripos($account->getTradeServer(), 'FTMO') !== false) {
+                                    $groupId = 'mytdfafq'; // DailyGrowthFX-1 (FTMO)
+                                } elseif (stripos($account->getTradeServer(), 'GBE') !== false) {
+                                    $groupId = 'LSOdfafq'; // DailyGrowthFX-1 (ROBOFOREX)
+                                }
+                                elseif (stripos($account->getTradeServer(), 'ROBOFOREX') !== false) {
+                                    $groupId = 'wUtdfafq'; // DailyGrowthFX-1 (ROBOFOREX)
+                                } elseif (stripos($account->getTradeServer(), 'FundedNext') !== false) {
+                                    $groupId = 'wStdfafq'; // DailyGrowthFX-1 (FUNDEDNEXT)
+                                } else {
+                                    $groupId = 'cwZdfafq'; // DailyGrowthFX-1 (Default)
+                                }
+                                break;
+                            case 2:
+                                if (stripos($account->getTradeServer(), 'FTMO') !== false) {
+                                    $groupId = 'Uatdfafq'; // DailyGrowthFX-2 (FTMO)
+                                } elseif (stripos($account->getTradeServer(), 'ROBOFOREX') !== false) {
+                                    $groupId = 'Jytdfafq'; // DailyGrowthFX-2 (ROBOFOREX)
+                                } else {
+                                    $groupId = 'wmZdfafq'; // DailyGrowthFX-2 (Default)
+                                }
+                                break;
+                            case 3:
+                                if (stripos($account->getTradeServer(), 'FTMO') !== false) {
+                                    $groupId = 'catdfafq'; // DailyGrowthFX-3 (FTMO)
+                                } elseif (stripos($account->getTradeServer(), 'ROBOFOREX') !== false) {
+                                    $groupId = 'aytdfafq'; // DailyGrowthFX-3 (ROBOFOREX)
+                                } else {
+                                    $groupId = 'JEZdfafq'; // DailyGrowthFX-3 (Default)
+                                }
+                                break;
+                            case 4:
+                                if (stripos($account->getTradeServer(), 'FTMO') !== false) {
+                                    $groupId = 'tatdfafq'; // DailyGrowthFX-4 (FTMO)
+                                } elseif (stripos($account->getTradeServer(), 'ROBOFOREX') !== false) {
+                                    $groupId = 'Zytdfafq'; // DailyGrowthFX-4 (ROBOFOREX)
+                                } else {
+                                    $groupId = 'aEZdfafq'; // DailyGrowthFX-4 (Default)
+                                }
+                                break;
+                            case 5:
+                                if (stripos($account->getTradeServer(), 'FTMO') !== false) {
+                                    $groupId = 'Latdfafq'; // DailyGrowthFX-5 (FTMO)
+                                } elseif (stripos($account->getTradeServer(), 'ROBOFOREX') !== false) {
+                                    $groupId = 'fytdfafq'; // DailyGrowthFX-5 (ROBOFOREX)
+                                } else {
+                                    $groupId = 'ZEZdfafq'; // DailyGrowthFX-5 (Default)
+                                }
+                                break;
+                            default:
+                                throw new \Exception('Ungültiger Multiplier für DailyGrowthFX: ' . $multiplier);
+                        }
+                        break;
+
+                    case 'C63c': // CoreGrowth EURUSD
+                        switch ($multiplier) {
+                            case 1:
+                                $groupId = 'fEZdfafq'; // CoreGrowth-EURUSD-1
+                                break;
+                            case 2:
+                                $groupId = 'mEZdfafq'; // CoreGrowth-EURUSD-2
+                                break;
+                            case 3:
+                                $groupId = 'cJhdfafq'; // CoreGrowth-EURUSD-3
+                                break;
+                            case 4:
+                                $groupId = 'tJhdfafq'; // CoreGrowth-EURUSD-4
+                                break;
+                            case 5:
+                                $groupId = 'LJhdfafq'; // CoreGrowth-EURUSD-5
+                                break;
+                            default:
+                                throw new \Exception('Ungültiger Multiplier für CoreGrowth EURUSD: ' . $multiplier);
+                        }
+                        break;
+
+                    case 'Z6iT': // CoreGrowth USDCHF
+                        switch ($multiplier) {
+                            case 1:
+                                $groupId = 'qphdfafq'; // CoreGrowth-USDCHF-1
+                                break;
+                            case 2:
+                                $groupId = 'Gphdfafq'; // CoreGrowth-USDCHF-2
+                                break;
+                            case 3:
+                                $groupId = 'rphdfafq'; // CoreGrowth-USDCHF-3
+                                break;
+                            case 4:
+                                $groupId = 'Zqhdfafq'; // CoreGrowth-USDCHF-4
+                                break;
+                            case 5:
+                                $groupId = 'aqhdfafq'; // CoreGrowth-USDCHF-5
+                                break;
+                            default:
+                                throw new \Exception('Ungültiger Multiplier für CoreGrowth USDCHF: ' . $multiplier);
+                        }
+                        break;
+
+                    default:
+                        throw new \Exception('Ungültige Strategy ID: ' . $strategyId);
+                }
+
+                if ($groupId) {
+                    $duplikiumClient->updateAccount($account, $groupId);
+                }
+            } else {
+                $data = [
+                    'name' => $user->getId() . '-' . $account->getId() . '-' . $account->getName() . '-' . $user->getUsername(),
+                    'subscriptions' => [
+                        [
+                            'strategyId' => $strategyId,
+                            'multiplier' => $multiplier
+                        ]
+                    ]
+                ];
+                $metaApiClient->updateSubscriber($subscriberId, $data);
+            }
+            $this->flashBag->add('success', 'Die Strategie wurde erfolgreich abonniert.');
+        } catch (\Exception $e) {
+            $this->flashBag->add('primary', 'Error updateSubscriber: ' . $e->getMessage());
+        }
+
+        return new RedirectResponse($this->urlGenerator->generate('app_agents_index'));
+    }
+
+    /**
+     * @Route("/agents/remove_subscriber", name="app_agents_remove_subscriber", methods={"POST"})
+     */
+    public function removeSubscriber(Request $request,
+         AccountRepository $accountRepository,
+         AgentRepository $agentRepository,
+         AccountAgentSubscriptionRepository $accountAgentSubscriptionRepository,
+         MetaApiClient $metaApiClient,
+         DuplikiumClient $duplikiumClient
+    ): RedirectResponse
+    {
+        // POST-Parameter auslesen
+        $subscriberId = $request->request->get('subscriberId');
+        $strategyId = $request->request->get('strategyId');
+
+        // Überprüfen, ob beide Parameter vorhanden sind
+        if (!$subscriberId || !$strategyId) {
+            $this->flashBag->add('primary', 'Ungültige Daten bereitgestellt.');
+            return new RedirectResponse($this->urlGenerator->generate('app_agents_index'));
+        }
+
+        $account = $accountRepository->findOneBy(['meta_id' => $subscriberId]);
+
+        // Überprüfen, ob der Account existiert
+        if (!$account) {
+            $this->flashBag->add('danger', 'Der angegebene Account wurde nicht gefunden.');
+            return new RedirectResponse($this->urlGenerator->generate('app_agents_index'));
+        }
+
+        // Überprüfen, ob der Account dem aktuellen Benutzer gehört
+        if ($account->getUser() !== $this->getUser()) {
+            $this->flashBag->add('danger', 'Sie haben keine Berechtigung, diesen Account zu verwalten.');
+            return new RedirectResponse($this->urlGenerator->generate('app_agents_index'));
+        }
+
+        // Account und Agent aus der Datenbank abrufen
+        $account = $accountRepository->findOneBy(['meta_id' => $subscriberId]);
+        $agent = $agentRepository->findOneBy(['meta_id' => $strategyId]);
+
+        if (!$account || !$agent) {
+            $this->flashBag->add('primary', 'Account oder Agent nicht gefunden.');
+            return new RedirectResponse($this->urlGenerator->generate('app_agents_index'));
+        }
+
+        try {
+            // Entferne die Beziehung in der Datenbank
+            $accountAgentSubscriptionRepository->unsubscribe($account, $agent);
+
+            if ($account->getHost() == 'duplikium') {
+                $duplikiumClient->updateAccount($account, '');
+            }
+            else {
+                // Aktualisiere den Subscriber auf der MetaApi
+                $metaApiClient->updateSubscriber($subscriberId, [
+                    'name' => $account->getName(),
+                    'subscriptions' => []
+                ]);
+            }
+
+            $this->flashBag->add('success', 'Die Strategie wurde erfolgreich entfernt.');
+        } catch (\Exception $e) {
+            $this->flashBag->add('primary', 'Error removeSubscriber: ' . $e->getMessage());
+        }
+
+        return new RedirectResponse($this->urlGenerator->generate('app_agents_index'));
+    }
+}

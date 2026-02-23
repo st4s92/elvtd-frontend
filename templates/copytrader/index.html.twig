@@ -1,0 +1,54 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Copytrader{% endblock %}
+
+{% block body %}
+
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <h3 class="mb-4">Copytrader (Coming soon)</h3>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div id="contentContainer">
+                    <div class="content">
+                        <p class="lead">
+                            Mit unserer Copy-Trading-Lösung kannst du mehrere Konten verschiedener Plattformen nahtlos verbinden und zentral verwalten. Optimiere dein Risiko, indem du individuelle Handelsstrategien und Multiplikatoren für jedes Konto festlegst. Unsere Plattform ermöglicht es dir, Trades über alle verbundenen Konten und Plattformen hinweg in Echtzeit zu kopieren und auszuführen. Ideal für Trader, die ihre Performance skalieren und ein konsistentes Risikomanagement gewährleisten möchten.</p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="container p-0 card table-responsive">
+        <table class="table align-items-center mb-0">
+            <thead>
+                <tr>
+                    <th>Account Id</th>
+                    <th>Gruppe</th>
+                    <th>Kopieren von</th>
+                    <th>Risiko Typ</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for signal in signals %}
+                <tr>
+                    <td>{{ signal.id }}</td>
+                    <td>{{ signal.symbol }}</td>
+                    <td>{{ signal.price }}</td>
+                    <td>{{ signal.price }}</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="6">Keine Copytrader-Master eingerichtet</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+{% endblock %}

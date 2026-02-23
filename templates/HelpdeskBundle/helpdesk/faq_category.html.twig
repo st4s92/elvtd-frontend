@@ -1,0 +1,73 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}FAQ - {{ category.title }}{% endblock %}
+
+{% block body %}
+    <style>
+        .accordion-button {
+            font-size: 18px !important;
+            font-weight: bold !important;
+            color: #111011 !important;
+        }
+        .accordion-body  {
+            padding-left: 25px !important;
+        }
+        .accordion-body h1 {
+            font-size: 18px !important;
+        }
+        .accordion-body h2 {
+            font-size: 16px !important;
+        }
+        .accordion-body p, .accordion-body span, .accordion-body a, .accordion-body li {
+            color: #111011 !important;
+        }
+        .accordion-body img {
+            max-width: 100%;
+            margin: 15px 0;
+        }
+        .accordion-item:first-of-type {
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+        }
+        .accordion-item:last-of-type {
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+        }
+    </style>
+    <div class="container">
+        <h3 class="mt-4 mb-4">{{ category.title }}</h3>
+        <div class="accordion" id="faqAccordion">
+            {% for post in posts %}
+                <div class="accordion-item card">
+                    <h2 class="accordion-header card-header" id="heading{{ post.id }}">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ post.id }}" aria-expanded="true" aria-controls="collapse{{ post.id }}">
+                            {{ post.title }}
+                        </button>
+                    </h2>
+                    <div id="collapse{{ post.id }}" class="accordion-collapse collapse card-body" aria-labelledby="heading{{ post.id }}" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body">
+                            {{ post.content|raw }}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+    <hr>
+    <div class="container">
+        <h3 class="mt-4 mb-4">Help Center</h3>
+        <div class="row">
+            {% for category in categories %}
+                <div class="col-md-4 mb-4">
+                    <div class="card text-center" style="height: 250px;">
+                        <div class="card-body d-flex flex-column justify-content-center">
+                            <i class="material-symbols-rounded mt-5 mb-3" style="font-size: 40px;">{{ category.logo ?: 'help' }}</i>
+                            <h5 class="card-title mt-2">{{ category.title }}</h5>
+                            <a href="{{ path('app_helpdesk_faq_category', {'id': category.id}) }}" class="btn btn-primary mt-auto">View Posts</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock %}

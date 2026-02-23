@@ -1,0 +1,294 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}EUR/USD{% endblock %}
+
+{% block body %}
+    <script type="text/javascript" src="{{ asset('charting/charting_library/charting_library.standalone.js') }}"></script>
+    <script type="text/javascript" src="{{ asset('charting/datafeeds/udf/dist/bundle.js') }}"></script>
+
+    <script type="text/javascript">
+
+        function getParameterByName(name) {
+            name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+            var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+                results = regex.exec(location.search);
+            return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+        }
+
+        function initOnReady() {
+            var datafeedUrl = "https://demo-feed-data.tradingview.com";
+            var customDataUrl = getParameterByName('dataUrl');
+            if (customDataUrl !== "") {
+                datafeedUrl = customDataUrl.startsWith('https://') ? customDataUrl : `https://${customDataUrl}`;
+            }
+
+            var widget = window.tvWidget = new TradingView.widget({
+                // debug: true, // uncomment this line to see Library errors and warnings in the console
+                fullscreen: false,
+                autosize: true,
+                symbol: 'AAPL',
+                interval: '1D',
+                container: "tv_chart_container",
+                overrides: {
+                    // https://www.tradingview.com/charting-library-docs/latest/customization/overrides/chart-overrides
+                    "paneProperties.horzGridProperties.style": "1",
+                    "paneProperties.vertGridProperties.style": "1",
+                    "paneProperties.legendProperties.showSeriesOHLC": false,
+                    "paneProperties.legendProperties.showStudyArguments": false,
+                    "paneProperties.legendProperties.showStudyTitles": false,
+                    "paneProperties.legendProperties.showStudyValues": false,
+                    "paneProperties.legendProperties.showSeriesTitle": false,
+                    "mainSeriesProperties.statusViewStyle.showExchange": false,
+                },
+
+                //	BEWARE: no trailing slash is expected in feed URL
+                datafeed: new Datafeeds.UDFCompatibleDatafeed(datafeedUrl, undefined, {
+                    maxResponseLength: 1000,
+                    expectedOrder: 'latestFirst',
+                }),
+                library_path: "charting_library/",
+                locale: getParameterByName('lang') || "de",
+
+                // https://www.tradingview.com/charting-library-docs/latest/api/interfaces/Charting_Library.ChartingLibraryWidgetOptions/#enabled_features
+                // https://www.tradingview.com/charting-library-docs/latest/customization/Featuresets/
+                disabled_features: [
+                    "use_localstorage_for_settings",
+                    "save_chart_properties_to_local_storage",
+                    "header_saveload",
+                    "items_favoriting",
+                    "show_object_tree",
+                    "header_resolutions" ,
+                    "header_compare" ,
+                    "header_quick_search" ,
+                    "header_fullscreen_button",
+                    "header_indicators",
+                    "header_settings",
+                    "header_undo_redo",
+                    "header_chart_type",
+                    "edit_buttons_in_legend",
+                    "context_menus",
+                    "go_to_date",
+                    "timeframes_toolbar",
+                    "left_toolbar",
+                ],
+                enabled_features: [""],
+
+                charts_storage_url: 'https://saveload.tradingview.com',
+                charts_storage_api_version: "1.1",
+                client_id: 'tradingview.com',
+                user_id: 'public_user_id',
+                theme: getParameterByName('theme'),
+            });
+            window.frames[0].focus();
+        };
+
+        window.addEventListener('DOMContentLoaded', initOnReady, false);
+    </script>
+    <div class="container-fluid py-2">
+        <div class="row">
+            <div class="col-xl-9 col-sm-12">
+                <div class="mb-4" id="tv_chart_container" style="min-height: 650px; height: 650px; max-height: 50vh"></div>
+                <div class="card">
+                    <div class="card-header pb-0">
+                        <h6 class="mb-0">offene Positionen</h6>
+                    </div>
+                    <div class="card-body px-0 table-responsive">
+                        <table class="table">
+                            <thead>
+                            <tr>
+                                <th class="w-15">Account</th>
+                                <th class="w-15">Asset</th>
+                                <th class="text-center w-10">Typ</th>
+                                <th class="text-center w-10">Volumen</th>
+                                <th class="text-center w-10">Preis</th>
+                                <th class="text-center w-10">Profit</th>
+                                <th></th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for order in openPositions %}
+                                <tr>
+                                    <td class="w-15"><strong>{{ order.account_name }}</strong><br>
+                                        <small>{{ order.account_login }}</small>
+                                    </td>
+                                    <td class="w-15"><strong>{{ order.order.symbol }}</strong><br><small>{{ order.order.openTime|date('d.m.Y H:i:s') }} - {{ order.order.ticket }} </small></td>
+                                    <td class="text-center align-middle w-10">{{ order.order.cmd == 1 ? '<span class="badge badge-success">Buy</span>' : '<span class="badge badge-danger">Sell</span>' }}</td>
+                                    <td class="text-center align-middle w-10">{{ order.order.volume }}</td>
+                                    <td class="text-center align-middle w-10">{{ order.order.price }}</td>
+                                    <td class="text-center align-middle w-10">
+                                        {% if order.order.profit >= 0 %}
+                                            <span class="text-success text-bold">{{ order.order.profit }}</span><br>
+                                            <span class="badge badge-success my-auto">
+                                                <i class="material-symbols-rounded text-xs">arrow_upward</i>
+                                                <span class="text-xs">{{ order.order.gain|round(2) }}%</span>
+                                            </span>
+                                        {% else %}
+                                            <span class="text-danger text-bold">{{ order.order.profit }}</span><br>
+                                            <span class="badge badge-danger">
+                                                <i class="material-symbols-rounded text-xs">arrow_downward</i>
+                                                <span class="text-xs">{{ order.order.gain|round(2) }}%</span
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="w-10">
+                                        <a href="{{ path('app_account_show', {'meta_id': order.account_meta_id}) }}" class="btn btn-link text-dark px-3 mb-0" data-bs-toggle="tooltip" data-bs-placement="bottom" aria-label="Account ansehen" data-bs-original-title="Account ansehen"><i class="fa-classic fa-solid fa-eye"></i></a><br>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="8">Keine offenen Positionen vorhanden.</td></tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-3 col-sm-12">
+                <div class="card h-100">
+                    <div class="card-body px-0 pb-2">
+                        <div class="row">
+                            <div class="col-lg-6 col-7">
+                                <h6 class="px-3 py-2">Verfügbare Accounts</h6>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table align-items-center mb-0">
+                                <thead>
+                                <tr>
+                                    <th class="w-15">Account</th>
+                                    <th class="text-center w-10">Platform</th>
+                                    <th class="text-center w-10">Equity</th>
+                                    <th class="text-center w-10">Balance</th>
+                                    <th class="text-center w-10">offener Profit</th>
+                                    <th class="text-center w-10">Gesamtprofit</th>
+                                    <th class="text-center w-5"></th>
+                                </tr>
+                                </thead>
+                                <tbody>
+
+
+                                {% if user_accounts|length < 1 %}
+                                    <tr><td colspan="8">Keine Accounts vorhanden.</td></tr>
+                                {% endif %}
+                                {% for account in user_accounts %}
+                                    <tr>
+                                        <td>
+                                            {% if account.metaId is defined and account.metaId|length > 0 %}
+                                                <strong>{{ account.name }}</strong>{{ account.isActive ? '<span class="badge badge-success mx-2">Online</span>' : '<span class="badge badge-secondary mx-2">Pausiert</span>' }}<br>
+                                            {% else %}
+                                                <strong>{{ account.name }}</strong>{{ account.isActive ? '<span class="badge badge-success mx-2">Online</span>' : '<span class="badge badge-secondary mx-2">wird verbunden ...</span>' }}<br>
+                                            {% endif %}
+                                            <small>{{ account.login }} - {{ account.broker }}</small>
+                                        </td>
+                                        <td class="text-center w-10">
+                                            <span class="badge badge-lg badge-dark text-uppercase text-white">{{ account.platform }}
+                                            </span><br>
+                                            <i class="material-symbols-rounded text-sm mt-2 mb-0 mx-0 position-relative" style="top: 2px">schedule</i>
+                                            <small class="my-0 position-relative bottom-1"> {{ account.lastUpdate|date('d.m.Y H:i:s') }}</small>
+                                        </td>
+                                        <td class="text-center w-10">{{ account.equity|number_format(2, ',', '.') }}</td>
+                                        <td class="text-center w-10">{{ account.balance|number_format(2, ',', '.') }}</td>
+                                        <td class="text-center w-10">
+                                            {% if account.equity is not null and account.balance is not null and account.balance != 0 %}
+                                                {% set openProfit = account.equity - account.balance %}
+                                                {% set openDrawdownPercent = (openProfit / account.balance) * 100 %}
+                                            {% else %}
+                                                {% set openProfit = 0 %}
+                                                {% set openDrawdownPercent = 0 %}
+                                            {% endif %}
+                                            {% if openProfit > 0.1 %}
+                                                <span class="text-success text-bold">{{ openProfit|number_format(2, ',', '.') }}</span><br>
+                                                <span class="badge badge-success my-auto">
+                                                    <i class="material-symbols-rounded text-xs">arrow_upward</i>
+                                                    <span class="text-xs">{{ openDrawdownPercent|number_format(2, ',', '.') }}%</span>
+                                                </span>
+                                            {% elseif openProfit < 0 %}
+                                                <span class="text-danger text-bold">{{ openProfit|number_format(2, ',', '.') }}</span><br>
+                                                <span class="badge badge-danger">
+                                                    <i class="material-symbols-rounded text-xs">arrow_downward</i>
+                                                    <span class="text-xs">{{ openDrawdownPercent|number_format(2, ',', '.') }}%</span>
+                                                </span>
+                                            {% else %}
+                                                <span class="text-secondary text-bold">{{ openProfit|number_format(2, ',', '.') }}</span><br>
+                                                <span class="badge badge-secondary">
+                                                    <i class="material-symbols-rounded text-xs">swap_horiz</i>
+                                                    <span class="text-xs">{{ openDrawdownPercent|number_format(2, ',', '.') }}%</span>
+                                                </span>
+                                            {% endif %}
+
+                                        </td>
+                                        <td class="text-center w-10">
+                                            {% if account.profit > 0 %}
+                                                <span class="text-success text-bold">{{ account.profit|number_format(2, ',', '.') }}</span><br>
+                                                <span class="badge badge-success my-auto">
+                                                    <i class="material-symbols-rounded text-xs">arrow_upward</i>
+                                                    <span class="text-xs">{{ account.gain|round(2) }}%</span>
+                                                </span>
+                                            {% elseif account.profit == 0 %}
+                                                <span class="text-secondary text-bold">{{ account.profit|round(0) }}</span><br>
+                                                <span class="badge badge-secondary">
+                                                    <i class="material-symbols-rounded text-xs">swap_horiz</i>
+                                                    <span class="text-xs">{{ account.gain|round(2) }}%</span>
+                                                </span>
+                                            {% else %}
+                                                <span class="text-danger text-bold">{{ account.profit|number_format(2, ',', '.') }}</span><br>
+                                                <span class="badge badge-danger">
+                                                    <i class="material-symbols-rounded text-xs">arrow_downward</i>
+                                                    <span class="text-xs">{{ account.gain|round(2) }}%</span>
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-lg-6 col-7">
+                                <h6 class="px-3 py-2 pt-4">Verfügbare Märkte</h6>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table align-items-center mb-0">
+                                <thead>
+                                <tr>
+                                    <th class="text-left text-uppercase text-xxs font-weight-bolder opacity-7">Markt</th>
+                                    <th class="text-center text-uppercase text-xxs font-weight-bolder opacity-7">Status</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for account in accounts %}
+                                    {% set agent = agents|filter(a => a.fromAccountId == account.id)|first %}
+                                    <tr>
+                                        <td>
+                                            <div class="py-1 d-inline-block">
+                                                <span class="badge badge-success mx-2">EUR/USD</span><span class="badge badge-info mr-2">OBSERVING</span>
+                                            </div>
+                                        </td>
+                                        <td class="align-middle">
+                                            <div class="progress-wrapper w-75 mx-auto">
+                                                <div class="progress-info">
+                                                    <div class="progress-percentage">
+                                                        <span class="text-xs font-weight-bold">{{ agent.winrate|round(2) }}%</span>
+                                                    </div>
+                                                </div>
+                                                <div class="progress">
+                                                    <div style="width: {{ agent.winrate|number_format(1) }}% !important;"
+                                                         class="progress-bar bg-gradient-primary w-60"
+                                                         role="progressbar"
+                                                         aria-valuenow="{{ agent.winrate|number_format(1) }}"
+                                                         aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

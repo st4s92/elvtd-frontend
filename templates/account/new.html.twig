@@ -1,0 +1,22 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Create New Account{% endblock %}
+
+{% block body %}
+    <div class="container mt-5">
+        <h1>Create New Account</h1>
+
+        {{ form_start(form) }}
+        {{ form_row(form.name) }}
+        {{ form_row(form.platform) }}
+        {{ form_row(form.broker) }}
+        {{ form_row(form.tradeServer) }}
+        {{ form_row(form.login) }}
+        {{ form_row(form.password) }}
+        {{ form_row(form.balance) }}
+        {{ form_row(form.equity) }}
+        {{ form_row(form.isActive) }}
+        <button type="submit" class="btn btn-primary">Create Account</button>
+        {{ form_end(form) }}
+    </div>
+{% endblock %}

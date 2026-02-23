@@ -1,0 +1,69 @@
+#!/usr/bin/env php
+<?php
+
+$autoloadPath = '/var/www/elvtd/vendor/autoload.php';
+if (!file_exists($autoloadPath)) {
+    die('Autoloader not found at ' . $autoloadPath . '. Run "composer install" in /var/www/elvtd.');
+}
+require $autoloadPath;
+
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DriverManager;
+
+try {
+    $envFile = '/var/www/elvtd/.env';
+    if (!file_exists($envFile)) {
+        die('.env file not found at ' . $envFile);
+    }
+
+    $envVars = @parse_ini_file($envFile, true); // @ unterdrückt Warnungen
+    if ($envVars === false) {
+        $error = error_get_last();
+        echo 'Failed to parse .env file at ' . $envFile . '. Error: ' . $error['message'] ?? 'Unknown syntax error';
+    }
+
+    foreach ($envVars as $key => $value) {
+        if (!isset($_ENV[$key])) {
+            $_ENV[$key] = $value;
+        }
+    }
+
+    $connectionParams = [
+        'dbname' => $_ENV['DATABASE_NAME'] ?? 'c1_db_panel',
+        'user' => $_ENV['DATABASE_USER'] ?? 'c1_api',
+        'password' => $_ENV['DATABASE_PASSWORD'] ?? 'WLQ@tmt5mxCB',
+        'host' => $_ENV['DATABASE_HOST'] ?? '127.0.0.1',
+        'driver' => 'pdo_mysql',
+    ];
+
+    $conn = DriverManager::getConnection($connectionParams);
+
+    $sql = [
+        "CREATE TABLE IF NOT EXISTS category (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            logo VARCHAR(50) NULL,
+            INDEX idx_title (title)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;",
+        "CREATE TABLE IF NOT EXISTS faq_post (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            content TEXT NOT NULL,
+            url VARCHAR(255) NULL,
+            category_id INT NOT NULL,
+            FOREIGN KEY (category_id) REFERENCES category(id) ON DELETE CASCADE,
+            INDEX idx_title (title)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;"
+    ];
+
+    foreach ($sql as $query) {
+        $conn->executeStatement($query);
+        echo "Tabelle erfolgreich erstellt: " . substr($query, 0, strpos($query, ' ')) . "\n";
+    }
+    echo "Alle Tabellen wurden erfolgreich erstellt!\n";
+} catch (\Exception $e) {
+    echo "Fehler beim Erstellen der Tabellen: " . $e->getMessage() . "\n";
+    exit(1);
+}
+
+$conn->close();

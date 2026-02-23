@@ -1,0 +1,162 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Kalendar{% endblock %}
+
+{% block body %}
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+    <div class="container">
+        <h1>Trade-Kalender</h1>
+        <div class="row">
+            <div class="col-12">
+                <div id="calendar"></div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-12">
+                <h3>Statistiken</h3>
+                <div id="calendar-stats"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Die dailyGrowth-Daten aus der Twig-Variable holen
+            const dailyGrowth = {{ account.dailyGrowth|json_encode|raw }};
+
+            // Events für FullCalendar erstellen
+            const events = dailyGrowth
+                .filter(day => day.profit !== undefined) // Nur Tage mit Profit anzeigen
+                .map(day => {
+                    // Profit formatieren (z. B. $443, $1.78K, -$4.99K)
+                    let profit = day.profit || 0;
+                    let formattedProfit = '';
+                    if (profit < 0) {
+                        formattedProfit = '-$' + Math.abs(profit).toFixed(2);
+                    } else {
+                        formattedProfit = '$' + profit.toFixed(2);
+                    }
+                    if (Math.abs(profit) >= 1000) {
+                        formattedProfit = (profit < 0 ? '-$' : '$') + (Math.abs(profit) / 1000).toFixed(2) + 'K';
+                    }
+
+                    // Anzahl der Trades (lots als Proxy für Trades)
+                    const trades = Math.round(day.lots || 0);
+
+                    // Prozentsatz (gains)
+                    const percent = (day.gains || 0).toFixed(2) + '%';
+
+                    // Hintergrundfarbe basierend auf Profit
+                    const backgroundColor = profit < 0 ? '#f8d7da' : '#d4edda'; // Rot für Verluste, Grün für Gewinne
+
+                    return {
+                        title: formattedProfit,
+                        start: day.date,
+                        backgroundColor: backgroundColor, // Dynamische Hintergrundfarbe
+                        borderColor: backgroundColor, // Optional: Rahmenfarbe anpassen
+                        extendedProps: {
+                            trades: trades,
+                            percent: percent
+                        }
+                    };
+                });
+
+            // Kalender initialisieren
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next',
+                    center: 'title',
+                    right: 'today'
+                },
+                events: events,
+                eventContent: function(arg) {
+                    let title = arg.event.title;
+                    let trades = arg.event.extendedProps.trades;
+                    let percent = arg.event.extendedProps.percent;
+                    let colorClass = title.startsWith('-') ? 'text-dark' : 'text-dark'; // Dunkler Text für bessere Lesbarkeit
+
+                    return {
+                        html: `
+                            <div class="${colorClass}">
+                                <div class="text-bolder">${title}</div>
+                                <div>${trades} trades</div>
+                                <div>${percent}</div>
+                            </div>
+                        `
+                    };
+                },
+                datesSet: function(dateInfo) {
+                    // Statistiken berechnen, wenn der Monat gewechselt wird
+                    calculateStats(dateInfo.start, dateInfo.end);
+                }
+            });
+            calendar.render();
+
+            // Funktion zum Berechnen der Statistiken
+            function calculateStats(startDate, endDate) {
+                // Filtere Daten für den aktuellen Monat
+                const monthData = dailyGrowth.filter(day => {
+                    const dayDate = new Date(day.date);
+                    return dayDate >= startDate && dayDate <= endDate && day.profit !== undefined;
+                });
+
+                // Monatliche Statistiken
+                const monthlyProfit = monthData.reduce((sum, day) => sum + (day.profit || 0), 0);
+                const tradingDays = monthData.length;
+
+                // Wöchentliche Statistiken
+                const weeks = {};
+                monthData.forEach(day => {
+                    const date = new Date(day.date);
+                    const weekNumber = Math.ceil((date.getDate() + (new Date(date.getFullYear(), date.getMonth(), 1).getDay() + 6) % 7) / 7);
+                    if (!weeks[weekNumber]) {
+                        weeks[weekNumber] = { profit: 0, days: 0 };
+                    }
+                    weeks[weekNumber].profit += day.profit || 0;
+                    weeks[weekNumber].days += 1;
+                });
+
+                // Formatierte Ausgabe
+                let formattedMonthlyProfit = monthlyProfit >= 1000 ? (monthlyProfit < 0 ? '-$' : '$') + (Math.abs(monthlyProfit) / 1000).toFixed(2) + 'K' : (monthlyProfit < 0 ? '-$' : '$') + monthlyProfit.toFixed(2);
+                let statsHtml = `
+                    <p>Monatlich: ${formattedMonthlyProfit}, ${tradingDays} Tage</p>
+                    <ul>
+                `;
+                for (const [week, data] of Object.entries(weeks)) {
+                    let formattedWeekProfit = data.profit >= 1000 ? (data.profit < 0 ? '-$' : '$') + (Math.abs(data.profit) / 1000).toFixed(2) + 'K' : (data.profit < 0 ? '-$' : '$') + data.profit.toFixed(2);
+                    statsHtml += `<li>Week ${week}: ${formattedWeekProfit}, ${data.days} Tage</li>`;
+                }
+                statsHtml += '</ul>';
+
+                document.getElementById('calendar-stats').innerHTML = statsHtml;
+            }
+        });
+    </script>
+
+    <style>
+        #calendar {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        .fc .fc-daygrid-day-frame {
+            background-color: #ffffffbd;
+        }
+        .fc-daygrid-day {
+            height: 100px; /* Höhe der Zellen anpassen */
+        }
+        .fc-daygrid-day-number {
+            font-size: 14px;
+        }
+        .fc-event {
+            font-size: 12px;
+            padding: 2px;
+            border-radius: 4px; /* Abgerundete Ecken */
+        }
+        .text-dark {
+            color: #343a40 !important; /* Dunkler Text für bessere Lesbarkeit */
+        }
+    </style>
+{% endblock %}

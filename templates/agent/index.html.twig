@@ -1,0 +1,404 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Agents{% endblock %}
+
+{% block body %}
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <h3 class="mb-4">Agents – Die nächste Generation des algorithmischen Tradings</h3>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div id="contentContainer" class="position-relative overflow-hidden" style="max-height: 300px; transition: max-height 0.75s ease-out; overflow: hidden">
+                    <div class="content">
+                        <p class="lead">
+                            Unsere <strong>Agents</strong> repräsentieren die Spitze des algorithmischen Tradings. Diese hochentwickelten Algorithmen analysieren kontinuierlich die Märkte in Echtzeit, treffen präzise Entscheidungen und platzieren automatisch Handelsaufträge über unsere direkte Integration mit MetaTrader. Dabei kombinieren sie die Stärken modernster Künstlicher Intelligenz mit bewährten Trading-Strategien, um optimale Ergebnisse zu erzielen.
+                        </p>
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <h4>Was machen unsere Agents einzigartig?</h4>
+                                <ul>
+                                    <li><strong>Echtzeit-Marktanalysen:</strong> Die Agents scannen die Märkte rund um die Uhr und erkennen Chancen, bevor sie der breiten Masse auffallen. Sie basieren auf KI-gesteuerten Analysen, die historische Daten, Markttrends und aktuelle Preisbewegungen berücksichtigen.</li>
+                                    <li><strong>Automatisierte Orderausführung:</strong> Mit einer nahtlosen MetaTrader-Anbindung werden Orders direkt und ohne Verzögerung ausgeführt. So profitieren Sie von schnelleren Reaktionszeiten und präziseren Einstiegs- und Ausstiegspunkten.</li>
+                                    <li><strong>Verschiedene Anlagestrategien:</strong> Jeder Agent ist speziell auf bestimmte Anforderungen ausgerichtet – von aggressiven Scalping-Strategien für kurzfristige Gewinne bis hin zu langfristigen Portfolio-Management-Lösungen für nachhaltige Investitionen.</li>
+                                    <li><strong>Risikomanagement integriert:</strong> Dank intelligenter Risiko-Kontrollmechanismen überwachen unsere Agents kontinuierlich die Marktbedingungen und passen Positionen automatisch an, um Verluste zu minimieren und Gewinne zu sichern.</li>
+                                    <li><strong>Evidenzbasierte Entscheidungen:</strong> Angetrieben durch umfangreiche Datenbanken und maschinelles Lernen, treffen unsere Agents Entscheidungen auf Grundlage von Milliarden von historischen Datenpunkten und aktuellen Marktinformationen.</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h4>Vorteile der Nutzung von Agents</h4>
+                                <ul>
+                                    <li><strong>Effizienz:</strong> Kein manueller Eingriff notwendig – Agents arbeiten unermüdlich und ohne emotionale Einflüsse.</li>
+                                    <li><strong>Schnelligkeit:</strong> Schnelle Analysen und Reaktionen auf Marktsituationen durch KI-gestützte Technologien.</li>
+                                    <li><strong>Transparenz:</strong> Alle Entscheidungen und Transaktionen sind nachvollziehbar und werden dokumentiert.</li>
+                                    <li><strong>Skalierbarkeit:</strong> Ob kleines Konto oder großes Portfolio – unsere Agents können flexibel auf Ihre Bedürfnisse skaliert werden.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center mt-3">
+                    <button id="toggleButton" class="btn btn-outline-dark-blue">Weiterlesen</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('toggleButton').addEventListener('click', function() {
+            const contentContainer = document.getElementById('contentContainer');
+            if (contentContainer.style.maxHeight === '300px') {
+                contentContainer.style.maxHeight = contentContainer.scrollHeight + 'px'; // Expand to full height
+                this.textContent = 'Weniger anzeigen';
+            } else {
+                contentContainer.style.maxHeight = '300px'; // Collapse back to 400px
+                this.textContent = 'Weiterlesen';
+            }
+        });
+    </script>
+
+    <div class="container mt-5 p-0">
+        <div class="row px-2 overflow-hidden">
+            <div id="agentCarousel" class="carousel slide" data-bs-ride="carousel">
+                <!-- Controls/Arrows -->
+                <h3 class="float-start">Verfügbare Agents</h3>
+                <div class="text-end">
+                    <button class="carousel-control-prev mb-6" type="button" data-bs-target="#agentCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="text-black"><i class="material-symbols-rounded opacity-9">arrow_back_ios</i></span>
+                    </button>
+                    <button class="carousel-control-next mb-6" type="button" data-bs-target="#agentCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="text-black"><i class="material-symbols-rounded opacity-9">arrow_forward_ios</i></span>
+                    </button>
+                </div>
+
+                <!-- Carousel Inner -->
+                <div class="carousel-inner" style="overflow: visible">
+                    {% for account in accounts %}
+                        {% set agent = agents|filter(a => a.fromAccountId == account.id)|first %}
+                        <div class="carousel-item {{ loop.first ? 'active' : '' }}">
+                            <div class="row">
+                                <div class="col-12 mb-5">
+                                    <div class="card px-4" data-animation="true">
+                                        <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+                                            <div class="bg-transparent shadow-xl">
+                                                <div class="overflow-hidden position-relative border-radius-xl">
+                                                    <span class="mask bg-gradient-dark opacity-10"></span>
+                                                    <div class="card-body position-relative z-index-1 p-3">
+
+                                                        <div class="d-flex">
+                                                            {% set digitSum = account.login|split('')|map(n => n)|reduce((carry, n) => carry + n, 0) %}
+                                                            <div class="text-white text-xs opacity-8 mb-0">
+                                                                <span>Rendite</span>
+                                                                <h6 class="mb-3" style="color: rgba(75, 192, 192, 1)">~ {{ agent.apy|round(2) }}% / Jahr</h6>
+                                                            </div>
+                                                            <i class="material-symbols-rounded text-3xl text-white my-0" style="margin-left: auto;">network_intel_node</i>
+                                                        </div>
+
+                                                        <div class="agentChart">
+                                                            <div class="pb-5" style="width: 100%; height: 100%; margin: auto;">
+                                                                <canvas class="agentChart" id="profitChart_{{ agent.id}}" width="100%" height="100%" style="min-width: 100%; min-height: 150px; max-width: 100%; max-height: 150px; margin: 0 auto;"></canvas>
+                                                            </div>
+
+                                                            <script>
+                                                                const dailyGrowth{{ account.id}} = {{ agent.backtestingJson|json_encode|raw }};
+                                                                const labels{{ account.id}} = dailyGrowth{{ account.id}}.map(entry => entry.date); // x-Achse: "date"
+                                                                const data{{ account.id}} = dailyGrowth{{ account.id}}.map(entry => entry.totalGains || 0); // y-Achse: "balance"
+
+                                                                // Initialisierung des Charts
+                                                                const ctx{{ account.id}} = document.getElementById('profitChart_{{ agent.id}}').getContext('2d');
+                                                                const profitChart_{{ account.id}} = new Chart(ctx{{ account.id}}, {
+                                                                    type: 'line',
+                                                                    data: {
+                                                                        labels: labels{{ account.id}},
+                                                                        datasets: [{
+                                                                            label: 'Balance',
+                                                                            data: data{{ account.id}},
+                                                                            borderColor: 'rgba(75, 192, 192, 1)',
+                                                                            backgroundColor: 'rgba(75, 192, 192, 0.1)',
+                                                                            tension: 0.3,
+                                                                            fill: true,
+                                                                            pointRadius: 2,
+                                                                        }]
+                                                                    },
+                                                                    options: {
+                                                                        responsive: true,
+                                                                        plugins: {
+                                                                            legend: {
+                                                                                position: 'top',
+                                                                                display: false
+                                                                            },
+                                                                            title: {
+                                                                                display: false,
+                                                                                text: 'Wachstum'
+                                                                            },
+                                                                            tooltip: {
+                                                                                enabled: false
+                                                                            }
+                                                                        },
+                                                                        scales: {
+                                                                            x: {
+                                                                                border: {
+                                                                                    display: false
+                                                                                },
+                                                                                title: {
+                                                                                    display: false,
+                                                                                    text: 'Datum',
+                                                                                    color: 'rgba(75, 192, 192, 0.0)'
+                                                                                },
+                                                                                grid: {
+                                                                                    display: false,
+                                                                                    color: 'rgba(75, 192, 192, 0.0)'
+                                                                                },
+                                                                                ticks: {
+                                                                                    display: false,
+                                                                                    color: 'rgba(75, 192, 192, 0.0)'
+                                                                                }
+                                                                            },
+                                                                            y: {
+                                                                                border: {
+                                                                                    display: false
+                                                                                },
+                                                                                title: {
+                                                                                    display: false,
+                                                                                    text: 'Balance',
+                                                                                    color: 'rgba(75, 192, 192, 0.0)'
+                                                                                },
+                                                                                grid: {
+                                                                                    display: false,
+                                                                                    color: 'rgba(75, 192, 192, 0.0)'
+                                                                                },
+                                                                                ticks: {
+                                                                                    display: false,
+                                                                                    color: 'rgba(75, 192, 192, 0.0)'
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                });
+                                                            </script>
+                                                        </div>
+
+                                                        <div class="container-fluid">
+                                                            <div class="row">
+                                                                <div class="col-6 col-md-2">
+                                                                    <p class="text-white text-xs opacity-8 mb-0">Profit pro Monat</p>
+                                                                    <h6 class="text-white text-sm mb-3">~{{ (agent.apy/12)|round(2) }}%</h6>
+                                                                </div><div class="col-4 col-md-2">
+                                                                    <p class="text-white text-xs opacity-8 mb-0">Trefferquote</p>
+                                                                    <h6 class="text-white text-sm mb-3">{{ agent.winrate|round(2) }}%</h6>
+                                                                </div>
+                                                                <div class="col-6 col-md-2">
+                                                                    <p class="text-white text-xs opacity-8 mb-0">Profitfaktor</p>
+                                                                    <h6 class="text-white text-sm mb-3">{{ agent.profitFactor|round(2) }}</h6>
+                                                                </div>
+                                                                <div class="col-6 col-md-2">
+                                                                    <p class="text-white text-xs opacity-8 mb-0">Risikofaktor</p>
+                                                                    <h6 class="text-white text-sm mb-3">{{ agent.riskFactor }}</h6>
+                                                                </div>
+                                                                <div class="col-6 col-md-2">
+                                                                    <p class="text-white text-xs opacity-8 mb-0">Backtesting</p>
+                                                                    <h6 class="text-white text-sm mb-3">{{ agent.backtesting|round(2) }} {{ agent.backtesting|round(2) < 2 ? 'Jahr' : 'Jahre' }}</h6>
+                                                                </div>
+                                                                <div class="col-6 col-md-2">
+                                                                    <p class="text-white text-xs opacity-8 mb-0">max. Drawdown</p>
+                                                                    <h6 class="text-white text-sm mb-3">{{ agent.maxDrawdown|round(2) }}%</h6>
+                                                                </div>
+                                                            </div>
+                                                            <div class="ms-auto d-flex align-items-start justify-content-start">
+                                                                <span class="btn btn-outline-white py-1 px-3 text-xs text-white mt-2 mx-0">{{ agent.strategy }}</span>
+                                                                <span class="btn btn-outline-white py-1 px-3 text-xs text-white mt-2 mx-2">{{ agent.risk }}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="colored-shadow" style="background-image: url(&quot;https://demos.creative-tim.com/test/material-dashboard-pro/assets/img/products/product-1-min.jpg&quot;);"></div>
+                                        </div>
+                                        <div class="card-body text-center">
+                                            <div class="d-flex mt-n6 mx-auto">
+                                                {% if user_accounts|length > 0 %}
+                                                <a class="btn btn-link text-primary ms-auto border-0" data-bs-toggle="modal" data-bs-target="#subscribeModal{{ account.id }}">
+                                                    <i class="material-symbols-rounded text-lg" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Kopieren">cloud_sync</i>
+                                                </a>
+                                                <button class="btn btn-link text-primary me-auto border-0" data-bs-toggle="modal" data-bs-target="#subscribeModal{{ account.id }}">
+                                                    <i class="material-symbols-rounded text-lg" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Ansehen">query_stats</i>
+                                                </button>
+                                                {% endif %}
+                                            </div>
+                                            <h5 class="font-weight-normal mt-3">
+                                                <a href="javascript:;">{{ agent ? agent.name : 'bald verfügbar' }}</a>
+                                            </h5>
+                                            <p class="mb-0">
+                                                {{ agent ? agent.description : '' }}
+                                            </p>
+                                        </div>
+                                        <hr class="dark horizontal my-0">
+                                        <div class="card-footer d-flex">
+                                            {% set digitSum = account.login|split('')|map(n => n)|reduce((carry, n) => carry + n, 0) %}
+                                            {% if user_accounts|length > 0 %}
+                                            <p class="font-weight-normal my-auto"></p>
+                                            <i class="material-symbols-rounded position-relative ms-auto text-lg me-1 my-auto"></i>
+                                            <p class="text-sm my-auto">
+                                                <button type="submit" data-bs-toggle="modal" data-bs-target="#subscribeModal{{ account.id }}" id="toggleButton" class="btn {{ agent ? 'btn-dark' : 'disabled' }}"><i class="material-symbols-rounded opacity-9">cloud_sync</i> Abonnieren</button>
+                                            </p>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Modal -->
+                        <div class="modal fade" id="subscribeModal{{ account.id }}" tabindex="-1" role="dialog" aria-labelledby="subscribeModal{{ account.id }}" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title font-weight-normal"><i class="material-symbols-rounded opacity-9">cloud_sync</i> {{ agent ? agent.name : 'Kein Agent gefunden' }} abonnieren</h5>
+                                        <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <form action="{{ path('app_agents_update_subscriber') }}" method="post">
+                                        <div class="modal-body">
+                                            <div class="py-2">
+                                                <p>
+                                                    <strong>Risikohinweis:</strong>  <br>
+                                                    Die Nutzung dieser automatisierten Handelsplattform erfolgt auf eigenes Risiko. Aufgrund von Marktvolatilität, wirtschaftlichen sowie politischen Unwägbarkeiten kann es zu erheblichen Verlusten bis hin zum vollständigen Verlust des eingesetzten Kapitals kommen.
+                                                    <br>
+                                                    Mit der Teilnahme an der Automatisierung erkennen Sie diese Risiken ausdrücklich an und erklären sich mit deren Bedingungen einverstanden. Es besteht keine Gewinnzusage. Historische Performance stellt keinen verlässlichen Indikator für zukünftige Entwicklungen dar. Bitte handeln Sie stets mit der gebotenen Sorgfalt und Verantwortung.
+                                                    <br>
+                                                </p>
+                                            </div>
+                                            <label for="subscriberId" class="ms-0">Dein Account</label>
+                                            <select class="form-control" id="subscriberId" name="subscriberId">
+                                                {% set activeAccounts = 0 %}
+                                                {% for user_account in user_accounts %}
+                                                    {% if user_account.metaId|length > 1 %}
+                                                        {% set activeAccounts = 1 %}
+                                                    {% endif %}
+                                                    <option value="{{ user_account.metaId ? user_account.metaId : '' }}" {{ user_account.metaId ? '' : 'disabled' }} {{ user_account.type == 3 ? '' : 'disabled' }}>{{ user_account.name }} - {{ user_account.login }}  {{ user_account.metaId ? '' : ' - noch nicht synchronisiert' }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <input type="hidden" name="strategyId" value="{{ agent ? agent.metaId : '' }}">
+                                            <label for="multiplier" class="mt-3">Risiko Multiplier</label>
+                                            <select class="form-control" id="multiplier" name="multiplier">
+                                                <option value="1">1</option>
+                                                {#<option value="2">2</option>
+                                                <option value="3">3</option>
+                                                <option value="4">4</option>
+                                                <option value="5">5</option>#}
+                                            </select>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn bg-danger-soft" data-bs-dismiss="modal">Abbrechen</button>
+                                            {% if activeAccounts > 0 %}
+                                            <button type="submit" id="toggleButton" class="btn {{ agent ? 'btn-dark' : 'disabled' }}"><i class="material-symbols-rounded opacity-9">cloud_sync</i> Abonnieren</button>
+                                            {% else %}
+                                                <p>Du hast noch keinen aktiven Account. Das könnte daran liegen, dass dein hinterlegter Account noch nicht mit Metatrader synchronisiert wurde.</p>
+                                            {% endif %}
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 text-start">
+                <h3 class="mt-4">Abonnierte Agents</h3>
+            </div>
+        </div>
+    </div>
+
+    <div class="container p-0 card table-responsive">
+        <table class="table align-items-center mb-0">
+            <thead>
+            <tr>
+                <th>Typ</th>
+                <th>Account Name</th>
+                <th>Agent Name</th>
+                <th>Multiplier</th>
+                <th>Status</th>
+                <th>Aktion</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% for connection in account_agent_connections %}
+                <tr>
+                    <td>
+                        {{ connection.account.type == 1 ? '<span class="badge badge-sm bg-gradient-success">Agent</span>' :
+                        (connection.account.type == 2 ? '<span class="badge badge-sm bg-gradient-primary">Leader</span>' :
+                        '<span class="badge badge-sm bg-gradient-info">Subscriber</span>')|raw }}
+                        {% if is_granted('ROLE_ADMIN') %}
+                            {% if account.host == 'metapi' %}
+                                <br><a href="https://app.metaapi.cloud/trade-copier/subscribers/{{ connection.account.metaId }}" target="_blank"><small>{{ connection.account.host }}</small></a>
+                            {% else %}
+                                <br><small>{{ connection.account.metaId }}</small>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                    <td>{{ connection.account.name }}<br><small class="text-uppercase">{{ connection.account.login }} - {{ connection.account.platform }}</small></td>
+                    <td>{{ connection.agent.name }}<br><small class="text-uppercase">{{ connection.name }}</small></td>
+                    <td>
+                        {{ connection.multiplier }}
+                        <button type="submit" data-bs-toggle="modal" data-bs-target="#multiplierModal{{ connection.account.id }}" id="toggleButton" class="btn p-0 mb-1 px-2"><i class="fa-classic fa-solid fa-pen"></i></button>
+                        <!-- Modal -->
+                        <div class="modal fade" id="multiplierModal{{ connection.account.id }}" tabindex="-1" role="dialog" aria-labelledby="multiplierModal{{ connection.account.id }}" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title font-weight-normal"><i class="material-symbols-rounded opacity-9">cloud_sync</i>{{ connection.account.name }} - {{ connection.agent.name }}</h5>
+                                        <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <form action="{{ path('app_agents_update_subscriber') }}" method="post">
+                                        <div class="modal-body">
+                                            <label for="subscriberId" class="ms-0">Account</label>
+                                            <select class="form-control" id="subscriberId" name="subscriberId">
+                                                <option value="{{ connection.account.metaId ? connection.account.metaId : '' }}" {{ connection.account.metaId ? '' : 'disabled' }} {{ connection.account.type == 3 ? '' : 'disabled' }}>{{ connection.account.name }} - {{ connection.account.login }}</option>
+                                            </select>
+                                            <input type="hidden" name="strategyId" value="{{ connection.agent ? connection.agent.metaId : '' }}">
+                                            <label for="multiplier" class="mt-3">Risiko Multiplier</label>
+                                            <select class="form-control" id="multiplier" name="multiplier">
+                                                <option value="1">1</option>
+{#                                                <option value="2">2</option>
+                                                <option value="3">3</option>
+                                                <option value="4">4</option>
+                                                <option value="5">5</option>#}
+                                            </select>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn bg-danger-soft" data-bs-dismiss="modal">Abbrechen</button>
+                                            <button type="submit" id="toggleButton" class="btn {{ connection.agent ? 'btn-dark' : 'disabled' }}"><i class="material-symbols-rounded opacity-9">cloud_sync</i> Speichern</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        {{ connection.account.isActive ? '<span class="badge badge-sm bg-gradient-success">Abonniert</span>' :
+                        '<span class="badge badge-sm bg-gradient-secondary">Pausiert</span>'|raw }}
+                    </td>
+                    <td>
+                        <form action="{{ path('app_agents_remove_subscriber') }}" method="post">
+                            <input type="hidden" name="subscriberId" value="{{ connection.account.metaId }}">
+                            <input type="hidden" name="strategyId" value="{{ connection.agent.metaId }}">
+                            <button type="submit" id="toggleButton" class="btn btn-sm btn-outline-dark text-dark px-3 mb-0">Trennen</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

@@ -1,0 +1,4 @@
+karser_recaptcha3:
+  secret_key: '%env(GOOGLE_RECAPTCHA_SECRET)%'
+  site_key: '%env(GOOGLE_RECAPTCHA_SITEKEY)%'
+  score_threshold: 0.5

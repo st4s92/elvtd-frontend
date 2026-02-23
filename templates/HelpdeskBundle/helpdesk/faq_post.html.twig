@@ -1,0 +1,17 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}FAQ - {{ post.title }}{% endblock %}
+
+{% block body %}
+    <div class="container">
+        <h1>{{ post.title }}</h1>
+        <div class="card">
+            <div class="card-body">
+                {{ post.content|raw }}
+            </div>
+        </div>
+        {% if post.url %}
+            <a href="{{ post.url }}" target="_blank" class="btn btn-info mt-3">Learn More</a>
+        {% endif %}
+    </div>
+{% endblock %}

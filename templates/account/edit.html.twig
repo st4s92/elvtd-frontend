@@ -1,0 +1,41 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Account bearbeiten{% endblock %}
+
+{% block body %}
+<div class="container mt-5">
+    <div class="container-fluid my-5 mx-0 card p-3">
+        <div class="card-header pb-0">
+            <h4 class="mb-0">Account bearbeiten</h4>
+        </div>
+        <div class="card-body px-0 table-responsive">
+            {{ form_start(form) }}
+
+            <div class="form-group mt-0">
+                {{ form_row(form.name, {'attr': {'class': 'form-control'}}) }}
+            </div>
+
+            <div class="form-group mt-4">
+                {{ form_row(form.platform, {'attr': {'class': 'form-control'}}) }}
+            </div>
+
+            <div class="form-group mt-2">
+                {{ form_row(form.broker, {'attr': {'class': 'form-control'}}) }}
+            </div>
+
+            <div class="form-group mt-2">
+                {{ form_row(form.tradeServer, {'attr': {'class': 'form-control'}}) }}
+            </div>
+
+            <div class="form-group mt-4">
+                {{ form_row(form.login, {'attr': {'class': 'form-control'}}) }}
+            </div>
+
+            <div class="form-group mt-2 mb-5">
+                {{ form_row(form.password, {'attr': {'class': 'form-control'}}) }}
+            </div>
+            <button type="submit" class="btn btn-warning">Update Account</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Signale{% endblock %}
+
+{% block body %}
+
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <h3 class="mb-4">Signale (Coming soon)</h3>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-12">
+                <div id="contentContainer">
+                    <div class="content">
+                        <p class="lead">
+                            Empfange Trading-Signale direkt aus unseren leistungsstarken TradingView-Indikatoren und lass unsere Plattform die Trades automatisch in deinen MetaTrader-Konten ausführen. Dank nahtloser Integration und automatisierter Prozesse kannst du dich auf das Wesentliche konzentrieren, während wir präzise Signale in Echtzeit analysieren und in erfolgreiche Handelsstrategien umsetzen. Optimal für Trader, die Effizienz und Genauigkeit in ihren Trades maximieren möchten.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="container p-0 card table-responsive">
+        <table class="table align-items-center mb-0">
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Symbol</th>
+                    <th>Action</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for signal in signals %}
+                <tr>
+                    <td>{{ signal.id }}</td>
+                    <td>{{ signal.symbol }}</td>
+                    <td>{{ signal.action }}</td>
+                    <td>{{ signal.price }}</td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="6">Keine Signale empfangen</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+{% endblock %}

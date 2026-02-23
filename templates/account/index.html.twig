@@ -1,0 +1,571 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Portfolio{% endblock %}
+
+{% block body %}
+    <div class="wrapper">
+        <div class="container py-2">
+    {% if accounts|length > 0 %}
+    <div class="container py-2">
+        {% if admin_view != true %}
+            <h3>Dein Portfolio</h3>
+        {% else %}
+            <h3>Statistik</h3>
+        {% endif %}
+        </div>
+
+        {% set totalEquity = 0 %}
+        {% set totalBalance = 0 %}
+        {% set totalProfit = 0 %}
+        {% set totalDeposits = 0 %}
+        {% set totalWithdrawals = 0 %}
+
+        {% for account in accounts %}
+            {% set totalEquity = totalEquity + account.equity %}
+            {% set totalBalance = totalBalance + account.balance %}
+            {% set totalProfit = totalProfit + account.profit %}
+            {% set totalDeposits = totalDeposits + account.deposits %}
+            {% set totalWithdrawals = totalWithdrawals + account.withdrawals %}
+        {% endfor %}
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Daten für das Chart sammeln
+                const labels = [];
+                const data = [];
+
+                {% for account in accounts %}
+                labels.push("{{ account.name }}");
+                data.push({{ account.balance }});
+                {% endfor %}
+
+                // Chart.js erstellen
+                const ctx = document.getElementById('depositsPieChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Deposits by Account',
+                            data: data,
+                            backgroundColor: [
+                                '#d2e8c8', '#e5fadc', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'
+                            ],
+                            hoverOffset: 4,
+                            pointRadius: 2,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(tooltipItem) {
+                                        return `${tooltipItem.label}: ${tooltipItem.raw.toFixed(2)} €`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            });
+        </script>
+
+        <div class="container mb-4 mx-0 p-0">
+            <div class="row">
+                {% if admin_view != true %}
+                <div class="col-xl-4 col-sm-12 mb-xl-0 my-4">
+                    <div class="text-center">
+                        <div class="p-4">
+                            <canvas id="depositsPieChart" width="100%" height="100%" style="min-width: 300px; min-height: 400px; max-width: 400px; max-height: 400px; margin: 0 auto;"></canvas>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                <div class="{% if admin_view %}col-xl-12{% else %}col-xl-8{% endif %} col-sm-12 mb-4">
+                    <div class="row">
+                        <div class="col-6 mb mb-4">
+                            <div class="card">
+                                <div class="card-header p-2 ps-3">
+                                    <h6 class="text-sm mb-0 text-capitalize pt-2">Gesamtdepot</h6>
+                                    <h4 class="mb-0">{{ totalBalance|number_format(2, ',', '.') }}</h4>
+                                </div>
+                                <hr class="dark horizontal my-0">
+                                <div class="card-footer p-2 ps-3">
+                                    {% set totalYesterdayProfit = 0 %}
+                                    {% set totalYesterdayGain = 0 %}
+
+                                    {% set yesterday = "now"|date_modify("-1 day")|date("Y-m-d") %}
+
+                                    {% for account in accounts %}
+                                        {% for growth in account.dailyGrowth %}
+                                            {% if growth.date == yesterday %}
+                                                {% set totalYesterdayProfit = totalYesterdayProfit + (growth.profit ?? 0) %}
+                                                {% set totalYesterdayGain = totalYesterdayGain + (growth.gain ?? 0) %}
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endfor %}
+                                    <p class="mb-0 text-sm">
+                                        <span class="{% if totalYesterdayProfit >= 0 %}text-success{% else %}text-danger{% endif %} font-weight-bolder">
+                                            {% if totalYesterdayProfit > 0 %}+{% endif %}{{ totalYesterdayProfit|number_format(2, ',', '.') }}
+                                        </span> am Vortag
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-4">
+                            <div class="card">
+                                <div class="card-header p-2 ps-3">
+                                    <h6 class="text-sm mb-0 text-capitalize pt-2">Gesamtprofit</h6>
+                                    <h4 class="mb-0">{{ totalProfit|number_format(2, ',', '.') }}</h4>
+                                </div>
+                                <hr class="dark horizontal my-0">
+                                <div class="card-footer p-2 ps-3">
+                                    <p class="mb-0 text-sm">
+                                        <span class="{% if totalYesterdayGain >= 0 %}text-success{% else %}text-danger{% endif %} font-weight-bolder">
+                                            {% if totalYesterdayGain > 0 %}+{% endif %}{{ totalYesterdayGain|number_format(2, ',', '.') }}%
+                                        </span> am Vortag
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-4">
+                            <div class="card">
+                                <div class="card-header p-2 ps-3">
+                                    <h6 class="text-sm mb-0 text-capitalize pt-2">Wachstum</h6>
+                                    <h4 class="mb-0">
+                                        {% if totalDeposits > 0 %}
+                                            {{(((totalBalance - totalDeposits) / totalDeposits) * 100)|number_format(2, ',', '.') }}%
+                                        {% endif %}
+                                    </h4>
+                                </div>
+                                <hr class="dark horizontal my-0">
+                                <div class="card-footer p-2 ps-3">
+    {#                                <p class="mb-0 text-sm"><span class="text-success font-weight-bolder">+55% </span>than last week</p>#}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-4">
+                            <div class="card">
+                                <div class="card-header p-2 ps-3">
+                                    <h6 class="text-sm mb-0 text-capitalize pt-2">offener Profit</h6>
+                                    <h4 class="mb-0">{{ (totalEquity-totalBalance)|number_format(2, ',', '.') }}</h4>
+                                </div>
+                                <hr class="dark horizontal my-0">
+                                <div class="card-footer p-2 ps-3">
+    {#                                <p class="mb-0 text-sm"><span class="text-success font-weight-bolder">+55% </span>than last week</p>#}
+                                </div>
+                            </div>
+                        </div>
+
+
+                        {% if admin_view != true %}
+                            <div class="col-6 mb-4">
+                                <div class="card">
+                                    <div class="card-header p-2 ps-3">
+                                        <h6 class="text-sm mb-0 text-capitalize pt-2">Einzahlungen</h6>
+                                        <h4 class="mb-0">{{ totalDeposits|number_format(2, ',', '.') }}</h4>
+                                    </div>
+                                    <hr class="dark horizontal my-0">
+                                    <div class="card-footer p-2 ps-3"></div>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-4">
+                                <div class="card">
+                                    <div class="card-header p-2 ps-3">
+                                        <h6 class="text-sm mb-0 text-capitalize pt-2">Auszahlungen</h6>
+                                        <h4 class="mb-0">{{ totalWithdrawals|number_format(2, ',', '.') }}</h4>
+                                    </div>
+                                    <hr class="dark horizontal my-0">
+                                    <div class="card-footer p-2 ps-3"></div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="col-6 mb-4">
+                                <div class="card">
+                                    <div class="card-header p-2 ps-3">
+                                        <h6 class="text-sm mb-0 text-capitalize pt-2">Verwaltete Konten</h6>
+                                        <h4 class="mb-0"> {{ accounts|length }}</h4>
+                                    </div>
+                                    <hr class="dark horizontal my-0">
+                                    <div class="card-footer p-2 ps-3"></div>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-4">
+                                <div class="card">
+                                    <div class="card-header p-2 ps-3">
+                                        <h6 class="text-sm mb-0 text-capitalize pt-2">Registrierte Kunden</h6>
+                                        <h4 class="mb-0">{{ users|length }}</h4>
+                                    </div>
+                                    <hr class="dark horizontal my-0">
+                                    <div class="card-footer p-2 ps-3"></div>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-4">
+                                <div class="card">
+                                    <div class="card-header p-2 ps-3">
+                                        <h6 class="text-sm mb-0 text-capitalize pt-2">Aktive Kunden (letzte 30 Min)</h6>
+                                        <h4 class="mb-0">{{ activeLast30Min }}</h4>
+                                    </div>
+                                    <hr class="dark horizontal my-0">
+                                    <div class="card-footer p-2 ps-3"></div>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-4">
+                                <div class="card">
+                                    <div class="card-header p-2 ps-3">
+                                        <h6 class="text-sm mb-0 text-capitalize pt-2">Aktive Kunden (letzte 24h)</h6>
+                                        <h4 class="mb-0">{{ activeLast24h }}</h4>
+                                    </div>
+                                    <hr class="dark horizontal my-0">
+                                    <div class="card-footer p-2 ps-3"></div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% if admin_view != true %}
+        <div class="container mb-5 mx-0 card p-0">
+            <div class="card">
+                <div class="card-header pb-0">
+                    <h6 class="mb-0">Deine Performance</h6>
+                </div>
+                <div class="card-body">
+                    <div class="col-xl-12 col-sm-12">
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const datasets = [];
+                                {% for account in accounts %}
+                                {% if account.dailyGrowth is not empty %}
+                                {% set firstGain = account.dailyGrowth[0].balance ?? 1 %} {# Erster Wert zur Normalisierung #}
+                                datasets.push({
+                                    label: '{{ account.name }}',
+                                    data: {{ account.dailyGrowth|map(d => {x: d.date, y: ((d.balance ?? 0) / firstGain) })|json_encode|raw }},
+                                    borderColor: 'hsl({{ 160 + loop.index * 5 }}, {{ 70 - loop.index * 2 }}%, {{ 40 - loop.index * 2 }}%)',
+                                    backgroundColor: 'hsla({{ 160 + loop.index * 5 }}, {{ 70 - loop.index * 2 }}%, {{ 40 - loop.index * 2 }}%, 0.5)',
+                                    tension: 0.5,
+                                    fill: true,
+                                    pointRadius: 2,
+                                });
+                                {% endif %}
+                                {% endfor %}
+
+                                const ctx = document.getElementById('lineChart').getContext('2d');
+                                const chart = new Chart(ctx, {
+                                    type: 'line',
+                                    data: {
+                                        datasets: datasets
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        scales: {
+                                            x: {
+                                                type: 'time',
+                                                time: {
+                                                    parser: 'yyyy-MM-dd', // Richtiges Format
+                                                    tooltipFormat: 'P', // Format für das Tooltip
+                                                    unit: 'day', // Einheit der X-Achse
+                                                    displayFormats: {
+                                                        day: 'yyyy-MM-dd' // Format der X-Achse
+                                                    }
+                                                },
+                                                title: {
+                                                    display: true,
+                                                    text: 'Datum'
+                                                },
+                                                grid: {
+                                                    display: false // Vertikales Grid entfernen
+                                                },
+                                                ticks: {
+                                                    display: false // Beschriftung auf der x-Achse entfernen
+                                                }
+                                            },
+                                            y: {
+                                                title: {
+                                                    display: true,
+                                                    text: 'Wachstums-Faktor'
+                                                }
+                                            }
+                                        },
+                                        plugins: {
+                                            legend: {
+                                                position: 'top'
+                                            }
+                                        }
+                                    }
+                                });
+                            });
+                        </script>
+                        <canvas id="lineChart" height="100%" width="100%" style="overflow-x: hidden; max-height: 400px; min-height: 300px; min-width: 300px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        {% endif %}
+
+        <div class="container my-5 mx-0 card p-0">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0 float-sm-start">Deine Accounts<br>
+                    <span class="text-sm mb-0 text-normal text-dark">
+                        <i class="fa fa-check text-info" aria-hidden="true"></i>
+                        Du hast<span class="font-weight-bold ms-1">{{ accounts|length }} von {{ app.user.maxAccounts }}</span> Accounts in Nutzung
+                    </span>
+                    </h6>
+                    <button {% if accounts|length < app.user.maxAccounts %}data-bs-toggle="modal" data-bs-target="#addAccountModal" id="toggleButton"{% endif %} class="float-sm-end btn {% if accounts|length < app.user.maxAccounts %}bg-gradient-dark{% else %}bg-secondary text-white{% endif %} mb-0"><i class="material-symbols-rounded text-sm">add</i>&nbsp;&nbsp;Account hinzufügen</button>
+                    {% if accounts|length < app.user.maxAccounts %}
+                        <!-- Modal -->
+                        <div class="modal fade" id="addAccountModal" tabindex="-1" role="dialog" aria-labelledby="addAccountModal" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title font-weight-normal">Account hinzufügen</h5>
+                                        <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <div class="p-4">
+                                        {{ form_start(form, { 'action': path('app_account_new') }) }}
+                                        {{ form_row(form.name, {'attr': {'class': 'form-control mb-3'}}) }}
+                                        {{ form_row(form.platform, {'attr': {'class': 'form-control mb-3'}}) }}
+                                        {{ form_row(form.broker, {'attr': {'class': 'form-control mb-3'}}) }}
+                                        {{ form_row(form.tradeServer, {'attr': {'class': 'form-control mb-3'}}) }}
+                                        {{ form_row(form.login, {'attr': {'class': 'form-control mb-3'}}) }}
+                                        {{ form_row(form.password, {'attr': {'class': 'form-control mb-3'}}) }}
+                                        <button type="submit" class="btn btn-dark">Account hinzufügen</button>
+                                        {{ form_end(form) }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="table-responsive">
+                    <table class="table align-items-center mb-0">
+                        <thead>
+                        <tr>
+                            <th class="w-15">Account</th>
+                            <th class="text-center w-10">Platform</th>
+                            <th class="text-center w-10">Equity</th>
+                            <th class="text-center w-10">Balance</th>
+                            <th class="text-center w-10">offener Profit</th>
+                            <th class="text-center w-10">Gesamtprofit</th>
+                            <th class="text-center w-5"></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+
+
+                        {% if accounts|length < 1 %}
+                            <tr><td colspan="8">Keine Accounts vorhanden.</td></tr>
+                        {% endif %}
+                        {% for account in accounts %}
+                            <tr>
+                                <td>
+                                    {% if account.metaId is defined and account.metaId|length > 0 and account.error|length < 1 %}
+                                        <strong>{{ account.name }}</strong>{{ account.isActive ? '<span class="badge badge-success mx-2">Online</span>' : '<span class="badge badge-secondary mx-2">Pausiert</span>' }}
+                                    {% else %}
+                                        {% if account.error == "EMPTY_EWALLET" %}
+                                        {% elseif account.error == "subscription expired" %}
+                                            <strong>{{ account.name }}</strong>{{ account.isActive ? '<span class="badge badge-success mx-2">Online</span>' : '<span class="badge badge-danger mx-2">PAUSIERT</span>' }}
+                                            <span class="badge badge-danger mx-0">{{ account.error }}</span>
+                                        {% else %}
+                                            <strong>{{ account.name }}</strong>{{ account.isActive ? '<span class="badge badge-success mx-2">Online</span>' : '<span class="badge badge-secondary mx-2">wird verbunden ...</span>' }}
+                                            <span class="badge badge-danger mx-0">Fehler: {{ account.error }}</span>
+                                        {% endif %}
+                                    {% endif %}
+                                    <br>
+                                    <small>{{ account.login }} - {{ account.broker }}</small>
+                                    {% if is_granted('ROLE_ADMIN') %}
+                                        <br>
+                                        <span class="badge badge-sm badge-info mt-1">
+                                            {{ account.user.username }} {% if account.user.firstname|length > 1 %} - {{ account.user.firstname }} {{ account.user.lastname }}{% endif %}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center w-10">
+                                    {% if is_granted('ROLE_ADMIN') %}
+                                        <span class="badge badge-lg badge-dark text-uppercase text-white">{{ account.host }}</span><br>
+                                    {% endif %}
+                                    <span class="badge badge-lg badge-dark text-uppercase text-white">{{ account.platform }}</span><br>
+                                    <i class="material-symbols-rounded text-sm mt-2 mb-0 mx-0 position-relative" style="top: 2px">schedule</i>
+                                    <small class="my-0 position-relative bottom-1"> {{ account.lastUpdate|date('d.m.Y H:i:s') }}</small>
+                                </td>
+
+                                {% if account.metaId is defined and account.metaId|length > 0 %}
+                                <td class="text-center w-10">{{ account.equity|number_format(2, ',', '.') }}</td>
+                                <td class="text-center w-10">{{ account.balance|number_format(2, ',', '.') }}</td>
+                                <td class="text-center w-10">
+                                    {% if account.equity is not null and account.balance is not null and account.balance != 0 %}
+                                        {% set openProfit = account.equity - account.balance %}
+                                        {% set openDrawdownPercent = (openProfit / account.balance) * 100 %}
+                                    {% else %}
+                                        {% set openProfit = 0 %}
+                                        {% set openDrawdownPercent = 0 %}
+                                    {% endif %}
+                                    {% if openProfit > 0.1 %}
+                                        <span class="text-success text-bold">{{ openProfit|number_format(2, ',', '.') }}</span><br>
+                                        <span class="badge badge-success my-auto">
+                                            <i class="material-symbols-rounded text-xs">arrow_upward</i>
+                                            <span class="text-xs">{{ openDrawdownPercent|number_format(2, ',', '.') }}%</span>
+                                        </span>
+                                    {% elseif openProfit < 0 %}
+                                        <span class="text-danger text-bold">{{ openProfit|number_format(2, ',', '.') }}</span><br>
+                                        <span class="badge badge-danger">
+                                            <i class="material-symbols-rounded text-xs">arrow_downward</i>
+                                            <span class="text-xs">{{ openDrawdownPercent|number_format(2, ',', '.') }}%</span>
+                                        </span>
+                                    {% else %}
+                                        <span class="text-secondary text-bold">{{ openProfit|number_format(2, ',', '.') }}</span><br>
+                                        <span class="badge badge-secondary">
+                                            <i class="material-symbols-rounded text-xs">swap_horiz</i>
+                                            <span class="text-xs">{{ openDrawdownPercent|number_format(2, ',', '.') }}%</span>
+                                        </span>
+                                    {% endif %}
+
+                                </td>
+                                <td class="text-center w-10">
+                                    {% if account.host != 'metapi' %}
+                                        {% set accountGain = account.deposits > 0 ? (((account.balance - account.deposits) / account.deposits) * 100)|number_format(2, ',', '.') : 0 %}
+                                        {% if account.profit > 0 %}
+                                            <span class="text-success text-bold">{{ account.profit|number_format(2, ',', '.') }}</span><br>
+                                            <span class="badge badge-success my-auto">
+                                                <i class="material-symbols-rounded text-xs">arrow_upward</i>
+                                                <span class="text-xs">{{ accountGain }}%</span>
+                                            </span>
+                                        {% elseif account.profit == 0 %}
+                                            <span class="text-secondary text-bold">{{ account.profit|round(0) }}</span><br>
+                                            <span class="badge badge-secondary">
+                                                <i class="material-symbols-rounded text-xs">swap_horiz</i>
+                                                <span class="text-xs">{{ accountGain }}%</span>
+                                            </span>
+                                        {% else %}
+                                            <span class="text-danger text-bold">{{ account.profit|number_format(2, ',', '.') }}</span><br>
+                                            <span class="badge badge-danger">
+                                                <i class="material-symbols-rounded text-xs">arrow_downward</i>
+                                                <span class="text-xs">{{ accountGain }}%</span>
+                                            </span>
+                                        {% endif %}
+                                    {% else %}
+                                        {% if account.profit > 0 %}
+                                            <span class="text-success text-bold">{{ account.profit|number_format(2, ',', '.') }}</span><br>
+                                            <span class="badge badge-success my-auto">
+                                                <i class="material-symbols-rounded text-xs">arrow_upward</i>
+                                                <span class="text-xs">{{ account.gain|round(2) }}%</span>
+                                            </span>
+                                        {% elseif account.profit == 0 %}
+                                            <span class="text-secondary text-bold">{{ account.profit|round(0) }}</span><br>
+                                            <span class="badge badge-secondary">
+                                                <i class="material-symbols-rounded text-xs">swap_horiz</i>
+                                                <span class="text-xs">{{ account.gain|round(2) }}%</span>
+                                            </span>
+                                        {% else %}
+                                            <span class="text-danger text-bold">{{ account.profit|number_format(2, ',', '.') }}</span><br>
+                                            <span class="badge badge-danger">
+                                                <i class="material-symbols-rounded text-xs">arrow_downward</i>
+                                                <span class="text-xs">{{ account.gain|round(2) }}%</span>
+                                            </span>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                {% else %}
+                                <td class="text-center"></td>
+                                <td class="text-center"></td>
+                                <td class="text-center"></td>
+                                <td class="text-center"></td>
+                                {% endif %}
+                                <td class="text-center w-5">
+                                    {% if account.metaId is defined and account.metaId|length > 0 %}
+                                        <a href="{{ path('app_account_show', {'meta_id': account.metaId}) }}" class="btn btn-link text-dark px-3 mb-0" data-bs-toggle="tooltip" data-bs-placement="bottom" aria-label="ansehen" data-bs-original-title="ansehen"><i class="fa-classic fa-solid fa-eye"></i></a>
+                                        <a href="{{ path('app_account_edit', {'meta_id': account.metaId}) }}" class="btn btn-link text-dark px-3 mb-0" data-bs-toggle="tooltip" data-bs-placement="bottom" aria-label="bearbeiten" data-bs-original-title="bearbeiten"><i class="fa-classic fa-solid fa-pen"></i></a>
+                                        <form method="post" action="{{ path('app_account_delete', {'meta_id': account.metaId}) }}" style="display:inline;">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ account.metaId) }}">
+                                            <button class="btn btn-link text-dark px-3 mb-0" type="submit" data-bs-toggle="tooltip" data-bs-placement="bottom" aria-label="löschen" data-bs-original-title="löschen"><i class="fa-classic fa-solid fa-trash"></i></button>
+                                        </form>
+                                    {% else %}
+                                        {% set csrf = 854 %}
+                                        {% set csrfId = account.Id * csrf %}
+                                        <form method="post" action="{{ path('app_account_delete_unactive', {'id': csrfId}) }}" style="display:inline;">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ csrfId) }}">
+                                            <button class="btn btn-link text-dark px-3 mb-0" type="submit" data-bs-toggle="tooltip" data-bs-placement="bottom" aria-label="löschen" data-bs-original-title="löschen"><i class="fa-classic fa-solid fa-trash"></i></button>
+                                        </form>
+                                    {% endif %}
+                                    {% if admin_view and account.host == 'metapi' %}
+                                        <a href="{{ path('app_metapi_close_all', {'meta_id': account.metaId}) }}" class="btn btn-link text-dark px-3 mb-0" data-bs-toggle="tooltip" data-bs-placement="bottom" aria-label="alle schließen" data-bs-original-title="ansehen">FLATTEN</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        {% if openPositions|length > 0 %}
+            <div class="container my-5 mx-0 card p-0">
+                <div class="card">
+                    <div class="card-header pb-0">
+                        <h6 class="mb-0">offene Positionen</h6>
+                    </div>
+                    <div class="card-body px-0 table-responsive">
+                        <table class="table">
+                            <thead>
+                            <tr>
+                                <th class="w-15">Account</th>
+                                <th class="w-15">Asset</th>
+                                <th class="text-center w-10">Typ</th>
+                                <th class="text-center w-10">Volumen</th>
+                                <th class="text-center w-10">Preis</th>
+                                <th class="text-center w-10">Profit</th>
+                                <th></th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for order in openPositions %}
+                                <tr>
+                                    <td class="w-15"><strong>{{ order.account.name }}</strong><br>
+                                        <small>{{ order.account.login }}</small>
+                                    </td>
+                                    <td class="w-15"><strong>{{ order.symbol }}</strong><br><small>{{ order.openTime|date('d.m.Y H:i:s') }} - {{ order.ticket }} </small></td>
+                                    <td class="text-center align-middle w-10">{{ order.cmd == 1 ? '<span class="badge badge-success">Buy</span>' : '<span class="badge badge-danger">Sell</span>' }}</td>
+                                    <td class="text-center align-middle w-10">{{ order.volume }}</td>
+                                    <td class="text-center align-middle w-10">{{ order.price }}</td>
+                                    <td class="text-center align-middle w-10">
+                                        {% if order.profit >= 0 %}
+                                            <span class="text-success text-bold">{{ order.profit }}</span><br>
+                                            <span class="badge badge-success my-auto">
+                                                <i class="material-symbols-rounded text-xs">arrow_upward</i>
+                                                <span class="text-xs">{{ order.gain|round(2) }}%</span>
+                                            </span>
+                                        {% else %}
+                                            <span class="text-danger text-bold">{{ order.profit }}</span><br>
+                                            <span class="badge badge-danger">
+                                                <i class="material-symbols-rounded text-xs">arrow_downward</i>
+                                                <span class="text-xs">{{ order.gain|round(2) }}%</span
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="w-10">
+                                        <a href="{{ path('app_account_show', {'meta_id': order.account.metaId}) }}" class="btn btn-link text-dark px-3 mb-0" data-bs-toggle="tooltip" data-bs-placement="bottom" aria-label="Account ansehen" data-bs-original-title="Account ansehen"><i class="fa-classic fa-solid fa-eye"></i></a><br>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr><td colspan="8">Keine offenen Positionen vorhanden.</td></tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    </div>
+{% endblock %}

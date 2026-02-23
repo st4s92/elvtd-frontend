@@ -1,0 +1,213 @@
+
+<style>
+    /* Stil für die Sprechblase */
+    .chat-widget {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        background-color: #82c75c;
+        border-radius: 50%;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); /* Stärkerer Schatten */
+        z-index: 1000;
+        transition: all 0.3s ease-in-out;
+        font-size: 24px; /* Größeres Icon */
+    }
+    .chat-widget:hover {
+        background-color: #5a8d3e;
+        transform: scale(1.1); /* Leichte Vergrößerung beim Hover */
+    }
+
+    .chat-overlay {
+        display: none;
+        position: fixed;
+        bottom: 100px;
+        right: 20px;
+        width: 350px;
+        background-color: #d2e8c8;
+        border: 1px solid #e0e0e0;
+        border-radius: 10px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        padding: 25px;
+        max-height: 800px;
+        overflow-y: auto;
+    }
+    .chat-overlay.active {
+        display: block;
+    }
+
+    .chat-headline {
+        padding: 25px 0;
+    }
+
+    /* Header des Overlays */
+    .chat-overlay-header {
+        background-color: #546545;
+        color: white;
+        padding: 10px;
+        border-radius: 8px 8px 0 0;
+        text-align: center;
+        font-weight: bold;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Inhalt des Overlays */
+    .chat-overlay-content {
+        padding: 10px 0;
+        background-color: #fff;
+        border-bottom-right-radius: 10px;
+        border-bottom-left-radius: 10px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    }
+    .chat-overlay-content a {
+        display: block;
+        padding: 10px;
+        color: #000;
+        text-decoration: none;
+        border-bottom: 1px solid #e0e0e0;
+        font-size: 14px;
+        font-weight: bold;
+    }
+    .chat-overlay-content a:hover {
+        background-color: #e9ecef;
+        border-radius: 5px;
+    }
+    .chat-overlay-content a:last-child {
+        border-bottom: none;
+    }
+
+    /* Formular für neues Ticket */
+    .chat-overlay-form {
+        margin-top: 25px;
+        background-color: #fff;
+        padding: 25px 15px;
+        border-radius: 10px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+    }
+    .chat-overlay-form p {
+        line-height: 1;
+    }
+    .chat-overlay-form img {
+        border-radius: 15px;
+        float: left;
+        margin-right: 10px;
+    }
+    .chat-overlay-form label {
+        display: none;
+        margin-bottom: 5px;
+        font-weight: 500;
+    }
+    .chat-overlay-form input[type="text"],
+    .chat-overlay-form textarea {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+    }
+    .chat-overlay-form button {
+        background-color: #546545;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    .chat-overlay-form button:hover {
+        background-color: #363b31;
+    }
+</style>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const chatWidget = document.querySelector('.chat-widget');
+        const chatOverlay = document.querySelector('.chat-overlay');
+        const newTicketForm = document.querySelector('#new-ticket-form');
+
+        chatWidget.addEventListener('click', function() {
+            chatOverlay.classList.toggle('active');
+            // Regenerate CSRF token on open
+            const csrfTokenInput = document.querySelector('#new-ticket-form [name="_token"]');
+            if (csrfTokenInput) csrfTokenInput.value = '{{ csrf_token('ticket_create') }}';
+        });
+
+        document.addEventListener('click', function(event) {
+            if (!chatWidget.contains(event.target) && !chatOverlay.contains(event.target)) {
+                chatOverlay.classList.remove('active');
+            }
+        });
+
+        if (newTicketForm) {
+            newTicketForm.addEventListener('submit', function(event) {
+                event.preventDefault();
+                const formData = new FormData(newTicketForm);
+                fetch('{{ path('app_helpdesk_new') }}', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: formData
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok ' + response.status + ' ' + response.statusText);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.success) {
+                            alert('Dein Ticket wurde erfolgreich erstellt! Die Antwortzeit beträgt in der Regel ca. 24 Stunden.');
+                            newTicketForm.reset();
+                            chatOverlay.classList.remove('active');
+                            location.reload();
+                        } else {
+                            alert('Error creating ticket: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Fetch error:', error);
+                        alert('Error: ' + error.message);
+                    });
+            });
+        }
+    });
+</script>
+
+<!-- Sprechblase -->
+<div class="chat-widget">
+    <i class="material-symbols-rounded text-white text-2xl">help</i>
+</div>
+<!-- Overlay mit Optionen und Formular -->
+<div class="chat-overlay">
+    <div class="chat-headline">
+        <h3>Willkommen! 👋</h3>
+        <p>Wir helfen dir gerne weiter und freuen uns auf deine Fragen und dein Feedback.</p>
+    </div>
+    <div class="chat-overlay-header">Helpdesk Support</div>
+    <div class="chat-overlay-content">
+        <a href="{{ path('app_helpdesk_faq') }}">Help Center</a>
+{#
+        <a href="{{ path('app_helpdesk_index') }}">Deine Tickets</a>
+#}
+    </div>
+    <div class="chat-overlay-form">
+        <p><img src="{{ asset('assets/img/elvtd_logo.png') }}" width="32"> <span style="font-weight: bold">Support-Team</span><br>
+            <span style="font-size: 12px">Antwortzeit beträgt ca. 24 Stunden</span></p>
+        <form id="new-ticket-form" action="{{ path('app_helpdesk_new') }}" method="POST">
+            <label for="ticket-title">Titel</label>
+            <input type="text" id="ticket-title" name="ticket[title]" placeholder="Betreff eingeben" required value="Neues Ticket von {{ app.user.username }}" style="display: none">
+            <input type="hidden" name="_token" value="{{ csrf_token('ticket_create') }}">
+            <label for="ticket-description">Beschreibung</label>
+            <textarea id="ticket-description" name="ticket[description]" placeholder="Beschreibe dein Problem" rows="6" required></textarea>
+            <button type="submit">Absenden</button>
+        </form>
+    </div>
+</div>

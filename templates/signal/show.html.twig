@@ -1,0 +1,38 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Signal{% endblock %}
+
+{% block body %}
+    <h1>Signal</h1>
+
+    <table class="table">
+        <tbody>
+            <tr>
+                <th>Id</th>
+                <td>{{ signal.id }}</td>
+            </tr>
+            <tr>
+                <th>Symbol</th>
+                <td>{{ signal.symbol }}</td>
+            </tr>
+            <tr>
+                <th>Action</th>
+                <td>{{ signal.action }}</td>
+            </tr>
+            <tr>
+                <th>Price</th>
+                <td>{{ signal.price }}</td>
+            </tr>
+            <tr>
+                <th>CreatedAt</th>
+                <td>{{ signal.createdAt ? signal.createdAt|date('Y-m-d H:i:s') : '' }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <a href="{{ path('app_signal_index') }}">back to list</a>
+
+    <a href="{{ path('app_signal_edit', {'id': signal.id}) }}">edit</a>
+
+    {{ include('signal/_delete_form.html.twig') }}
+{% endblock %}

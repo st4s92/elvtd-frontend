@@ -1,0 +1,5 @@
+## DEPENDING FILES: ##
+config/routes/helpdesk.yaml
+src/HelpdeskBundle
+templates/HelpdeskBundle
+public/assets/img/helpdesk

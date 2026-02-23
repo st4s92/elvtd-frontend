@@ -1,0 +1,23 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Testphase starten{% endblock %}
+
+{% block body %}
+    <div class="container my-5">
+        <h1>Starte deine 14-tägige Testphase</h1>
+        <p>
+            Wir bieten dir eine 14-tägige kostenlose Testphase, um alle Funktionen
+            unseres Services kennenzulernen. Während dieser Testphase kannst du
+            uneingeschränkt auf alle Features zugreifen.
+        </p>
+
+        <p>
+            Nach Ablauf der Testphase wird dein Zugang automatisch eingeschränkt, es sei denn,
+            du entscheidest dich für eine Premium-Mitgliedschaft.
+        </p>
+
+        <a href="{{ path('app_trial_start') }}" class="btn btn-primary">
+            Testphase jetzt starten
+        </a>
+    </div>
+{% endblock %}

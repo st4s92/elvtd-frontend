@@ -1,0 +1,22 @@
+index:
+    path: /
+    controller: App\Controller\DefaultController::index
+
+user:
+  resource: '../src/Controller/UserController.php'
+  type: annotation
+
+signal:
+  resource: '../src/Controller/SignalController.php'
+  type: annotation
+
+trade_log:
+  resource: '../src/Controller/TradeLogController.php'
+  type: annotation
+
+send_signal:
+  resource: '../src/Controller/SendSignalController.php'
+  type: annotation
+
+login_check:
+  path: /login_check

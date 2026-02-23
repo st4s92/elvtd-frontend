@@ -1,0 +1,166 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}User index{% endblock %}
+
+{% block body %}
+    <div class="container-fluid my-5 mx-0 card p-0">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0 float-sm-start">User Accounts</h6>
+                <span class="text-sm mb-0 text-normal text-dark float-end">
+                    <a href="{{ path('app_user_new') }}" class="btn btn-outline-primary btn-sm mb-0">neuen User anlegen</a>
+                </span>
+            </div>
+            <div class="card-body px-0">
+                <div class="table-responsive">
+                    <table class="table align-items-center mb-0" id="userTable">
+                        <thead>
+                        <tr>
+                            <th>Daten</th>
+                            <th>Email</th>
+                            <th>Änderungen</th>
+                            <th>Affiliate Code</th>
+                            <th>Subscription</th>
+                            <th>Subscription Ende</th>
+                            <th>Verbleibende Tage</th>
+                            <th>Accounts</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for user in users %}
+                            {% set subscription = subscriptions|filter(s => s.user.id == user.id)|first %}
+                            {% set is_expired = false %}
+                            {% set is_deactivated = false %}
+                            {% if subscription %}
+                                {% if subscription.trialEnd and subscription.trialEnd < date() %}
+                                    {% set is_expired = true %}
+                                {% elseif subscription.currentPeriodEnd and subscription.currentPeriodEnd < date() %}
+                                    {% set is_expired = true %}
+                                {% endif %}
+                                {% if user.subscriptionStatus == 'deactivated' %}
+                                    {% set is_deactivated = true %}
+                                {% endif %}
+                            {% endif %}
+                            <tr class="{{ is_expired ? 'table-danger' : '' }}" {{ is_deactivated ? 'style="--bs-table-bg: #ff6054; color: #fff"' : '' }}">
+                                <td>
+                                    ({{ user.id }}) {{ user.firstname }} {{ user.lastname }}<br>
+                                    {{ user.username }}
+                                </td>
+                                <td>
+                                    {{ user.email }}<br>
+
+                                </td>
+                                <td>
+                                    Created: {{ user.createdAt ? user.createdAt|date('Y-m-d H:i:s') : '' }}<br>
+                                    Updated: {{ user.updatedAt ? user.updatedAt|date('Y-m-d H:i:s') : '' }}<br>
+                                    Last Login: {{ user.lastLogin ? user.lastLogin|date('Y-m-d H:i:s') : '' }}
+                                </td>
+                                <td>{{ user.affiliateCode }}</td>
+                                <td><span class="badge-default {{ is_deactivated ? 'badge-danger p-2' : '' }}">{{ user.subscriptionStatus }}</span></td>
+                                <td>
+                                    {% if subscription %}
+                                        {{ subscription.currentPeriodStart ? subscription.currentPeriodStart|date('Y-m-d H:i:s') : 'N/A' }}<br>
+                                        {{ subscription.currentPeriodEnd ? subscription.currentPeriodEnd|date('Y-m-d H:i:s') : 'N/A' }}<br><br>
+                                        Trial:<br>
+                                        {{ subscription.trialEnd ? subscription.trialEnd|date('Y-m-d H:i:s') : 'N/A' }}
+                                    {% else %}
+                                        Keine Subscription
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if subscription %}
+                                        {% set end_date = subscription.currentPeriodEnd %}
+                                        {% if subscription.trialEnd and (not subscription.currentPeriodEnd or subscription.trialEnd > subscription.currentPeriodEnd) %}
+                                            {% set end_date = subscription.trialEnd %}
+                                        {% endif %}
+                                        {% if end_date %}
+                                            {% set days_remaining = (end_date|date('U') - date()|date('U')) / (60 * 60 * 24) %}
+                                            {% if days_remaining > 0 %}
+                                                {{ days_remaining|round(0, 'floor') }} Tage
+                                            {% else %}
+                                                Abgelaufen
+                                            {% endif %}
+                                        {% else %}
+                                            Keine Daten
+                                        {% endif %}
+                                    {% else %}
+                                        Keine Subscription
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ user.accounts|length }} von {{ user.maxAccounts }}
+                                    {% if user.accounts|length > 0 %}
+                                        {% for account in user.accounts %}
+                                            <br><a style="text-decoration: underline" href="/account/{{ account.metaId }}" target="_blank">
+                                            {{ account.login }} - {{ account.platform }} - {{ account.host }}<br>
+                                            <span class="badge-default">{{ account.error }}</span>
+                                        </a>
+                                        {% endfor %}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ path('app_user_edit', {'id': user.id}) }}" class="btn btn-outline-primary btn-sm mb-1">bearbeiten</a>
+                                    <a href="{{ path('app_user_reset_password', {'id': user.id}) }}" class="btn btn-outline-primary btn-sm mb-1">Passwort zurücksetzen</a>
+                                    <br>
+                                    <form action="{{ path('app_subscription_api_manual') }}" method="post">
+                                        <input type="hidden" name="email" value="{{ user.email }}">
+                                        <select class="form-control p-2 mt-2 w-100" id="product" name="product">
+                                            <option value="2month">2month</option>
+                                            <option value="3month">3month</option>
+                                            <option value="6month">6month</option>
+                                            <option value="12month">12month</option>
+                                            <option value="12month_onetime">12month_onetime</option>
+                                        </select>
+                                        <button type="submit" id="toggleButton" class="btn btn-outline-dark w-100"><i class="material-symbols-rounded opacity-9">cloud_sync</i> Subscription setzen</button>
+                                    </form>
+                                    <a href="{{ path('app_user_deactivate', {'id': user.id}) }}" class="btn btn-danger btn-sm mb-1 w-100">Trading sperren</a><br>
+                                    <a href="{{ path('app_user_activate', {'id': user.id}) }}" class="btn btn-info btn-sm mb-0 w-100">Trading aktivieren</a>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="13">no records found</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# DataTables CSS und JS einbinden #}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.6/css/dataTables.bootstrap5.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/datatables.net@1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/datatables.net-bs5@1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+    {# DataTables initialisieren #}
+    <script>
+        $(document).ready(function () {
+            $('#userTable').DataTable({
+                "paging": false, // Paginierung aktivieren
+                "searching": true, // Suche aktivieren
+                "ordering": true, // Sortierung aktivieren
+                "info": true, // Info über Einträge anzeigen
+                "lengthMenu": [1000], // Optionen für Einträge pro Seite
+                "pageLength": 1000, // Standardmäßig 10 Einträge pro Seite
+                "language": {
+                    "lengthMenu": "Zeige _MENU_ Einträge pro Seite",
+                    "zeroRecords": "Keine Einträge gefunden",
+                    "info": "Zeige Seite _PAGE_ von _PAGES_",
+                    "infoEmpty": "Keine Einträge verfügbar",
+                    "infoFiltered": "(gefiltert von _MAX_ Einträgen insgesamt)",
+                    "search": "Suche:",
+                    "paginate": {
+                        "first": "",
+                        "last": "",
+                        "next": ">",
+                        "previous": "<"
+                    }
+                }
+            });
+        });
+    </script>
+{% endblock %}
