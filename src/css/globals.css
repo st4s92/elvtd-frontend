@@ -21,6 +21,31 @@ body{
   font-family: "DM Sans", sans-serif;
 }
 
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #334155; /* slate-700 approx */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+}
+
+/* Firefox support */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #334155 transparent;
+}
+
 @theme {
   
   --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);

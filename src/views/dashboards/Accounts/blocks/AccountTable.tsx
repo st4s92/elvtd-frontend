@@ -16,6 +16,7 @@ import CreateOrderFormModal from "./CreateOrderFormModal";
 import CopyTradeConfigModal from "./EditTraderConfigModal";
 import { Badge } from "src/components/ui/badge";
 import EditAccountFormModal from "./EditAccountFormModal";
+import { formatDistanceToNow, differenceInMinutes, parseISO } from "date-fns";
 import {
   Select,
   SelectContent,
@@ -133,6 +134,44 @@ const AccountTable = () => {
       },
     },
     {
+      accessorKey: "balance",
+      header: "Balance",
+      cell: ({ row }) => {
+        const val = row.original.balance;
+        return <span>${parseFloat(val).toLocaleString()}</span>;
+      },
+    },
+    {
+      accessorKey: "open_positions_count",
+      header: "Open Pos",
+      cell: ({ row }) => (
+        <Badge variant="outline">{row.original.open_positions_count}</Badge>
+      ),
+    },
+    {
+      accessorKey: "dedicated_server_name",
+      header: "Ded. Server",
+    },
+    {
+      accessorKey: "updated_at",
+      header: "Last Update",
+      cell: ({ row }) => {
+        const updatedAt = row.original.updated_at;
+        if (!updatedAt) return "-";
+
+        // Force UTC by appending Z if not present
+        const dateStr = updatedAt.endsWith('Z') ? updatedAt : updatedAt + 'Z';
+        const date = parseISO(dateStr);
+        const diff = differenceInMinutes(new Date(), date);
+
+        return (
+          <Badge variant={diff > 5 ? "error" : "lightSuccess"}>
+            {formatDistanceToNow(date, { addSuffix: true })}
+          </Badge>
+        );
+      },
+    },
+    {
       header: "Action",
       cell: ({ row }) => {
         const accountId = row.original.id;
@@ -169,23 +208,23 @@ const AccountTable = () => {
                     <span>Account Detail</span>
                   </DropdownMenuItem>
                   {accountType == "MASTER" && (
-                  <DropdownMenuItem
-                    className="flex gap-3 items-center cursor-pointer mt-4 hover:bg-gray-500"
-                    onSelect={() => {
-                      setSelectedAccount({
-                        serverName: row.original.server_name,
-                        accountNumber: row.original.account_number,
-                        accountId: row.original.id,
-                        platformName: row.original.platform_name,
-                        role: row.original.role,
-                      });
-                      setOpenCreateOrder(true);
-                    }}
-                  >
-                    <Icon icon="solar:document-add-broken" height={18} />
-                    <span>Create Order</span>
-                  </DropdownMenuItem>
-                )}
+                    <DropdownMenuItem
+                      className="flex gap-3 items-center cursor-pointer mt-4 hover:bg-gray-500"
+                      onSelect={() => {
+                        setSelectedAccount({
+                          serverName: row.original.server_name,
+                          accountNumber: row.original.account_number,
+                          accountId: row.original.id,
+                          platformName: row.original.platform_name,
+                          role: row.original.role,
+                        });
+                        setOpenCreateOrder(true);
+                      }}
+                    >
+                      <Icon icon="solar:document-add-broken" height={18} />
+                      <span>Create Order</span>
+                    </DropdownMenuItem>
+                  )}
                   {accountType == "SLAVE" && (
                     <DropdownMenuItem
                       className="flex gap-3 items-center cursor-pointer mt-4 hover:bg-gray-500"

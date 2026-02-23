@@ -67,6 +67,49 @@ const ServerTable = () => {
       header: "Server IP",
     },
     {
+      accessorKey: "activeTerminals",
+      header: "Terminals",
+      cell: ({ row }) => {
+        return (
+          <Badge variant="outline" className="font-mono">
+            {row.original.activeTerminals ?? 0}
+          </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: "cpuUsage",
+      header: "CPU",
+      cell: ({ row }) => {
+        const value = row.original.cpuUsage ?? 0;
+        let variant: any = "lightSuccess";
+        if (value > 80) variant = "error";
+        else if (value > 50) variant = "warning";
+
+        return (
+          <Badge variant={variant} className="min-w-[45px] justify-center">
+            {Math.round(value)}%
+          </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: "ramUsage",
+      header: "RAM",
+      cell: ({ row }) => {
+        const value = row.original.ramUsage ?? 0;
+        let variant: any = "lightSuccess";
+        if (value > 80) variant = "error";
+        else if (value > 50) variant = "warning";
+
+        return (
+          <Badge variant={variant} className="min-w-[45px] justify-center">
+            {value.toFixed(1)}%
+          </Badge>
+        );
+      },
+    },
+    {
       accessorKey: "serverOs",
       header: "Server OS",
     },
@@ -114,6 +157,17 @@ const ServerTable = () => {
           <Badge variant={diff >= 5 ? "error" : "lightSuccess"}>
             {relativeTime}
           </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: "uptimeString",
+      header: "Uptime",
+      cell: ({ row }) => {
+        return (
+          <span className="font-mono text-xs text-muted-foreground">
+            {row.original.uptimeString || "-"}
+          </span>
         );
       },
     },
