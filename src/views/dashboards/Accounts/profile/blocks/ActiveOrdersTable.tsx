@@ -70,7 +70,7 @@ const ActiveOrdersTable = ({
   };
 
   return (
-    <div className="bg-[#1e1e2f] border border-[#2c2c3e] rounded-xl p-6 shadow-lg w-full">
+    <div className="bg-[rgba(233,223,255,0.04)] backdrop-blur-md rounded-3xl p-6 shadow-sm transition-all duration-300 w-full hover:shadow-lg">
       {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-2">
@@ -78,34 +78,33 @@ const ActiveOrdersTable = ({
           <h4 className="text-lg font-semibold text-gray-200">Active Orders</h4>
         </div>
 
-        { role === "MASTER" && 
-        <div className="flex gap-3">
-          <button
-            onClick={handleFlushAll}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
-          >
-            Flush All
-          </button>
+        {role === "MASTER" &&
+          <div className="flex gap-3">
+            <button
+              onClick={handleFlushAll}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
+            >
+              Flush All
+            </button>
 
-          <button
-            onClick={handleDeleteSelected}
-            disabled={selected.length === 0}
-            className={`px-4 py-2 rounded-lg text-sm transition ${
-              selected.length === 0
+            <button
+              onClick={handleDeleteSelected}
+              disabled={selected.length === 0}
+              className={`px-4 py-2 rounded-lg text-sm transition ${selected.length === 0
                 ? "bg-gray-700 text-gray-400 cursor-not-allowed"
                 : "bg-red-500 hover:bg-red-600 text-white"
-            }`}
-          >
-            Delete Selected ({selected.length})
-          </button>
-        </div>
+                }`}
+            >
+              Delete Selected ({selected.length})
+            </button>
+          </div>
         }
       </div>
 
       {/* TABLE */}
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left text-gray-300">
-          <thead className="text-xs uppercase text-gray-400 border-b border-[#2c2c3e]">
+          <thead className="text-xs uppercase text-gray-400 border-b border-white/10">
             <tr>
               <th className="px-4 py-3">
                 <input
@@ -129,7 +128,7 @@ const ActiveOrdersTable = ({
             {orders.map((o: any) => (
               <tr
                 key={o.id}
-                className="border-b border-[#2c2c3e] hover:bg-[#25253a] transition"
+                className="border-b border-white/10 hover:bg-white/5 transition"
               >
                 <td className="px-4 py-3">
                   <input
@@ -144,11 +143,10 @@ const ActiveOrdersTable = ({
 
                 <td className="px-4 py-3">
                   <span
-                    className={`px-2 py-1 rounded text-xs font-semibold ${
-                      o.orderType === "DEAL_TYPE_BUY"
-                        ? "bg-emerald-600 text-white"
-                        : "bg-red-600 text-white"
-                    }`}
+                    className={`px-2 py-1 rounded text-xs font-semibold ${o.orderType === "DEAL_TYPE_BUY"
+                      ? "bg-emerald-600 text-white"
+                      : "bg-red-600 text-white"
+                      }`}
                   >
                     {o.orderType?.replace("DEAL_TYPE_", "")}
                   </span>
@@ -160,9 +158,8 @@ const ActiveOrdersTable = ({
                 {role === "SLAVE" && (
                   <td className="px-4 py-3">
                     <span
-                      className={`font-semibold ${
-                        o.orderProfit >= 0 ? "text-emerald-400" : "text-red-400"
-                      }`}
+                      className={`font-semibold ${o.orderProfit >= 0 ? "text-emerald-400" : "text-red-400"
+                        }`}
                     >
                       {o.orderProfit?.toFixed(2)}
                     </span>

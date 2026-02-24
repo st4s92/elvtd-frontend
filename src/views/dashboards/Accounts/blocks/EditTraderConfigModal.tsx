@@ -171,8 +171,8 @@ const CopyTradeConfigModal = ({
       symbol_pairs: pairs
         .filter((p) => p.masterSymbol && p.slaveSymbol)
         .map((p) => ({
-          masterSymbol: p.masterSymbol.trim().toUpperCase(),
-          slaveSymbol: p.slaveSymbol.trim().toUpperCase(),
+          masterSymbol: p.masterSymbol.trim(),
+          slaveSymbol: p.slaveSymbol.trim(),
         })),
     };
 

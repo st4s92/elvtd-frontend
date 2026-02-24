@@ -65,6 +65,13 @@ const SidebarContent: MenuItem[] = [
       },
       {
         id: uniqueId(),
+        name: 'Symbol Maps',
+        icon: 'solar:sort-by-alphabet-linear',
+        url: '/dashboard/symbol-map',
+        isPro: false,
+      },
+      {
+        id: uniqueId(),
         name: 'Servers',
         icon: 'solar:server-path-linear',
         url: '/dashboard/servers',

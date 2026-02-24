@@ -50,7 +50,7 @@ const SlaveOrdersSection = ({ masterAccountId }: { masterAccountId: number }) =>
             </div>
 
             {slaves.map((slave) => (
-                <div key={slave.accountId} className="bg-[#1e1e2f] border border-[#2c2c3e] rounded-xl p-6 shadow-lg">
+                <div key={slave.accountId} className="bg-[rgba(233,223,255,0.04)] backdrop-blur-md rounded-3xl p-6 shadow-sm transition-all duration-300 hover:shadow-lg">
                     <div className="flex justify-between items-center mb-4">
                         <div className="flex items-center gap-4">
                             <div className="flex flex-col">
@@ -72,7 +72,7 @@ const SlaveOrdersSection = ({ masterAccountId }: { masterAccountId: number }) =>
 
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm text-left text-gray-300">
-                            <thead className="text-xs uppercase text-gray-400 border-b border-[#2c2c3e]">
+                            <thead className="text-xs uppercase text-gray-400 border-b border-white/10">
                                 <tr>
                                     <th className="px-4 py-3">Ticket</th>
                                     <th className="px-4 py-3">Symbol</th>
@@ -92,7 +92,7 @@ const SlaveOrdersSection = ({ masterAccountId }: { masterAccountId: number }) =>
                                     </tr>
                                 ) : (
                                     slave.orders.map((order: any) => (
-                                        <tr key={order.id} className="border-b border-[#2c2c3e] hover:bg-[#25253a] transition">
+                                        <tr key={order.id} className="border-b border-white/10 hover:bg-white/5 transition">
                                             <td className="px-4 py-3">{order.orderTicket}</td>
                                             <td className="px-4 py-3">{order.orderSymbol}</td>
                                             <td className="px-4 py-3">

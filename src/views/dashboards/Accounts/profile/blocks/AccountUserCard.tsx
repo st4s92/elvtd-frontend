@@ -3,16 +3,11 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 const AccountUserCard = ({ user }: any) => {
   return (
     <div
-      className="p-4 rounded-3 mb-4 rounded-xl"
-      style={{
-        background: "#1e1e2f",
-        border: "1px solid #2c2c3e",
-        color: "#e4e6eb",
-      }}
+      className="p-6 mb-4 rounded-3xl bg-[rgba(233,223,255,0.04)] backdrop-blur-md text-gray-200 shadow-sm transition-all duration-300 hover:shadow-lg"
     >
       <div className="d-flex align-items-center gap-2 mb-4">
         <Icon icon="solar:user-bold" height={20} />
-        <h5 className="m-0 fw-semibold">User Info</h5>
+        <h5 className="m-0 fw-semibold text-white">User Info</h5>
       </div>
 
       <div className="d-flex align-items-center gap-3 mb-3">

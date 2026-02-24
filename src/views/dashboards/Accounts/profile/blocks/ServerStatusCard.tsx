@@ -12,16 +12,11 @@ const ServerStatusCard = ({ server, accountId }: any) => {
 
   return (
     <div
-      className="p-4 rounded-3 rounded-xl"
-      style={{
-        background: "#1e1e2f",
-        border: "1px solid #2c2c3e",
-        color: "#e4e6eb",
-      }}
+      className="p-6 rounded-3xl bg-[rgba(233,223,255,0.04)] backdrop-blur-md text-gray-200 shadow-sm transition-all duration-300 hover:shadow-lg"
     >
       <div className="d-flex align-items-center gap-2 mb-4">
         <Icon icon="solar:server-bold" height={20} />
-        <h5 className="m-0 fw-semibold">Server Status</h5>
+        <h5 className="m-0 fw-semibold text-white">Server Status</h5>
       </div>
 
       {/* SERVER NAME */}
@@ -77,9 +72,9 @@ const ServerStatusCard = ({ server, accountId }: any) => {
       {/* MESSAGE */}
       {server?.message && (
         <div
-          className="mt-3 p-2 rounded"
+          className="mt-3 p-2 rounded-xl"
           style={{
-            background: "#2c2c3e",
+            background: "rgba(255, 255, 255, 0.05)",
             fontSize: "0.8rem",
             color: "#ccc",
           }}

@@ -13,6 +13,8 @@ import Servers from 'src/views/dashboards/Servers/Index';
 const FullLayout = Loadable(lazy(() => import('../layouts/full/FullLayout')));
 const BlankLayout = Loadable(lazy(() => import('../layouts/blank/BlankLayout')));
 
+const SymbolMap = Loadable(lazy(() => import('../views/dashboards/SymbolMap/Index')));
+
 // authentication
 
 const Login2 = Loadable(lazy(() => import('../views/authentication/auth2/Login')));
@@ -43,6 +45,8 @@ const SolarIcon = Loadable(lazy(() => import('../views/icons/SolarIcon')));
 
 // const SamplePage = lazy(() => import('../views/sample-page/SamplePage'));
 
+const FeaturePreview = Loadable(lazy(() => import('../views/pages/FeaturePreview')));
+
 const Router = [
   {
     path: '/',
@@ -58,6 +62,7 @@ const Router = [
       { path: '/dashboard/signals/:accountId', element: <Signals /> },
       { path: '/dashboard/accounts', element: <Accounts /> },
       { path: '/dashboard/accounts/:accountId', element: <AccountProfile /> },
+      { path: '/dashboard/symbol-map', element: <SymbolMap /> },
       { path: '/utilities/form', element: <Form /> },
       { path: '/utilities/table', element: <Table /> },
       { path: '/apps/tickets', element: <Tickets /> },
@@ -79,6 +84,7 @@ const Router = [
       { path: '/auth/maintenance', element: <Maintainance /> },
       { path: '404', element: <Error /> },
       { path: '/auth/404', element: <Error /> },
+      { path: '/feature-preview', element: <FeaturePreview /> },
       { path: '*', element: <Navigate to="/auth/404" /> },
     ],
   },

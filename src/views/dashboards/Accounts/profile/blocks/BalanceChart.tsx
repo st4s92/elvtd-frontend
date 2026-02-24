@@ -24,7 +24,7 @@ const BalanceChart = ({ data }: any) => {
     if (
       !dailyMap[date] ||
       new Date(item.createdAt) >
-        new Date(dailyMap[date].createdAt)
+      new Date(dailyMap[date].createdAt)
     ) {
       dailyMap[date] = item;
     }
@@ -43,7 +43,7 @@ const BalanceChart = ({ data }: any) => {
     }));
 
   return (
-    <div className="bg-[#1e1e2f] border border-[#2c2c3e] rounded-xl p-6 mb-6 shadow-lg w-full">
+    <div className="bg-[rgba(233,223,255,0.04)] backdrop-blur-md rounded-3xl p-6 mb-6 shadow-sm transition-all duration-300 w-full hover:shadow-lg">
       <div className="flex items-center gap-2 mb-4">
         <Icon icon="solar:chart-bold" height={20} />
         <h4 className="font-semibold text-lg text-gray-200">
@@ -54,14 +54,14 @@ const BalanceChart = ({ data }: any) => {
       <div className="w-full h-80">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={formattedData}>
-            <CartesianGrid stroke="#2c2c3e" strokeDasharray="3 3" />
+            <CartesianGrid stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" />
             <XAxis dataKey="date" stroke="#888" />
             <YAxis stroke="#888" />
             <Tooltip
               contentStyle={{
-                backgroundColor: "#2c2c3e",
-                border: "none",
-                color: "#fff",
+                backgroundColor: "rgba(0,0,0,0.8)",
+                borderColor: "rgba(255,255,255,0.1)",
+                color: "#e2e8f0",
               }}
             />
             <Line

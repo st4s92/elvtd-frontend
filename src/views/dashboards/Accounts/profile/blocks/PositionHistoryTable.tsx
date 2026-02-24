@@ -128,7 +128,7 @@ const PositionHistoryTable = ({ accountId, role }: Props) => {
   // ===== FINAL COLUMNS =====
   const columns: ColumnDef<Record<string, any>>[] = [
     ...baseColumns,
-    ...(role === "SLAVE" ? [profitColumn] : []),
+    profitColumn,
     ...endColumns,
   ];
 

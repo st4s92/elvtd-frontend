@@ -1,32 +1,32 @@
 /*---break---*/
 .dark {
-  --background: var(--color-dark);
+  --background: #020204;
   --foreground: var(--color-white);
-  --card: var(--color-dark);
+  --card: rgba(233, 223, 255, 0.04);
   --card-foreground: var(--color-white);
-  --popover: var(--color-darkgray);
+  --popover: rgba(233, 223, 255, 0.04);
   --popover-foreground: var(--color-white);
-  --primary: var(--color-primary);
+  --primary: #763EFF;
   --primary-foreground: var(--color-white);
-  --secondary: var(--color-secondary);
+  --secondary: #A885FF;
   --secondary-foreground: var(--color-white);
-  --muted: var(--color-muted);
-  --muted-foreground: var(--color-muted-foreground);
-  --accent: var(--color-accent);
+  --muted: #A1A1A1;
+  --muted-foreground: #A1A1A1;
+  --accent: var(--color-lightprimary);
   --accent: var(--color-lightprimary);
   --accent-foreground: var(--color-accent-foreground);
   --destructive: var(--color-error);
-  --border: var(--color-darkborder);
-  --input: var(--color-darkborder);
+  --border: transparent;
+  --input: rgba(255, 255, 255, 0.1);
   --ring: var(--color-lightprimary);
   --chart-1: var(--color-primary);
   --chart-2: var(--color-secondary);
   --chart-3: var(--color-success);
   --chart-4: var(--color-warning);
   --chart-5: var(--color-error);
-  --sidebar: var(--color-sidebar);
-  --sidebar-foreground: var(--color-sidebar-foreground);
-  --sidebar-primary: var(--color-sidebar-primary);
+  --sidebar: #020204;
+  --sidebar-foreground: var(--color-white);
+  --sidebar-primary: var(--color-primary);
   --sidebar-primary-foreground: var(--color-sidebar-primary-foreground);
   --sidebar-accent: var(--color-sidebar-accent);
   --sidebar-accent-foreground: var(--color-sidebar-accent-foreground);
@@ -37,7 +37,7 @@
   /* common var for dark&light */
   --color-charcoal: #7c8fac;
   --color-customdark: #ffff;
-  --color-defaultBorder: #333f55;
+  --color-defaultBorder: transparent;
   --color-slateGray: #7c8fac;
   --color-breadcrumbColor: #223662;
   --color-lightgray: #2a3851;

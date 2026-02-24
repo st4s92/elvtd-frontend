@@ -15,7 +15,7 @@ const AccountDetailCard = ({ account }: any) => {
   };
 
   return (
-    <div className="bg-[#1e1e2f] border border-[#2c2c3e] rounded-xl p-10 text-gray-200 shadow-lg">
+    <div className="bg-[rgba(233,223,255,0.04)] backdrop-blur-md rounded-3xl p-10 text-gray-200 shadow-sm transition-all duration-300 hover:shadow-lg">
       {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-2">
@@ -24,11 +24,10 @@ const AccountDetailCard = ({ account }: any) => {
         </div>
 
         <span
-          className={`px-3 py-1 rounded-full text-xs font-semibold ${
-            account.status === 200
-              ? "bg-emerald-600 text-white"
-              : "bg-red-600 text-white"
-          }`}
+          className={`px-3 py-1 rounded-full text-xs font-semibold ${account.status === 200
+            ? "bg-emerald-600 text-white"
+            : "bg-red-600 text-white"
+            }`}
         >
           {account.status === 200 ? "Running" : "Stopped"}
         </span>
@@ -59,11 +58,10 @@ const AccountDetailCard = ({ account }: any) => {
 
           <button
             onClick={handleCopy}
-            className={`text-xs px-3 py-1 rounded-md transition ${
-              copied
-                ? "bg-blue-600 text-white"
-                : "bg-[#2c2c3e] hover:bg-[#3b3b55]"
-            }`}
+            className={`text-xs px-3 py-1 rounded-md transition ${copied
+              ? "bg-blue-600 text-white"
+              : "bg-white/10 hover:bg-white/20"
+              }`}
           >
             {copied ? "Copied ✓" : "Copy"}
           </button>
@@ -118,9 +116,8 @@ const AccountDetailCard = ({ account }: any) => {
           <div>
             <div className="text-gray-400 text-xs">Floating P/L</div>
             <div
-              className={`font-bold text-lg ${
-                isProfit ? "text-emerald-400" : "text-red-400"
-              }`}
+              className={`font-bold text-lg ${isProfit ? "text-emerald-400" : "text-red-400"
+                }`}
             >
               {isProfit ? "+" : ""}
               {profit}
@@ -134,11 +131,10 @@ const AccountDetailCard = ({ account }: any) => {
           <div>
             <div className="text-gray-400 text-xs">Role</div>
             <span
-              className={`inline-block mt-1 px-3 py-1 text-xs rounded-md font-semibold ${
-                account.role === "MASTER"
-                  ? "bg-blue-600 text-white"
-                  : "bg-amber-400 text-black"
-              }`}
+              className={`inline-block mt-1 px-3 py-1 text-xs rounded-md font-semibold ${account.role === "MASTER"
+                ? "bg-blue-600 text-white"
+                : "bg-amber-400 text-black"
+                }`}
             >
               {account.role}
             </span>

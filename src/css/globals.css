@@ -1,5 +1,5 @@
 @import 'tailwindcss';
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wdth,wght@12..96,75..100,200..800&family=Inter:wght@300;400;500;600;700&display=swap');
 @import './app.css';
 
 @import './layouts/container.css' layer(utilities);
@@ -17,8 +17,8 @@ main {
   scroll-behavior: smooth;
 }
 
-body{
-  font-family: "DM Sans", sans-serif;
+body {
+  font-family: "Inter", "Inter Placeholder", sans-serif;
 }
 
 /* Scrollbar Styling */
@@ -32,7 +32,8 @@ body{
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155; /* slate-700 approx */
+  background: #334155;
+  /* slate-700 approx */
   border-radius: 10px;
 }
 
@@ -47,11 +48,13 @@ body{
 }
 
 @theme {
-  
-  --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
-  
-  --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-  --shadow-btn-shadow: box-shadow: rgba(0, 0, 0, 0.05) 0 9px 17.5px;
+
+  --shadow-lg: 0px 1px 24px 0px rgba(118, 62, 255, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  /* Framer deep purple glow */
+
+  --shadow-sm: 0px 1px 12px 0px rgba(118, 62, 255, 0.2), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --shadow-md: 0px 1px 16px 0px rgba(118, 62, 255, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+  --shadow-btn-shadow: 0px 1px 16px 0px rgba(118, 62, 255, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
 
   --radius-sm: 4px;
   --radius-md: 7px;
@@ -192,8 +195,8 @@ body{
     @apply flex items-center gap-4 p-3;
   }
 
-  .sales-overview select{
-    @apply pr-9!;
+  .sales-overview select {
+    @apply !pr-9;
   }
 
 }
@@ -245,6 +248,7 @@ body{
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }

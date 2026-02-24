@@ -6,13 +6,16 @@ import { RecentTransaction } from "src/components/dashboards/modern/RecentTransa
 import { ProductPerformance } from "src/components/dashboards/modern/ProuctPerformance";
 import { Footer } from "src/components/dashboards/modern/Footer";
 import ProfileWelcome from "src/components/dashboards/modern/ProfileWelcome";
-
+import RetroFeatureCards from "src/components/ui/RetroFeatureCards";
 const Moderndash = () => {
     return (
         <>
             <div className="grid grid-cols-12 gap-6">
                 <div className="col-span-12">
                     <ProfileWelcome />
+                </div>
+                <div className="col-span-12">
+                    <RetroFeatureCards />
                 </div>
                 <div className="col-span-12">
                     <TopCards />
