@@ -8,6 +8,7 @@ use App\Form\AccountType;
 use App\Repository\AccountRepository;
 use App\Repository\AgentRepository;
 use App\Repository\OrderRepository;
+use App\Service\DeniesClient;
 use App\Service\DuplikiumClient;
 use App\Service\MetaApiClient;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -102,7 +103,7 @@ class AgentController extends AbstractController
         foreach ($userAccounts as $userAccount) {
             $user_agents = $agentRepository->findAgentsByUserAccounts(['from_account_id' => $userAccount]);
             foreach ($user_agents as $agent) {
-                $multiplier = $userAccount->getHost() == 'duplikium' ? $duplikiumClient->getMultiplier($userAccount->getMetaId()) : $metaApiClient->getMultiplier($userAccount->getMetaId());
+                $multiplier = $userAccount->getHost() == 'duplikium' ? $duplikiumClient->getMultiplier($userAccount->getMetaId()) : 1; // $metaApiClient->getMultiplier($userAccount->getMetaId());
 
                 $accountAgentConnections[] = [
                     'account' => $userAccount,
@@ -121,23 +122,90 @@ class AgentController extends AbstractController
     }
 
     /**
-     * @Route("/agents/{id}", name="app_agents_show", methods={"GET"})
+     * @Route("/agents/{meta_id}", name="app_agents_show", methods={"GET"})
      */
-    public function show(Account $account, OrderRepository $orderRepository): Response
+    public function show(Account $account, OrderRepository $orderRepository, AccountAgentSubscriptionRepository $accountAgentSubscriptionRepository, AgentRepository $agentRepository, MetaApiClient $metaApiClient, DuplikiumClient $duplikiumClient): Response
     {
+        // Prüfen, ob der Account dem aktuellen Benutzer gehört
+        if (!$account || $account->getType() !== 1 && !$this->isGranted('ROLE_ADMIN')) {
+            // Weiterleiten auf die Account-Übersicht
+            $this->session->getFlashBag()->add('danger', 'Account-Validierung fehlgeschlagen. Account existiert nicht oder gehört einem anderen User.');
+            return $this->redirectToRoute('app_account_index');
+        }
+
         // Fetch orders for the account
-        $allOrders = $orderRepository->findBy(['account' => $account]);
+        $allOrders = $orderRepository->findBy(
+            ['account' => $account],
+            ['open_time' => 'DESC']
+        );
 
         // Group orders by state
         $openPositions = array_filter($allOrders, fn($order) => $order->getState() === 1);
-        $openOrders = array_filter($allOrders, fn($order) => $order->getState() === 0);
         $closedPositions = array_filter($allOrders, fn($order) => !in_array($order->getState(), [0, 1]));
 
-        return $this->render('account/show.html.twig', [
+        // Finde den verbundenen Agent
+        $agentId = $accountAgentSubscriptionRepository->findOneBy(['account' => $account]);
+        $agent = $agentId ? $agentRepository->find($agentId) : null;
+
+        // Berechne dailyGrowth für account.host != 'metapi'
+        $dailyGrowth = [];
+        if ($account->getHost() != 'metapi') {
+            // Initialisiere dailyGrowth aus geschlossenen Trades
+            $dailyGrowthMap = [];
+
+            foreach ($closedPositions as $order) {
+                $closeDate = $order->getCloseTime();
+                if (!$closeDate) {
+                    continue; // Überspringe Trades ohne Schließungsdatum
+                }
+
+                // Gruppiere nach Datum (YYYY-MM-DD)
+                $dateKey = $closeDate->format('Y-m-d');
+
+                if (!isset($dailyGrowthMap[$dateKey])) {
+                    $dailyGrowthMap[$dateKey] = [
+                        'date' => $dateKey,
+                        'profit' => 0,
+                        'gains' => 0, // Prozentuale Gewinne (werden später berechnet)
+                        'balance' => 0, // Wird später berechnet
+                        'lots' => 0, // Anzahl der Lots (falls verfügbar)
+                    ];
+                }
+
+                // Summiere Profit und Lots
+                $dailyGrowthMap[$dateKey]['profit'] += $order->getProfit() ?? 0;
+                $dailyGrowthMap[$dateKey]['lots'] += $order->getVolume() ?? 0;
+            }
+
+            // Konvertiere das Map in ein Array und berechne balance und gains
+            $dailyGrowth = array_values($dailyGrowthMap);
+            $runningBalance = $account->getBalance() ?? 0; // Startwert: aktueller Kontostand
+
+            // Gehe rückwärts durch die Tage, um den Balance-Verlauf zu berechnen
+            for ($i = count($dailyGrowth) - 1; $i >= 0; $i--) {
+                $dailyGrowth[$i]['balance'] = $runningBalance;
+                $dailyGrowth[$i]['gains'] = $runningBalance != 0 ? ($dailyGrowth[$i]['profit'] / $runningBalance) * 100 : 0;
+                $runningBalance -= $dailyGrowth[$i]['profit']; // Ziehe den Profit ab, um den vorherigen Balance-Wert zu erhalten
+            }
+
+            // Sortiere nach Datum aufsteigend
+            usort($dailyGrowth, function($a, $b) {
+                return strtotime($a['date']) - strtotime($b['date']);
+            });
+        } else {
+            // Für account.host == 'metapi' verwenden wir die vorhandenen dailyGrowth-Daten
+            $dailyGrowth = $account->getDailyGrowth() ?? [];
+        }
+
+        $multiplier = $account->getHost() == 'duplikium' ? $duplikiumClient->getMultiplier($account->getMetaId()) : $metaApiClient->getMultiplier($account->getMetaId());
+
+        return $this->render('agent/show.html.twig', [
             'account' => $account,
             'openPositions' => $openPositions,
-            'openOrders' => $openOrders,
             'closedPositions' => $closedPositions,
+            'dailyGrowth' => $dailyGrowth,
+            'agent' => $agent,
+            'multiplier' => $multiplier,
         ]);
     }
 
@@ -149,6 +217,7 @@ class AgentController extends AbstractController
                                      AgentRepository $agentRepository,
                                      AccountAgentSubscriptionRepository $accountAgentSubscriptionRepository,
                                      MetaApiClient $metaApiClient,
+                                     DeniesClient $deniesClient,
                                      DuplikiumClient $duplikiumClient
     ): RedirectResponse
     {
@@ -186,6 +255,9 @@ class AgentController extends AbstractController
                                     $groupId = 'wUtdfafq'; // DailyGrowthFX-1 (ROBOFOREX)
                                 } elseif (stripos($account->getTradeServer(), 'FundedNext') !== false) {
                                     $groupId = 'wStdfafq'; // DailyGrowthFX-1 (FUNDEDNEXT)
+                                }
+                                elseif (stripos($account->getTradeServer(), 'ALFX') !== false) {
+                                    $groupId = 'qSSdfafq'; // DailyGrowthFX-1 (QUANTUM ALFX)
                                 } else {
                                     $groupId = 'cwZdfafq'; // DailyGrowthFX-1 (Default)
                                 }
@@ -282,7 +354,11 @@ class AgentController extends AbstractController
                 if ($groupId) {
                     $duplikiumClient->updateAccount($account, $groupId);
                 }
-            } else {
+            }
+            elseif ($account->getHost() == 'denies') {
+                $deniesClient->updateSubscriber($account, $multiplier);
+            }
+            else {
                 $data = [
                     'name' => $user->getId() . '-' . $account->getId() . '-' . $account->getName() . '-' . $user->getUsername(),
                     'subscriptions' => [

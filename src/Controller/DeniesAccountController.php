@@ -2,22 +2,22 @@
 
 namespace App\Controller;
 
-use App\Service\DuplikiumClient;
+use App\Service\DeniesClient;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Annotation\Route;
 
-class DuplikiumAccountController extends AbstractController
+class DeniesAccountController extends AbstractController
 {
-    private DuplikiumClient $duplikiumClient;
+    private DeniesClient $DeniesClient;
 
-    public function __construct(DuplikiumClient $duplikiumClient)
+    public function __construct(DeniesClient $deniesClient)
     {
-        $this->duplikiumClient = $duplikiumClient;
+        $this->deniesClient = $deniesClient;
     }
 
     /**
-     * @Route("/duplikium", name="app_duplikium_index", methods={"GET"})
+     * @Route("/denies", name="app_denies_index", methods={"GET"})
      */
     public function index(): JsonResponse
     {

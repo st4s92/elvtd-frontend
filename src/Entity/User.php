@@ -124,6 +124,16 @@ class User implements UserInterface
      */
     private $resetTokenExpiration;
 
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $language;
+
+    /**
+     * @ORM\Column(type="integer")
+     */
+    private $darkmode = 0;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
@@ -423,5 +433,31 @@ class User implements UserInterface
     {
         $this->resetTokenExpiration = $resetTokenExpiration;
         return $this;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getLanguage(): string
+    {
+        return $this->language ?: 'en'; // Fallback to English
+    }
+
+    /**
+     * @param mixed $language
+     */
+    public function setLanguage($language): void
+    {
+        $this->language = $language;
+    }
+
+    public function getDarkmode(): int
+    {
+        return $this->darkmode ?: 0;
+    }
+
+    public function setDarkmode(int $darkmode): void
+    {
+        $this->darkmode = $darkmode;
     }
 }

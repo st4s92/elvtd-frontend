@@ -11,7 +11,9 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Contracts\HttpClient\HttpClientInterface; // Importiere den HttpClientInterface
+use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Bridge\Twig\Mime\TemplatedEmail;
 
 class RegistrationController extends AbstractController
 {
@@ -26,7 +28,11 @@ class RegistrationController extends AbstractController
     /**
      * @Route("/register", name="app_register", methods={"GET", "POST"})
      */
-    public function register(Request $request, UserRepository $userRepository, UserPasswordHasherInterface $passwordHasher): Response
+    public function register(Request $request,
+                             UserRepository $userRepository,
+                             UserPasswordHasherInterface $passwordHasher,
+                             MailerInterface $mailer
+    ): Response
     {
         # return $this->redirectToRoute('app_login');
 

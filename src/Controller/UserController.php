@@ -13,6 +13,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\HttpFoundation\Session\Flash\FlashBagInterface;
 
 /**
  * @Route("/user")
@@ -21,9 +22,15 @@ class UserController extends AbstractController
 {
     private UserPasswordHasherInterface $passwordHasher;
 
-    public function __construct(UserPasswordHasherInterface $passwordHasher)
+    private FlashBagInterface $flashBag;
+
+    public function __construct(
+        UserPasswordHasherInterface $passwordHasher,
+        FlashBagInterface $flashBag
+    )
     {
         $this->passwordHasher = $passwordHasher;
+        $this->flashBag = $flashBag;
     }
 
     /**
@@ -63,6 +70,34 @@ class UserController extends AbstractController
         }
 
         return $this->renderForm('user/new.html.twig', [
+            'user' => $user,
+            'form' => $form,
+        ]);
+    }
+
+    /**
+     * @Route("/profile", name="app_user_profile", methods={"GET", "POST"})
+     */
+    public function profile(Request $request, UserRepository $userRepository): Response
+    {
+        // Prüfen, ob der Benutzer ein Admin ist
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $this->redirectToRoute('app_default');
+        }
+
+        $user = $this->getUser();
+
+        $form = $this->createForm(UserType::class, $user);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $userRepository->add($user, true);
+
+            $this->flashBag->add('success', 'Die Änderungen wurden erfolgreich gespeichert.');
+            return $this->redirectToRoute('app_user_profile', [], Response::HTTP_SEE_OTHER);
+        }
+
+        return $this->renderForm('user/edit.html.twig', [
             'user' => $user,
             'form' => $form,
         ]);

@@ -1,0 +1,340 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Economic Calendar{% endblock %}
+
+{% block body %}
+<div class="container-fluid py-4">
+    <style>
+        /* Economic Calendar Styles */
+        .calendar-header-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 1.5rem;
+        }
+        
+        /* Filters */
+        .calendar-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .search-wrapper {
+            position: relative;
+            flex-grow: 1;
+            max-width: 300px;
+        }
+        
+        .search-input {
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem 0.5rem 2.5rem;
+            color: #111827;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+        }
+        
+        .filter-dropdown {
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            color: #111827;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            min-width: 150px;
+        }
+        
+        .filter-dropdown:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+        
+        /* Table */
+        .calendar-table-wrapper {
+            background: #ffffff;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #e5e7eb;
+        }
+        
+        .calendar-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .calendar-table thead {
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .calendar-table th {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .calendar-table tbody tr {
+            border-bottom: 1px solid #f3f4f6;
+            transition: background-color 0.15s;
+        }
+        
+        .calendar-table tbody tr:hover {
+            background-color: #f9fafb;
+        }
+        
+        .calendar-table tbody tr:last-child {
+            border-bottom: none;
+        }
+        
+        .calendar-table td {
+            padding: 1rem;
+            color: #374151;
+            font-size: 0.875rem;
+        }
+        
+        .event-time {
+            color: #6b7280;
+            white-space: nowrap;
+        }
+        
+        .event-title {
+            font-weight: 500;
+            color: #111827;
+        }
+        
+        .event-country {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* Impact Badges */
+        .impact-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .impact-high {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .impact-medium {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .impact-low {
+            background: #dcfce7;
+            color: #166534;
+        }
+        
+        .impact-neutral {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+        
+        /* Data cells */
+        .data-cell {
+            color: #111827;
+        }
+        
+        /* Action button */
+        .action-btn {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            transition: color 0.15s;
+            padding: 0.25rem;
+        }
+        
+        .action-btn:hover {
+            color: #111827;
+        }
+        
+        /* No results */
+        .no-results {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #6b7280;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .calendar-table {
+                font-size: 0.75rem;
+            }
+            
+            .calendar-table th,
+            .calendar-table td {
+                padding: 0.5rem;
+            }
+            
+            .calendar-controls {
+                flex-direction: column;
+            }
+            
+            .search-wrapper {
+                max-width: 100%;
+            }
+        }
+    </style>
+
+    <h1 class="calendar-header-title">Economic Calendar</h1>
+
+    <div class="calendar-controls">
+        <div class="search-wrapper">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" class="search-input" id="calendarSearch" placeholder="Search">
+        </div>
+        <select class="filter-dropdown" id="countryFilter">
+            <option value="all">Countries: All</option>
+            <option value="United States">United States</option>
+            <option value="Eurozone">Eurozone</option>
+            <option value="United Kingdom">United Kingdom</option>
+            <option value="Japan">Japan</option>
+            <option value="China">China</option>
+            <option value="Canada">Canada</option>
+            <option value="Australia">Australia</option>
+            <option value="New Zealand">New Zealand</option>
+            <option value="Switzerland">Switzerland</option>
+        </select>
+        <select class="filter-dropdown" id="impactFilter">
+            <option value="all">Impact: All</option>
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+        </select>
+    </div>
+
+    <div class="calendar-table-wrapper">
+        <table class="calendar-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Event</th>
+                    <th>Country</th>
+                    <th>Impact</th>
+                    <th>Actual</th>
+                    <th>Forecast</th>
+                    <th>Previous</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="calendarBody">
+                {% for event in events %}
+                    <tr class="calendar-row" 
+                        data-title="{{ event.title|lower }}" 
+                        data-country="{{ event.country }}"
+                        data-impact="{{ event.impact }}">
+                        <td class="event-time">{{ event.date }}</td>
+                        <td class="event-time">{{ event.time }}</td>
+                        <td class="event-title">{{ event.title }}</td>
+                        <td>
+                            <div class="event-country">
+                                <span>{{ event.country }}</span>
+                            </div>
+                        </td>
+                        <td>
+                            {% if event.impact == 'High' %}
+                                <span class="impact-badge impact-high">High</span>
+                            {% elseif event.impact == 'Medium' %}
+                                <span class="impact-badge impact-medium">Medium</span>
+                            {% elseif event.impact == 'Low' %}
+                                <span class="impact-badge impact-low">Low</span>
+                            {% else %}
+                                <span class="impact-badge impact-neutral">Neutral</span>
+                            {% endif %}
+                        </td>
+                        <td class="data-cell">{{ event.actual }}</td>
+                        <td class="data-cell">{{ event.forecast }}</td>
+                        <td class="data-cell">{{ event.previous }}</td>
+                        <td>
+                            <button class="action-btn" title="Set notification">
+                                <i class="far fa-bell"></i>
+                            </button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="no-results d-none" id="noResults">
+            <p>No events found matching your criteria.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('calendarSearch');
+        const countryFilter = document.getElementById('countryFilter');
+        const impactFilter = document.getElementById('impactFilter');
+        const rows = document.querySelectorAll('.calendar-row');
+        const noResults = document.getElementById('noResults');
+        const tableBody = document.getElementById('calendarBody');
+
+        function filterEvents() {
+            const query = searchInput.value.toLowerCase();
+            const selectedCountry = countryFilter.value;
+            const selectedImpact = impactFilter.value;
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const title = row.getAttribute('data-title');
+                const country = row.getAttribute('data-country');
+                const impact = row.getAttribute('data-impact');
+                
+                const matchesSearch = title.includes(query);
+                const matchesCountry = selectedCountry === 'all' || country === selectedCountry;
+                const matchesImpact = selectedImpact === 'all' || impact === selectedImpact;
+
+                if (matchesSearch && matchesCountry && matchesImpact) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            if (visibleCount === 0) {
+                noResults.classList.remove('d-none');
+                tableBody.style.display = 'none';
+            } else {
+                noResults.classList.add('d-none');
+                tableBody.style.display = '';
+            }
+        }
+
+        searchInput.addEventListener('input', filterEvents);
+        countryFilter.addEventListener('change', filterEvents);
+        impactFilter.addEventListener('change', filterEvents);
+    });
+</script>
+{% endblock %}

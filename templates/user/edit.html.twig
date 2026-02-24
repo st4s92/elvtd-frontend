@@ -3,11 +3,25 @@
 {% block title %}Edit User{% endblock %}
 
 {% block body %}
-    <h1>Edit User</h1>
 
-    {{ include('user/_form.html.twig', {'button_label': 'Update'}) }}
+    <style>
+        .profile .btn {
+            color: #fff;
+            box-shadow: 0 2px 2px 0 rgba(38, 38, 38, 0.1), 0 3px 1px -2px rgba(38, 38, 38, 0.18), 0 1px 5px 0 rgba(38, 38, 38, 0.15);
+            background-image: linear-gradient(195deg, #42424a 0%, #191919 100%);
+            margin: 15px 0;
+            float: right;
+            margin-left: 15px;
+        }
+    </style>
 
-    <a href="{{ path('app_user_index') }}">back to list</a>
-
-    {{ include('user/_delete_form.html.twig') }}
+    <div class="container card p-3 profile">
+        <div class="card-header">
+            <h6 class="float-start w-100">User Information</h6>
+            <p class="float-start w-100">{{ 'account_index_title'|trans }}</p>
+        </div>
+        <div class="card-body px-0 table-responsive">
+            {{ include('user/_form.html.twig', {'button_label': 'Update', 'attr' : {'class':'btn bg-gradient-dark w-100'}}) }}
+        </div>
+    </div>
 {% endblock %}

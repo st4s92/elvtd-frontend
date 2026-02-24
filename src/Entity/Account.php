@@ -283,6 +283,21 @@ class Account
      */
     private $error;
 
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $tradovateAccessToken;
+
+    /**
+     * @ORM\Column(type="string", length=255, nullable=true)
+     */
+    private $tradovateRefreshToken;
+
+    /**
+     * @ORM\Column(type="datetime", nullable=true)
+     */
+    private $tradovateTokenExpiresAt;
+
     public function __construct()
     {
         $this->orders = new ArrayCollection();
@@ -968,6 +983,39 @@ class Account
     public function setError(?string $error): self
     {
         $this->error = $error;
+        return $this;
+    }
+
+    public function getTradovateAccessToken(): ?string
+    {
+        return $this->tradovateAccessToken;
+    }
+
+    public function setTradovateAccessToken(?string $tradovateAccessToken): self
+    {
+        $this->tradovateAccessToken = $tradovateAccessToken;
+        return $this;
+    }
+
+    public function getTradovateRefreshToken(): ?string
+    {
+        return $this->tradovateRefreshToken;
+    }
+
+    public function setTradovateRefreshToken(?string $tradovateRefreshToken): self
+    {
+        $this->tradovateRefreshToken = $tradovateRefreshToken;
+        return $this;
+    }
+
+    public function getTradovateTokenExpiresAt(): ?\DateTimeInterface
+    {
+        return $this->tradovateTokenExpiresAt;
+    }
+
+    public function setTradovateTokenExpiresAt(?\DateTimeInterface $tradovateTokenExpiresAt): self
+    {
+        $this->tradovateTokenExpiresAt = $tradovateTokenExpiresAt;
         return $this;
     }
 }

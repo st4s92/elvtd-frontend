@@ -286,4 +286,22 @@ class DuplikiumClient
 
         return ['multiplier' => 0.0, 'templateFullName' => "NOT CONNECTED"];
     }
+
+    public function getAccount(string $subscriberId)
+    {
+        $filter = ['account_id' => $subscriberId];
+
+        try {
+            $response = $this->request('POST', "getAccounts.php", $filter);
+        }
+        catch (\Exception $e) {
+            throw new \RuntimeException('Fehler beim Verbinden mit dem Host: ' . $e->getMessage());
+        }
+
+        if (isset($response->accounts[0])) {
+            return $response;
+        }
+
+        return false;
+    }
 }

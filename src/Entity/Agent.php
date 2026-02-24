@@ -68,10 +68,21 @@ class Agent
     /** @ORM\Column(type="integer") */
     private $users;
 
+    /** @ORM\Column(type="string") */
+    private $link_account;
+
+    /** @ORM\Column(type="string") */
+    private $youtube_link;
+
     /**
      * @ORM\Column(type="json", nullable=true)
      */
     private $backtesting_json;
+
+    /**
+     * @ORM\Column(type="string", nullable=true)
+     */
+    private $html_backtest;
 
     public function __construct()
     {
@@ -385,5 +396,53 @@ class Agent
     public function setUsers($users): void
     {
         $this->users = $users;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getLinkAccount()
+    {
+        return $this->link_account;
+    }
+
+    /**
+     * @param mixed $link_account
+     */
+    public function setLinkAccount($link_account): void
+    {
+        $this->link_account = $link_account;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getYoutubeLink()
+    {
+        return $this->youtube_link;
+    }
+
+    /**
+     * @param mixed $youtube_link
+     */
+    public function setYoutubeLink($youtube_link): void
+    {
+        $this->youtube_link = $youtube_link;
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getHtmlBacktest()
+    {
+        return $this->html_backtest;
+    }
+
+    /**
+     * @param mixed $html_backtest
+     */
+    public function setHtmlBacktest($html_backtest): void
+    {
+        $this->html_backtest = $html_backtest;
     }
 }

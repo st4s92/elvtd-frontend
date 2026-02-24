@@ -21,3 +21,12 @@ services:
         arguments:
             $baseUrl: '%metaapi.base_url%'
             $token: '%metaapi.token%'
+
+    App\Service\LocaleSwitcher:
+        arguments:
+            $requestStack: '@request_stack'
+            $security: '@security.helper'
+
+    App\EventListener\LocaleListener:
+        tags:
+            - { name: kernel.event_listener, event: kernel.request, method: onKernelRequest }

@@ -242,11 +242,19 @@
                             document.addEventListener('DOMContentLoaded', function() {
                                 const datasets = [];
                                 {% for account in accounts %}
-                                {% if account.dailyGrowth is not empty %}
-                                {% set firstGain = account.dailyGrowth[0].balance ?? 1 %} {# Erster Wert zur Normalisierung #}
+                                {# Nur Accounts mit dailyGrowth anzeigen #}
+                                {% if account.dailyGrowth is defined and account.dailyGrowth is not empty %}
+                                {# Sicherer erster Balance-Wert #}
+                                {% set firstEntry = account.dailyGrowth[0] %}
+                                {% set firstBalance = (firstEntry.balance ?? 0)|abs %}
+                                {% set firstGain = firstBalance > 0 ? firstBalance : 1 %} {# Niemals 0! #}
+
                                 datasets.push({
-                                    label: '{{ account.name }}',
-                                    data: {{ account.dailyGrowth|map(d => {x: d.date, y: ((d.balance ?? 0) / firstGain) })|json_encode|raw }},
+                                    label: '{{ account.name|escape('js') }}',
+                                    data: {{ account.dailyGrowth|map(d => {
+                                        x: d.date,
+                                        y: ((d.balance ?? 0) / firstGain)
+                                    })|json_encode|raw }},
                                     borderColor: 'hsl({{ 160 + loop.index * 5 }}, {{ 70 - loop.index * 2 }}%, {{ 40 - loop.index * 2 }}%)',
                                     backgroundColor: 'hsla({{ 160 + loop.index * 5 }}, {{ 70 - loop.index * 2 }}%, {{ 40 - loop.index * 2 }}%, 0.5)',
                                     tension: 0.5,
@@ -378,7 +386,9 @@
                                             <span class="badge badge-danger mx-0">{{ account.error }}</span>
                                         {% else %}
                                             <strong>{{ account.name }}</strong>{{ account.isActive ? '<span class="badge badge-success mx-2">Online</span>' : '<span class="badge badge-secondary mx-2">wird verbunden ...</span>' }}
-                                            <span class="badge badge-danger mx-0">Fehler: {{ account.error }}</span>
+                                            {% if is_granted('ROLE_ADMIN') %}
+                                                <span class="badge badge-danger mx-0">Fehler: {{ account.error }}</span>
+                                            {% endif %}
                                         {% endif %}
                                     {% endif %}
                                     <br>

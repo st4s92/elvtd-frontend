@@ -23,9 +23,24 @@
         <link rel="stylesheet" href="{{ asset('assets/css/material-dashboard.css') }}">
         <link rel="stylesheet" href="{{ asset('css/styles.css') }}">
 
+        {% if app.user.darkmode >= 1 %}
+        <link rel="stylesheet" href="{{ asset('css/darkmode.css') }}">
+        {% endif %}
+
         {% block javascripts %}
             {{ encore_entry_script_tags('app') }}
         {% endblock %}
+
+        <style>
+            .navbar-nav {
+                justify-content: flex-end !important;
+            }
+            @media (max-width: 1199.98px) {
+                .navbar-nav {
+                    justify-content: space-between !important;
+                }
+            }
+        </style>
 
     </head>
     <body class="g-sidenav-show bg-gray-100">
@@ -34,7 +49,7 @@
                 <i class="fas fa-times p-3 cursor-pointer opacity-5 position-absolute end-0 top-0 d-none d-xl-none" aria-hidden="true" id="iconSidenav"></i>
                 <a class="navbar-brand px-4 py-3 m-0" href="/">
                     <img src="{{ asset('assets/img/elvtd_logo.png') }}">
-                    <span class="ms-1 text-md text-bolder">ELVTD Finance</span>
+                    <span class="ms-1 text-md text-bolder">ELVTD Finance</span> <span>{{ app.request.locale }}</span>
                 </a>
             </div>
             <hr class="horizontal dark mt-0 mb-2">
@@ -73,6 +88,18 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link {{ app.request.attributes.get('_route') == 'app_market_news' ? ' active' : '' }}" href="{{ path('app_market_news') }}">
+                            <i class="material-symbols-rounded opacity-5">newspaper</i>
+                            <span class="nav-link-text ms-3 text-md text-bold">Market News</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ app.request.attributes.get('_route') == 'app_economic_calendar' ? ' active' : '' }}" href="{{ path('app_economic_calendar') }}">
+                            <i class="material-symbols-rounded opacity-5">event</i>
+                            <span class="nav-link-text ms-3 text-md text-bold">Economic Calendar</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link {{ app.request.attributes.get('_route') starts with 'app_helpdesk_faq' ? ' active' : '' }}" href="{{ path('app_helpdesk_faq') }}">
                             <i class="material-symbols-rounded opacity-5">help</i>
                             <span class="nav-link-text ms-3 text-md text-bold">Helpdesk</span>
@@ -97,10 +124,10 @@
                     <a class="btn btn-outline-dark w-100" href="{{ path('app_admin_helpdesk_index') }}">Tickets</a>
                         <br>
                     <a class="btn btn-light w-100" href="{{ path('app_duplikium_index') }}">Duplikium</a>
-                    {#<a class="btn btn-outline-dark w-100" href="{{ path('app_order_index') }}">Orders</a>
+                    <a class="btn btn-outline-dark w-100" href="{{ path('app_order_index') }}">Orders</a>
                     <a class="btn btn-outline-dark w-100" href="{{ path('app_trade_log_index') }}" type="button">Trade Log</a>
                     <a class="btn bg-gradient-dark w-100" href="{{ path('app_send_signal') }}" type="button">Test Signal senden</a>
-                    <a class="btn bg-gradient-dark w-100" href="{{ path('app_subscription_api_start') }}" type="button">Test Subscription senden</a>#}
+                    <a class="btn bg-gradient-dark w-100" href="{{ path('app_subscription_api_start') }}" type="button">Test Subscription senden</a>
                     {% endif %}
                 </div>
             </div>
@@ -111,7 +138,7 @@
                     <div class="collapse navbar-collapse mt-sm-0 mt-2 me-md-0 me-sm-4" id="navbar">
                         <div class="ms-md-auto pe-md-3 d-flex align-items-center w-100">
                             <div class="input-group input-group-outline">
-                                <ul class="navbar-nav d-flex align-items-center w-100" style="justify-content: space-between;">
+                                <ul class="navbar-nav d-flex align-items-center w-100">
                                     <li class="nav-item d-xl-none d-flex align-items-center">
                                         <a class="m-0" href="/" ><img src="{{ asset('assets/img/elvtd_logo.png') }}" style="max-width: 32px; max-height: 32px;"></a>
                                     </li>
@@ -124,93 +151,105 @@
                                             </div>
                                         </a>
                                     </li>
-                                    {#<li class="nav-item d-flex align-items-cente px-3">
+       {#                             <li class="nav-item d-flex align-items-cente px-3">
                                         <a href="/" class="nav-link text-body p-0">
                                             <i class="material-symbols-rounded fixed-plugin-button-nav">settings</i>
                                         </a>
-                                    </li>
+                                    </li>#}
                                     <li class="nav-item dropdown px-3 d-flex align-items-center">
                                         <a href="javascript:;" class="nav-link text-body p-0" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
                                             <i class="material-symbols-rounded">notifications</i>
                                         </a>
                                         <ul class="dropdown-menu  dropdown-menu-end px-2 py-3 me-sm-n4" aria-labelledby="dropdownMenuButton">
-#}{#                                            <li class="mb-2">#}{#
-#}{#                                                <a class="dropdown-item border-radius-md" href="javascript:;">#}{#
-#}{#                                                    <div class="d-flex py-1">#}{#
-#}{#                                                        <div class="my-auto">#}{#
-#}{#                                                            <img src="../assets/img/team-2.jpg" class="avatar avatar-sm  me-3 ">#}{#
-#}{#                                                        </div>#}{#
-#}{#                                                        <div class="d-flex flex-column justify-content-center">#}{#
-#}{#                                                            <h6 class="text-sm font-weight-normal mb-1">#}{#
-#}{#                                                                <span class="font-weight-bold">New message</span> from Laur#}{#
-#}{#                                                            </h6>#}{#
-#}{#                                                            <p class="text-xs text-secondary mb-0">#}{#
-#}{#                                                                <i class="fa fa-clock me-1"></i>#}{#
-#}{#                                                                13 minutes ago#}{#
-#}{#                                                            </p>#}{#
-#}{#                                                        </div>#}{#
-#}{#                                                    </div>#}{#
-#}{#                                                </a>#}{#
-#}{#                                            </li>#}{#
-#}{#                                            <li class="mb-2">#}{#
-#}{#                                                <a class="dropdown-item border-radius-md" href="javascript:;">#}{#
-#}{#                                                    <div class="d-flex py-1">#}{#
-#}{#                                                        <div class="my-auto">#}{#
-#}{#                                                            <img src="../assets/img/small-logos/logo-spotify.svg" class="avatar avatar-sm bg-gradient-dark  me-3 ">#}{#
-#}{#                                                        </div>#}{#
-#}{#                                                        <div class="d-flex flex-column justify-content-center">#}{#
-#}{#                                                            <h6 class="text-sm font-weight-normal mb-1">#}{#
-#}{#                                                                <span class="font-weight-bold">New album</span> by Travis Scott#}{#
-#}{#                                                            </h6>#}{#
-#}{#                                                            <p class="text-xs text-secondary mb-0">#}{#
-#}{#                                                                <i class="fa fa-clock me-1"></i>#}{#
-#}{#                                                                1 day#}{#
-#}{#                                                            </p>#}{#
-#}{#                                                        </div>#}{#
-#}{#                                                    </div>#}{#
-#}{#                                                </a>#}{#
-#}{#                                            </li>#}{#
-#}{#                                            <li>#}{#
-#}{#                                                <a class="dropdown-item border-radius-md" href="javascript:;">#}{#
-#}{#                                                    <div class="d-flex py-1">#}{#
-#}{#                                                        <div class="avatar avatar-sm bg-gradient-secondary  me-3  my-auto">#}{#
-#}{#                                                            <svg width="12px" height="12px" viewBox="0 0 43 36" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">#}{#
-#}{#                                                                <title>credit-card</title>#}{#
-#}{#                                                                <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">#}{#
-#}{#                                                                    <g transform="translate(-2169.000000, -745.000000)" fill="#FFFFFF" fill-rule="nonzero">#}{#
-#}{#                                                                        <g transform="translate(1716.000000, 291.000000)">#}{#
-#}{#                                                                            <g transform="translate(453.000000, 454.000000)">#}{#
-#}{#                                                                                <path class="color-background" d="M43,10.7482083 L43,3.58333333 C43,1.60354167 41.3964583,0 39.4166667,0 L3.58333333,0 C1.60354167,0 0,1.60354167 0,3.58333333 L0,10.7482083 L43,10.7482083 Z" opacity="0.593633743"></path>#}{#
-#}{#                                                                                <path class="color-background" d="M0,16.125 L0,32.25 C0,34.2297917 1.60354167,35.8333333 3.58333333,35.8333333 L39.4166667,35.8333333 C41.3964583,35.8333333 43,34.2297917 43,32.25 L43,16.125 L0,16.125 Z M19.7083333,26.875 L7.16666667,26.875 L7.16666667,23.2916667 L19.7083333,23.2916667 L19.7083333,26.875 Z M35.8333333,26.875 L28.6666667,26.875 L28.6666667,23.2916667 L35.8333333,23.2916667 L35.8333333,26.875 Z"></path>#}{#
-#}{#                                                                            </g>#}{#
-#}{#                                                                        </g>#}{#
-#}{#                                                                    </g>#}{#
-#}{#                                                                </g>#}{#
-#}{#                                                            </svg>#}{#
-#}{#                                                        </div>#}{#
-#}{#                                                        <div class="d-flex flex-column justify-content-center">#}{#
-#}{#                                                            <h6 class="text-sm font-weight-normal mb-1">#}{#
-#}{#                                                                Payment successfully completed#}{#
-#}{#                                                            </h6>#}{#
-#}{#                                                            <p class="text-xs text-secondary mb-0">#}{#
-#}{#                                                                <i class="fa fa-clock me-1"></i>#}{#
-#}{#                                                                2 days#}{#
-#}{#                                                            </p>#}{#
-#}{#                                                        </div>#}{#
-#}{#                                                    </div>#}{#
-#}{#                                                </a>#}{#
-#}{#                                            </li>#}{#
+                                            <li class="mb-2">
+                                                <a class="dropdown-item border-radius-md" href="javascript:;">
+                                                    <div class="d-flex py-1">
+                                                        <div class="my-auto">
+                                                            <img src="../assets/img/elvtd_logo.png" class="avatar avatar-sm  me-3 ">
+                                                        </div>
+                                                        <div class="d-flex flex-column justify-content-center">
+                                                            <p class="text-xs text-secondary mb-0">
+                                                                <i class="fa fa-clock me-1"></i>
+                                                                keine neuen Nachrichten
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            </li>
+                                            {#<li class="mb-2">
+                                                <a class="dropdown-item border-radius-md" href="javascript:;">
+                                                    <div class="d-flex py-1">
+                                                        <div class="my-auto">
+                                                            <img src="../assets/img/team-2.jpg" class="avatar avatar-sm  me-3 ">
+                                                        </div>
+                                                        <div class="d-flex flex-column justify-content-center">
+                                                            <h6 class="text-sm font-weight-normal mb-1">
+                                                                <span class="font-weight-bold">New message</span> from Laur
+                                                            </h6>
+                                                            <p class="text-xs text-secondary mb-0">
+                                                                <i class="fa fa-clock me-1"></i>
+                                                                13 minutes ago
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            </li>
+                                            <li class="mb-2">
+                                                <a class="dropdown-item border-radius-md" href="javascript:;">
+                                                    <div class="d-flex py-1">
+                                                        <div class="my-auto">
+                                                            <img src="../assets/img/small-logos/logo-spotify.svg" class="avatar avatar-sm bg-gradient-dark  me-3 ">
+                                                        </div>
+                                                        <div class="d-flex flex-column justify-content-center">
+                                                            <h6 class="text-sm font-weight-normal mb-1">
+                                                                <span class="font-weight-bold">Welcome</span> back
+                                                            </h6>
+                                                            <p class="text-xs text-secondary mb-0">
+                                                                <i class="fa fa-clock me-1"></i>
+                                                                1 day
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item border-radius-md" href="javascript:;">
+                                                    <div class="d-flex py-1">
+                                                        <div class="avatar avatar-sm bg-gradient-secondary  me-3  my-auto">
+                                                            <svg width="12px" height="12px" viewBox="0 0 43 36" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                                                                <title>credit-card</title>
+                                                                <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                                                    <g transform="translate(-2169.000000, -745.000000)" fill="#FFFFFF" fill-rule="nonzero">
+                                                                        <g transform="translate(1716.000000, 291.000000)">
+                                                                            <g transform="translate(453.000000, 454.000000)">
+                                                                                <path class="color-background" d="M43,10.7482083 L43,3.58333333 C43,1.60354167 41.3964583,0 39.4166667,0 L3.58333333,0 C1.60354167,0 0,1.60354167 0,3.58333333 L0,10.7482083 L43,10.7482083 Z" opacity="0.593633743"></path>
+                                                                                <path class="color-background" d="M0,16.125 L0,32.25 C0,34.2297917 1.60354167,35.8333333 3.58333333,35.8333333 L39.4166667,35.8333333 C41.3964583,35.8333333 43,34.2297917 43,32.25 L43,16.125 L0,16.125 Z M19.7083333,26.875 L7.16666667,26.875 L7.16666667,23.2916667 L19.7083333,23.2916667 L19.7083333,26.875 Z M35.8333333,26.875 L28.6666667,26.875 L28.6666667,23.2916667 L35.8333333,23.2916667 L35.8333333,26.875 Z"></path>
+                                                                            </g>
+                                                                        </g>
+                                                                    </g>
+                                                                </g>
+                                                            </svg>
+                                                        </div>
+                                                        <div class="d-flex flex-column justify-content-center">
+                                                            <h6 class="text-sm font-weight-normal mb-1">
+                                                                Payment successfully completed
+                                                            </h6>
+                                                            <p class="text-xs text-secondary mb-0">
+                                                                <i class="fa fa-clock me-1"></i>
+                                                                2 days
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                </a>
+                                            </li>#}
                                         </ul>
                                     </li>
                                     <li class="nav-item d-flex align-items-center">
-                                        <a href="./" class="nav-link text-body font-weight-bold pe-4">
+                                        <a href="{{ path('app_user_profile') }}" class="nav-link text-body font-weight-bold pe-4">
                                             <i class="material-symbols-rounded">account_circle</i>
                                         </a>
                                     </li>
-                                    <li class="mt-1">
-                                        <span></span>
-                                    </li>#}
-                                    <li class="nav-item d-flex align-items-center" style="margin-left: auto;">
+                                    <li class="nav-item d-flex align-items-center">
                                         <a class="btn btn-outline-primary btn-sm mb-0 me-3" href="/logout">Logout</a>
                                     </li>
                                 </ul>

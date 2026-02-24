@@ -3,9 +3,10 @@
 namespace App\Service;
 
 use App\Entity\Account;
+use App\Entity\Agent;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
-class DuplikiumClient
+class DeniesClient
 {
     private string $baseUrl;
     private string $username;
@@ -15,20 +16,17 @@ class DuplikiumClient
     public function __construct(HttpClientInterface $httpClient, string $baseUrl = "")
     {
         $this->httpClient = $httpClient;
-        $this->baseUrl = "https://www.trade-copier.com/webservice/v4/account/";
-        $this->username = "elvtdfinance";
-        $this->token = "Tk2NWU1MDJlNTAxNzk4NjdmNDllOGQ";
+        $this->baseUrl = "http://65.108.60.88:5021/api/trader/";
     }
 
     private function request(string $method, string $endpoint, array $data = [])
     {
         $response = $this->httpClient->request($method, $this->baseUrl . $endpoint, [
             'headers' => [
-                'Content-Type' => 'application/x-www-form-urlencoded',
-                'Auth-Username' => $this->username,
-                'Auth-Token' => $this->token,
+                'Accept' => '*/*',
+                'Content-Type' => 'application/json',
             ],
-            'body' => http_build_query($data),
+            'json' => $data,
             'verify_peer' => false,
             'verify_host' => false
         ]);
@@ -40,6 +38,11 @@ class DuplikiumClient
         }
 
         if ($statusCode !== 200) {
+
+/*            var_dump("$this->baseUrl . $endpoint");
+            var_dump("<pre>");
+            var_dump($response); die;*/
+
             $errorContent = $response->getContent(false);
             throw new \RuntimeException("Failed to request host api: HTTP $statusCode - $errorContent - Data: " . http_build_query($data));
         }
@@ -54,41 +57,22 @@ class DuplikiumClient
 
     public function addAccount(Account $account)
     {
-        $subscription = 'auto'; // Automaticaly select an available subscription
-
-        // Name zusammenstellen, ohne Sonderzeichen zu entfernen
-        $name = $account->getUser()->getId() . '-' . $account->getUser()->getUsername() . '-' . $account->getName();
-
-        // Passwort entschlüsseln
-        if($account->getPlatform() != 'ctrader') {
-            $decryptedPassword = $this->decryptPassword($account->getPassword(), $_SERVER['ENCRYPTION_KEY']);
-        }
+        $decryptedPassword = $this->decryptPassword($account->getPassword(), $_SERVER['ENCRYPTION_KEY']);
 
         // Adding data to POST
         $data = [
-            'type' => 1, // 0=Master, 1=Slave
-            'name' => $name,
-            'broker' => $account->getPlatform(), // mt4, mt5, ctrader, lmax, fxcm_fc
-            'login' => $account->getLogin(),
-            'password' => $account->getPlatform() == 'ctrader' ? '' : $decryptedPassword,
-            'server' => $account->getPlatform() == 'ctrader' ? '' : $account->getTradeServer(),
-            'environment' => 'Demo', // Demo, Real
-            'status' => '1', // The account is 0=disabled, 1=enabled
-            'group' => 'NULL', // Always an EMPTY string for Master
-            'subscription' => $subscription, // Always an EMPTY string for Master
-            'pending' => '0', // 0=disabled, 1=enabled
-            'stop_loss' => '0', // 0=disabled, 1=enabled
-            'take_profit' => '0', // 0=disabled, 1=enabled
-            'comment' => '', // Custom comment that appears in MT4 terminal trade comment. Only for MT4.
-            'alert_email' => '0', // 0=disabled, 1=enabled
-            'alert_sms' => '0',
-            'access_token' => $account->getPlatform() == 'ctrader' ? strval($account->getCtraderAccessToken()) : '',
-            'refresh_token' => $account->getPlatform() == 'ctrader' ? strval($account->getCtraderRefreshToken()) : '',
-            'expiry_token' =>$account->getPlatform() == 'ctrader' ?  strval($account->getCtraderTokenExpiresAt()->format('Y-m-d H:i:s')) : '',
+            'platform_name' => "Metatrader 5", // $account->getPlatform(),
+            'account_number' => $account->getLogin(),
+            'account_password' => $decryptedPassword,
+            'server_name' => $account->getTradeServer(),
+            'broker_name' => $account->getBroker(),
+            'user_id' => '1',
+            'role' => 'SLAVE',
         ];
 
+
         try {
-            $response = $this->request('POST', "addAccount.php", $data);
+            $response = $this->request('POST', "account", $data);
         }
         catch (\Exception $e) {
             throw new \RuntimeException('Fehler beim Verbinden mit dem Host: ' . $e->getMessage());
@@ -97,24 +81,230 @@ class DuplikiumClient
         return $response;
     }
 
+    public function getAccount(Account $account)
+    {
+        try {
+            $id_response = $this->request('GET', "account/paginated?PerPage=100&Page=1&AccountNumber=" . $account->getLogin());
+            $id = $id_response->data->data[0]->id;
+            $response = $this->request('GET', "account/" . $id);
+        }
+        catch (\Exception $e) {
+            throw new \RuntimeException('Fehler beim Verbinden mit dem Host: ' . $e->getMessage());
+        }
+
+        return $response;
+    }
+    public function updateSubscriber(Account $account, Agent $agent, float $multiplier)
+    {
+        try {
+            // 1. Get Slave Account ID
+            $slaveLogin = $account->getLogin();
+            $slaveData = $this->request('GET', "account/paginated?PerPage=1&Page=1&AccountNumber=" . $slaveLogin);
+            
+            if (empty($slaveData->data->data)) {
+                throw new \RuntimeException('Slave Account nicht in der Denies API gefunden.');
+            }
+            $slaveId = $slaveData->data->data[0]->id;
+
+            // 2. Get Master Account ID (Agent)
+            $masterLogin = $agent->getMetaId(); // Assuming Agent's meta_id stores the Denies login/ID
+            $masterData = $this->request('GET', "account/paginated?PerPage=1&Page=1&AccountNumber=" . $masterLogin);
+            
+            if (empty($masterData->data->data)) {
+                 throw new \RuntimeException('Master Account (Agent) nicht in der Denies API gefunden.');
+            }
+            $masterId = $masterData->data->data[0]->id;
+
+            // 3. Find Master-Slave relationship
+            $masterSlaveData = $this->request('GET', "master-slave/paginated?PerPage=1&Page=1&MasterId=" . $masterId . "&SlaveId=" . $slaveId);
+            $masterSlaveId = null;
+
+            if (empty($masterSlaveData->data->data)) {
+                 // Create Master-Slave relationship
+                 $createData = [
+                     'name' => $agent->getName() . ' - ' . $account->getName(),
+                     'master_id' => $masterId,
+                     'slave_id' => $slaveId
+                 ];
+                 $createResponse = $this->request('POST', "master-slave", $createData);
+                 
+                 // Need to fetch it again to get the ID, or assume the response returns it. 
+                 // Assuming POST /master-slave returns the created object or ID in 'data'
+                 if (isset($createResponse->data) && isset($createResponse->data->id)) {
+                      $masterSlaveId = $createResponse->data->id;
+                 } else {
+                     // Fallback: fetch again
+                     $masterSlaveDataRetry = $this->request('GET', "master-slave/paginated?PerPage=1&Page=1&MasterId=" . $masterId . "&SlaveId=" . $slaveId);
+                     if (!empty($masterSlaveDataRetry->data->data)) {
+                         $masterSlaveId = $masterSlaveDataRetry->data->data[0]->id;
+                     } else {
+                         throw new \RuntimeException('Konnte Master-Slave Beziehung nicht erstellen/finden.');
+                     }
+                 }
+            } else {
+                $masterSlaveId = $masterSlaveData->data->data[0]->id;
+            }
+
+            // 4. Set Config (Multiplier)
+            $configData = [
+                'master_slave_id' => $masterSlaveId,
+                'multiplier' => $multiplier
+            ];
+
+            // Swagger says POST /api/trader/master-slave-config
+            $response = $this->request('POST', "master-slave-config", $configData);
+
+            return $response;
+            
+        } catch (\Exception $e) {
+            throw new \RuntimeException('Fehler beim Verbinden mit dem Host (updateSubscriber): ' . $e->getMessage());
+        }
+    }
+
+    public function removeSubscriber(Account $account, Agent $agent)
+    {
+        try {
+            // 1. Get Slave Account ID
+            $slaveLogin = $account->getLogin();
+            $slaveData = $this->request('GET', "account/paginated?PerPage=1&Page=1&AccountNumber=" . $slaveLogin);
+            
+            if (empty($slaveData->data->data)) {
+                return true; // Already gone or not found
+            }
+            $slaveId = $slaveData->data->data[0]->id;
+
+            // 2. Get Master Account ID
+            $masterLogin = $agent->getMetaId(); 
+            $masterData = $this->request('GET', "account/paginated?PerPage=1&Page=1&AccountNumber=" . $masterLogin);
+            
+            if (empty($masterData->data->data)) {
+                 return true;
+            }
+            $masterId = $masterData->data->data[0]->id;
+
+            // 3. Find Master-Slave relationship
+            $masterSlaveData = $this->request('GET', "master-slave/paginated?PerPage=1&Page=1&MasterId=" . $masterId . "&SlaveId=" . $slaveId);
+            
+            if (!empty($masterSlaveData->data->data)) {
+                $masterSlaveId = $masterSlaveData->data->data[0]->id;
+                // Delete the relationship
+                return $this->request('DELETE', "master-slave/" . $masterSlaveId);
+            }
+            
+            return true;
+
+        } catch (\Exception $e) {
+             throw new \RuntimeException('Fehler beim Entfernen des Subscribers (Denies): ' . $e->getMessage());
+        }
+    }
+
+    public function getMultiplier(string $subscriberId) : array
+    {
+        try {
+            // 1. Get Account ID from Account Number
+            $accountData = $this->request('GET', "account/paginated?PerPage=1&Page=1&AccountNumber=" . $subscriberId);
+
+            if (empty($accountData->data->data)) {
+                 return ['multiplier' => 0.0, 'templateFullName' => "NOT CONNECTED (Account not found)"];
+            }
+
+            $accountId = $accountData->data->data[0]->id;
+
+            // 2. Get Master-Slave Pair to find MasterSlaveId
+            $masterSlaveData = $this->request('GET', "master-slave/paginated?PerPage=1&Page=1&SlaveId=" . $accountId);
+
+             if (empty($masterSlaveData->data->data)) {
+                 return ['multiplier' => 0.0, 'templateFullName' => "NOT CONNECTED (No Master-Slave Pair)"];
+            }
+
+            $masterSlaveId = $masterSlaveData->data->data[0]->id;
+
+            // 3. Get Config to get Multiplier
+            $configData = $this->request('GET', "master-slave/full-config/" . $masterSlaveId);
+
+            $multiplier = 0.0;
+            if (isset($configData->multiplier)) {
+                 $multiplier = $configData->multiplier;
+            } elseif (isset($configData->data) && isset($configData->data->multiplier)) {
+                $multiplier = $configData->data->multiplier;
+            }
+
+            // Map Multiplier to Template Name
+             $templateFullName = 'Custom Multiplier: ' . $multiplier;
+
+             if ($multiplier == 1.0) $templateFullName = 'DailyGrowthFX-1';
+             elseif ($multiplier == 2.0) $templateFullName = 'DailyGrowthFX-2';
+             elseif ($multiplier == 3.0) $templateFullName = 'DailyGrowthFX-3';
+             elseif ($multiplier == 4.0) $templateFullName = 'DailyGrowthFX-4';
+             elseif ($multiplier == 5.0) $templateFullName = 'DailyGrowthFX-5';
+
+             return ['multiplier' => $multiplier, 'templateFullName' => $templateFullName];
+
+        } catch (\Exception $e) {
+             return ['multiplier' => 0.0, 'templateFullName' => "ERROR: " . $e->getMessage()];
+        }
+    }
+
     public function updateAccount(Account $account, $template = "")
     {
-        $data = [
-            'account_id' => $account->getMetaId(),
-            'type' => 1, // 0=Master, 1=Slave
-            'group' => $template,
-        ];
+         $multiplier = 1.0;
 
-        return $this->request('POST', "updateAccount.php", $data);
+         if (preg_match('/DailyGrowthFX-(\d+)/', $template, $matches)) {
+             $multiplier = (float)$matches[1];
+         } elseif (is_numeric($template)) {
+             $multiplier = (float)$template;
+         }
+
+         // Since updateAccount doesn't have the Agent context natively,
+         // we need to find the active Master-Slave relationship instead of creating one.
+         try {
+             $slaveLogin = $account->getLogin();
+             $slaveData = $this->request('GET', "account/paginated?PerPage=1&Page=1&AccountNumber=" . $slaveLogin);
+             
+             if (empty($slaveData->data->data)) {
+                 return false;
+             }
+             $slaveId = $slaveData->data->data[0]->id;
+
+             // Find active master-slave relationship for this slave
+             $masterSlaveData = $this->request('GET', "master-slave/paginated?PerPage=1&Page=1&SlaveId=" . $slaveId);
+             
+             if (!empty($masterSlaveData->data->data)) {
+                 $masterSlaveId = $masterSlaveData->data->data[0]->id;
+                 
+                 $configData = [
+                     'master_slave_id' => $masterSlaveId,
+                     'multiplier' => $multiplier
+                 ];
+                 return $this->request('POST', "master-slave-config", $configData);
+             }
+         } catch (\Exception $e) {
+             // Silently fail or log, as updateAccount is often a fallback
+         }
+         
+         return false;
     }
 
     public function deleteAccount($account)
     {
-        $data = [
-            'account_id' => $account,
-        ];
+        try {
+            $id = $account;
 
-        return $this->request('POST', "deleteAccount.php", $data);
+            if (is_object($account) && method_exists($account, 'getLogin')) {
+                 $login = $account->getLogin();
+                 $accountData = $this->request('GET', "account/paginated?PerPage=1&Page=1&AccountNumber=" . $login);
+                 if (!empty($accountData->data->data)) {
+                    $id = $accountData->data->data[0]->id;
+                 } else {
+                     return true;
+                 }
+            }
+
+             return $this->request('DELETE', "account/" . $id);
+
+        } catch (\Exception $e) {
+             throw new \RuntimeException('Fehler beim Löschen des Accounts: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -144,146 +334,5 @@ class DuplikiumClient
         }
 
         return $decrypted;
-    }
-
-    public function getMultiplier(string $subscriberId) : array
-    {
-        $filter = ['account_id' => $subscriberId];
-
-        try {
-            $response = $this->request('POST', "getAccounts.php", $filter);
-        }
-        catch (\Exception $e) {
-            throw new \RuntimeException('Fehler beim Verbinden mit dem Host: ' . $e->getMessage());
-        }
-
-        if (isset($response->accounts[0]->groupid)) {
-            
-            $groupId = $response->accounts[0]->groupid;
-
-            $multiplier = null;
-            $templateFullName = null;
-
-            switch ($groupId) {
-                // DailyGrowthFX (VqND)
-                case 'cwZdfafq':
-                    $multiplier = 1.0;
-                    $templateFullName = 'DailyGrowthFX-1';
-                    break;
-                case 'LSOdfafq':
-                    $multiplier = 1.0;
-                    $templateFullName = 'DailyGrowthFX-1 (FTMO)';
-                    break;
-                case 'mytdfafq':
-                    $multiplier = 1.0;
-                    $templateFullName = 'DailyGrowthFX-1 (FTMO)';
-                    break;
-                case 'wUtdfafq':
-                    $multiplier = 1.0;
-                    $templateFullName = 'DailyGrowthFX-1 (ROBOFOREX)';
-                    break;
-                case 'wmZdfafq':
-                    $multiplier = 2.0;
-                    $templateFullName = 'DailyGrowthFX-2';
-                    break;
-                case 'Uatdfafq':
-                    $multiplier = 2.0;
-                    $templateFullName = 'DailyGrowthFX-2 (FTMO)';
-                    break;
-                case 'Jytdfafq':
-                    $multiplier = 2.0;
-                    $templateFullName = 'DailyGrowthFX-2 (ROBOFOREX)';
-                    break;
-                case 'JEZdfafq':
-                    $multiplier = 3.0;
-                    $templateFullName = 'DailyGrowthFX-3';
-                    break;
-                case 'catdfafq':
-                    $multiplier = 3.0;
-                    $templateFullName = 'DailyGrowthFX-3 (FTMO)';
-                    break;
-                case 'aytdfafq':
-                    $multiplier = 3.0;
-                    $templateFullName = 'DailyGrowthFX-3 (ROBOFOREX)';
-                    break;
-                case 'aEZdfafq':
-                    $multiplier = 4.0;
-                    $templateFullName = 'DailyGrowthFX-4';
-                    break;
-                case 'tatdfafq':
-                    $multiplier = 4.0;
-                    $templateFullName = 'DailyGrowthFX-4 (FTMO)';
-                    break;
-                case 'Zytdfafq':
-                    $multiplier = 4.0;
-                    $templateFullName = 'DailyGrowthFX-4 (ROBOFOREX)';
-                    break;
-                case 'ZEZdfafq':
-                    $multiplier = 5.0;
-                    $templateFullName = 'DailyGrowthFX-5';
-                    break;
-                case 'Latdfafq':
-                    $multiplier = 5.0;
-                    $templateFullName = 'DailyGrowthFX-5 (FTMO)';
-                    break;
-                case 'fytdfafq':
-                    $multiplier = 5.0;
-                    $templateFullName = 'DailyGrowthFX-5 (ROBOFOREX)';
-                    break;
-
-                // CoreGrowth EURUSD (C63c)
-                case 'fEZdfafq':
-                    $multiplier = 1.0;
-                    $templateFullName = 'CoreGrowth-EURUSD-1';
-                    break;
-                case 'mEZdfafq':
-                    $multiplier = 2.0;
-                    $templateFullName = 'CoreGrowth-EURUSD-2';
-                    break;
-                case 'cJhdfafq':
-                    $multiplier = 3.0;
-                    $templateFullName = 'CoreGrowth-EURUSD-3';
-                    break;
-                case 'tJhdfafq':
-                    $multiplier = 4.0;
-                    $templateFullName = 'CoreGrowth-EURUSD-4';
-                    break;
-                case 'LJhdfafq':
-                    $multiplier = 5.0;
-                    $templateFullName = 'CoreGrowth-EURUSD-5';
-                    break;
-
-                // CoreGrowth USDCHF (Z6iT)
-                case 'qphdfafq':
-                    $multiplier = 1.0;
-                    $templateFullName = 'CoreGrowth-USDCHF-1';
-                    break;
-                case 'Gphdfafq':
-                    $multiplier = 2.0;
-                    $templateFullName = 'CoreGrowth-USDCHF-2';
-                    break;
-                case 'rphdfafq':
-                    $multiplier = 3.0;
-                    $templateFullName = 'CoreGrowth-USDCHF-3';
-                    break;
-                case 'Zqhdfafq':
-                    $multiplier = 4.0;
-                    $templateFullName = 'CoreGrowth-USDCHF-4';
-                    break;
-                case 'aqhdfafq':
-                    $multiplier = 5.0;
-                    $templateFullName = 'CoreGrowth-USDCHF-5';
-                    break;
-
-                default:
-                    // throw new \Exception('Unbekannte group_id: ' . $groupId);
-                    $multiplier = 0.0;
-                    $templateFullName = 'UNSET';
-            }
-
-            return ['multiplier' => $multiplier, 'templateFullName' => $templateFullName];
-        }
-
-        return ['multiplier' => 0.0, 'templateFullName' => "NOT CONNECTED"];
     }
 }

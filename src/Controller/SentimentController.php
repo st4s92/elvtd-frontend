@@ -6,16 +6,16 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-class AgbController extends AbstractController
+class SentimentController extends AbstractController
 {
     /**
-     * @Route("/agb", name="app_agb")
+     * @Route("/sentiment", name="app_sentiment")
      */
     public function index(): Response
     {
 
 
-        return $this->render('pages/agb.html.twig', [
-            'controller_name' => 'AGB']);
+        return $this->render('pages/sentiment.html.twig', [
+            'controller_name' => 'Sentiment']);
     }
 }

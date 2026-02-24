@@ -1,61 +1,251 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}AGB{% endblock %}
+{% block title %}Sentiment - Community Outlook{% endblock %}
 
 {% block body %}
-<div class="container">
-    <h3>Allgemeine Geschäftsbedingungen (AGB) von ELVTD Finance</h3>
-    <p>Willkommen bei ELVTD Finance! Durch den Zugriff auf unsere Webseite <a href="https://elvtdfinance.com">https://elvtdfinance.com</a> oder die Nutzung unserer Produkte und Dienstleistungen erklären Sie sich mit den nachfolgenden Allgemeinen Geschäftsbedingungen (AGB) in ihrer Gesamtheit einverstanden. Bitte nutzen Sie unsere Webseite nicht, wenn Sie diesen Bedingungen nicht zustimmen.</p>
+    <div class="container-fluid py-4" style="background: #0a0e17; color: #e0e0e0; min-height: 100vh;">
+        <style>
+            body {
+                font-family: 'Inter', system-ui, -apple-system, sans-serif;
+                background: #0a0e17;
+                color: #e0e0e0;
+                margin: 0;
+                padding: 0;
+            }
+            .container-fluid {
+                max-width: 1400px;
+                padding: 1.5rem;
+            }
+            .card {
+                background: #111827;
+                border: 1px solid #1f2937;
+                border-radius: 10px;
+                overflow: hidden;
+            }
+            .card-header {
+                background: #1f2937;
+                border-bottom: 1px solid #374151;
+                padding: 1rem 1.5rem;
+                font-weight: 600;
+                color: #f3f4f6;
+            }
+            .sentiment-badge {
+                font-size: 0.8rem;
+                padding: 0.4em 0.85em;
+                border-radius: 1rem;
+                font-weight: 600;
+                white-space: nowrap;
+            }
+            .short-badge   { background: #991b1b; color: white; }
+            .long-badge    { background: #166534;  color: white; }
+            .balanced-badge{ background: #854d0e; color: white; }
 
-    <strong>1. Einführung</strong>
-    <p>Diese AGB gelten für alle Besucher, Nutzer und sonstigen Personen, die auf unsere Dienstleistungen zugreifen oder diese nutzen. Bitte lesen Sie diese AGB sorgfältig durch, bevor Sie unsere Webseite oder unsere Dienstleistungen in Anspruch nehmen.</p>
+            .progress {
+                height: 10px;
+                background: #1f2937;
+                border-radius: 5px;
+                overflow: hidden;
+            }
+            .progress-short  { background: linear-gradient(90deg, #dc2626, #f87171); }
+            .progress-long   { background: linear-gradient(90deg, #16a34a, #4ade80); }
 
-    <strong>2. Mitgliedschaft und Abonnements</strong>
-    <p>Durch die Bestellung eines Abonnements bei ELVTD Finance bestätigen Sie, dass Sie diese AGB gelesen und akzeptiert haben. Sie ermächtigen uns, Ihre angegebene Zahlungsmethode gemäß dem von Ihnen gewählten Abrechnungszeitraum automatisch zu belasten.</p>
+            tr.symbol-row:hover {
+                background: #1f2937 !important;
+                transition: background 0.15s;
+            }
+            .symbol-name {
+                font-weight: 600;
+                color: #60a5fa;
+            }
+            .text-red    { color: #ef4444 !important; }
+            .text-green  { color: #22c55e !important; }
+            .text-orange { color: #f59e0b !important; }
 
-    <strong>3. Zahlung</strong>
-    <p>ELVTD Finance verlangt, dass Sie mindestens eine gültige Zahlungsmethode in Form einer Debit- oder Kreditkarte angeben, um sich für ein Abonnement anzumelden. Durch die Aktualisierung Ihrer Zahlungsdetails ermächtigen Sie uns, Ihre gespeicherte Zahlungsmethode für die Gebühren im Zusammenhang mit Ihrem Abonnement zu belasten.</p>
+            .last-sync {
+                font-size: 0.85rem;
+                color: #9ca3af;
+            }
+            #loading, #error {
+                min-height: 400px;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+            }
+        </style>
 
-    <strong>4. Rückbuchungen (Chargebacks)</strong>
-    <p>Sie erklären sich damit einverstanden, keine Rückbuchungen für Käufe bei ELVTD Finance zu veranlassen. Bitte kontaktieren Sie stattdessen unseren Support unter <a href="mailto:support@elvtdfinance.com">support@elvtdfinance.com</a>, um eventuelle Probleme zu klären.</p>
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+            <h3 class="mb-0">Sentiments</h3>
+            <div class="d-flex align-items-center gap-3">
+                <div class="last-sync">
+                    Last synced: <span id="last-sync-time">loading...</span>
+                    <button class="btn btn-sm btn-outline-light ms-2" onclick="window.loadData && window.loadData(true)" title="Refresh now">
+                        <i class="bi bi-arrow-repeat"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
 
-    <strong>5. Kündigung des Dienstes</strong>
-    <p>Sie können Ihr Abonnement jederzeit über das Dashboard auf unserer Webseite kündigen. Sie haben bis zum Ende des aktuellen Abrechnungszeitraums weiterhin Zugriff auf unsere Dienste.</p>
+        <ul class="nav nav-tabs mb-4 border-bottom-0">
+            <li class="nav-item">
+                <a class="nav-link active" href="#">Overview</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link disabled" href="#">Listing</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link disabled" href="#">Brokers</a>
+            </li>
+        </ul>
 
-    <strong>6. Rückerstattungsrichtlinie</strong>
-    <p>Es werden keine Rückerstattungen für Testphasen, monatliche oder jährliche Abonnements gewährt, auch nicht, wenn das Abonnement am selben Tag der automatischen Verlängerung gekündigt wird.</p>
+        <div id="loading" class="text-center my-5">
+            <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
+            <p class="lead">Lade Community Outlook von Myfxbook...</p>
+        </div>
 
-    <strong>7. Konto</strong>
-    <p>Das von Ihnen registrierte Konto bei ELVTD Finance ist nur für den persönlichen Gebrauch bestimmt. Sie dürfen Ihre Kontodaten oder Anmeldeinformationen nicht mit anderen Personen teilen.</p>
-    <ul>
-        <li>Sie sind für die Sicherheit Ihres Kontos und Ihres Passworts verantwortlich. ELVTD Finance haftet nicht für Verluste oder Schäden, die durch Ihre Nichteinhaltung dieser Sicherheitsverpflichtung entstehen.</li>
-        <li>Sie tragen die Verantwortung für alle Aktivitäten, die über Ihr Konto erfolgen.</li>
-        <li>Bei der Nutzung der Dienste versichern Sie, alle geltenden Gesetze einzuhalten und Folgendes zu unterlassen:
-            <ul>
-                <li>Unbefugte Nutzung der Dienste oder Erstellung von Benutzerkonten durch automatisierte Methoden oder unter falschen Angaben.</li>
-                <li>Hochladen einer übermäßigen Anzahl von Transaktionen oder Dokumenten, um die Dienste zu stören.</li>
-                <li>Missbrauch von Angeboten, Werbeaktionen oder Rabatten, einschließlich der Erstellung fiktiver Benutzerkonten.</li>
-                <li>Umgehung oder Störung von Sicherheitsfunktionen der Dienste.</li>
-            </ul>
-        </li>
-    </ul>
+        <div id="error" class="alert alert-danger d-none my-4" role="alert"></div>
 
-    <strong>8. Links zu anderen Webseiten</strong>
-    <p>Unsere Dienste können Links zu Webseiten oder Diensten Dritter enthalten, die nicht im Besitz oder unter der Kontrolle von ELVTD Finance stehen. Wir sind nicht verantwortlich für die Inhalte, Datenschutzrichtlinien oder Praktiken dieser Drittanbieter.</p>
+        <div class="card d-none" id="outlook-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>News & Positioning Feed · Market</div>
+                <i class="bi bi-info-circle" title="Community sentiment based on Myfxbook traders"></i>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-dark table-hover mb-0">
+                    <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Community Trend</th>
+                        <th>Open Interest / Positions</th>
+                        <th>Avg Short</th>
+                        <th>Avg Long</th>
+                        <th>Current</th>
+                    </tr>
+                    </thead>
+                    <tbody id="outlook-table"></tbody>
+                </table>
+            </div>
+        </div>
 
-    <strong>9. Haftungsausschluss</strong>
-    <p>Die Nutzung unserer Dienste erfolgt auf eigenes Risiko. ELVTD Finance übernimmt keine Haftung für direkte oder indirekte Schäden, die aus der Nutzung unserer Dienste resultieren.</p>
-    <p>ELVTD Finance bietet eine leistungsstarke Lösung zur vollständigen Automatisierung der Handelseröffnung und -ausführung über Webhooks, die direkt mit Ihren Broker- und Börsenkonten verknüpft sind. Es ist jedoch wichtig zu beachten, dass die Automatisierung von Handelsaktivitäten mit inhärenten Risiken verbunden ist. Unabhängig davon, ob Sie ein Anfänger oder ein erfahrener Händler sind, ist es unerlässlich, den automatisierten Handel mit Vorsicht zu betreiben und sich der potenziellen Gefahren bewusst zu sein.</p>
-    <p>DURCH DIE NUTZUNG VON ELVTD FINANCE BESTÄTIGEN SIE, DASS IHNEN DIE RISIKEN IM ZUSAMMENHANG MIT DER AUTOMATISIERUNG VON HANDELSGESCHÄFTEN AUF DER PLATTFORM BEKANNT SIND UND DASS SIE DIE VOLLE VERANTWORTUNG FÜR DIESE RISIKEN ÜBERNEHMEN.</p>
-    <p>Indem Sie ELVTD Finance weiterhin nutzen, erklären Sie sich damit einverstanden, das Unternehmen, seine Muttergesellschaft, Partnerunternehmen und Mitarbeiter von jeglichen Ansprüchen, Verbindlichkeiten, Kosten, Verlusten, Schäden oder Ausgaben freizustellen, die sich aus oder im Zusammenhang mit Ihrer Nutzung der Plattform ergeben. Dies umfasst, jedoch nicht ausschließlich, jegliche Komplikationen, die durch Systemfehler, Fehlfunktionen oder Ausfallzeiten von ELVTD Finance oder dessen Drittanbietern verursacht werden. Sie tragen die volle Verantwortung für die Überwachung Ihrer Handelsaktivitäten und die korrekte Ausführung Ihrer Handelssignale. Durch die Nutzung von ELVTD Finance akzeptieren Sie diesen Haftungsausschluss und bestätigen, dass Sie die Nutzungsbedingungen sowie die Datenschutzrichtlinien von ELVTD Finance gelesen, verstanden und akzeptiert haben, einschließlich zusätzlicher Haftungsausschlüsse und Einschränkungen.</p>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const loading = document.getElementById('loading');
+                const errorEl = document.getElementById('error');
+                const card = document.getElementById('outlook-card');
+                const tbody = document.getElementById('outlook-table');
+                const syncEl = document.getElementById('last-sync-time');
 
-    <strong>10. Anwendbares Recht</strong>
-    <p>Diese AGB unterliegen dem Recht des Vereinigten Königreichs. Im Falle von Streitigkeiten ist der Gerichtsstand London.</p>
+                if (!loading || !errorEl || !card || !tbody || !syncEl) {
+                    console.error('Fehlende DOM-Elemente');
+                    if (errorEl) {
+                        errorEl.innerHTML = 'Interner Fehler: Fehlende Elemente. Bitte neu laden.';
+                        errorEl.classList.remove('d-none');
+                    }
+                    return;
+                }
 
-    <strong>11. Änderungen der AGB</strong>
-    <p>Wir behalten uns das Recht vor, diese AGB jederzeit zu ändern. Falls wesentliche Änderungen vorgenommen werden, bemühen wir uns, Sie mindestens 30 Tage vor Inkrafttreten der neuen Bedingungen zu informieren.</p>
+                let lastSyncTime = Date.now();
 
-    <strong>12. Kontakt</strong>
-    <p>Bei Fragen zu diesen AGB können Sie uns per E-Mail unter <a href="mailto:support@elvtdfinance.com">support@elvtdfinance.com</a> kontaktieren.</p>
-</div>
+                async function loadData(silent = false) {
+                    if (!silent) {
+                        loading.classList.remove("d-none");
+                        card.classList.add("d-none");
+                        errorEl.classList.add("d-none");
+                        tbody.innerHTML = "";
+                    }
+
+                    try {
+                        const res = await fetch('/api/myfxbook/outlook');
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+                        const json = await res.json();
+
+                        if (json.error) {
+                            throw new Error(json.message || "API-Fehler");
+                        }
+
+                        lastSyncTime = Date.now();
+                        updateSyncTime();
+
+                        renderOutlook(json.symbols || []);
+
+                        loading.classList.add("d-none");
+                        card.classList.remove("d-none");
+
+                    } catch (err) {
+                        console.error(err);
+                        errorEl.textContent = "Daten konnten nicht geladen werden: " + err.message;
+                        errorEl.classList.remove("d-none");
+                        loading.classList.add("d-none");
+                    }
+                }
+
+                function updateSyncTime() {
+                    const elapsed = Math.round((Date.now() - lastSyncTime) / 1000);
+                    syncEl.textContent = `${elapsed}s ago`;
+                }
+
+                function renderOutlook(symbols) {
+                    tbody.innerHTML = "";
+
+                    symbols.forEach(item => {
+                        const shortPct = Math.round(item.shortPercentage || 0);
+                        const longPct  = Math.round(item.longPercentage  || 0);
+
+                        let trendText = `${shortPct}% Short`;
+                        let trendClass = "short-badge";
+
+                        if (longPct > shortPct + 5) {
+                            trendText = `${longPct}% Long`;
+                            trendClass = "long-badge";
+                        } else if (Math.abs(shortPct - longPct) <= 10) {
+                            trendText = "Balanced";
+                            trendClass = "balanced-badge";
+                        }
+
+                        // Check if it's an index (simple heuristic for now)
+                        const isIndex = ['US30', 'US100', 'GER40', 'JP225', 'UK100'].includes(item.name);
+                        const symbolBadge = isIndex 
+                            ? `<span class="badge bg-secondary ms-2" style="font-size: 0.65rem;">INDEX</span>` 
+                            : '';
+
+                        const row = document.createElement("tr");
+                        row.className = "symbol-row";
+                        row.innerHTML = `
+                    <td class="symbol-name">
+                        <div class="d-flex align-items-center">
+                            ${item.name || '—'}
+                            ${symbolBadge}
+                        </div>
+                    </td>
+                    <td>
+                        <span class="sentiment-badge ${trendClass}">${trendText}</span>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="progress flex-grow-1" style="width:140px;" title="Short: ${shortPct}% / Long: ${longPct}%">
+                                <div class="progress-bar progress-bar-short" style="width:${shortPct}%"></div>
+                                <div class="progress-bar progress-bar-long" style="width:${longPct}%"></div>
+                            </div>
+                            <small class="text-muted" title="Total Positions">${(item.totalPositions || 0).toLocaleString()}</small>
+                        </div>
+                    </td>
+                    <td class="text-red">${(item.avgShortPrice || 0).toFixed(4)}</td>
+                    <td class="text-green">${(item.avgLongPrice || 0).toFixed(4)}</td>
+                    <td class="fw-bold">—</td>
+                `;
+                        tbody.appendChild(row);
+                    });
+                }
+
+                window.loadData = loadData;
+
+                loadData();
+
+                setInterval(() => loadData(true), 60000);
+                setInterval(updateSyncTime, 1000);
+            });
+        </script>
+
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 {% endblock %}

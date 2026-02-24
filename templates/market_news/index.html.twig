@@ -1,0 +1,414 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Market News{% endblock %}
+
+{% block body %}
+<div class="container-fluid py-4">
+    <style>
+        .news-header-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #111827; /* Dark text */
+            margin-bottom: 1.5rem;
+        }
+        
+        /* Filters */
+        .news-filters {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid #e5e7eb; /* Light border */
+            padding-bottom: 0.5rem;
+            overflow-x: auto;
+        }
+        .filter-btn {
+            background: none;
+            border: none;
+            color: #6b7280; /* Gray-500 */
+            font-weight: 500;
+            padding: 0.5rem 0;
+            cursor: pointer;
+            position: relative;
+            white-space: nowrap;
+        }
+        .filter-btn:hover {
+            color: #374151; /* Gray-700 */
+        }
+        .filter-btn.active {
+            color: #10b981; /* Green accent */
+        }
+        .filter-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -0.5rem;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: #10b981;
+        }
+        
+        /* Controls */
+        .news-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .search-wrapper {
+            position: relative;
+            flex-grow: 1;
+            max-width: 300px;
+        }
+        .search-input {
+            width: 100%;
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem 0.5rem 2.5rem;
+            color: #111827;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+        .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+        }
+        
+        .impact-dropdown {
+            background: #ffffff;
+            border: 1px solid #d1d5db;
+            color: #111827;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+        }
+
+        /* Grid */
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        /* Card */
+        .news-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05); /* Subtle shadow */
+        }
+        .news-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-color: #d1d5db;
+        }
+        
+        .news-meta-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
+            font-size: 0.75rem;
+            color: #6b7280;
+        }
+        
+        .badges {
+            display: flex;
+            gap: 0.5rem;
+        }
+        .badge-custom {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        /* Keep badge colors as they are generally good, maybe tweak backgrounds for light mode legibility if needed, but they seem okay */
+        .badge-impact-high { background: #fee2e2; color: #991b1b; }
+        .badge-impact-med { background: #fef3c7; color: #92400e; }
+        .badge-impact-low { background: #dcfce7; color: #166534; }
+        
+        .badge-sentiment-bull { background: #dcfce7; color: #166534; }
+        .badge-sentiment-bear { background: #fee2e2; color: #991b1b; }
+        .badge-sentiment-neutral { background: #f3f4f6; color: #374151; }
+
+        .news-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+        
+        .news-source {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-bottom: 0.75rem;
+        }
+        
+        .news-content {
+            font-size: 0.875rem;
+            color: #4b5563;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+            flex-grow: 1;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .news-image {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            background-color: #f3f4f6;
+        }
+
+        .news-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+        }
+        .read-more {
+            color: #10b981;
+            font-size: 0.875rem;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-weight: 500;
+        }
+        .read-more:hover {
+            text-decoration: underline;
+            color: #059669;
+        }
+        
+        .bookmark-btn {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            transition: color 0.15s;
+        }
+        .bookmark-btn:hover {
+            color: #111827;
+        }
+
+        .load-more-container {
+            text-align: center;
+            margin-top: 2rem;
+        }
+    </style>
+
+    <h1 class="news-header-title">Market News</h1>
+
+    <div class="news-filters">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="forex">Forex</button>
+        <button class="filter-btn" data-filter="stocks">Indices</button> {# Mapping Stocks to Indices for UI match #}
+        <button class="filter-btn" data-filter="financialjuice">FinancialJuice</button>
+        <button class="filter-btn" data-filter="stockmarket">StockMarket.com</button>
+        <button class="filter-btn" data-filter="marketbeat_alerts">Alerts</button>
+        <button class="filter-btn" data-filter="crypto">Crypto</button>
+        <button class="filter-btn" data-filter="commodities">Commodities</button>
+        {# <button class="filter-btn" data-filter="bookmarked">Bookmarked</button> #}
+    </div>
+
+    <div class="news-controls">
+        <div class="search-wrapper">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" class="search-input" id="newsSearch" placeholder="Search">
+        </div>
+        {# Impact filter visually present but functionally limited as RSS lacks this data #}
+        <select class="impact-dropdown">
+            <option>Impact: All</option>
+            <option>High</option>
+            <option>Medium</option>
+            <option>Low</option>
+        </select>
+    </div>
+
+    <div class="news-grid" id="newsGrid">
+        {% for item in newsItems %}
+            <div class="news-card" data-category="{{ item.category }}" data-title="{{ item.title|lower }}">
+                <div class="news-meta-top">
+                    <div class="badges">
+                        {# Mock badges for visual consistency with screenshot #}
+                        {% if item.category == 'forex' %}
+                             <span class="badge-custom badge-impact-med">Medium Impact</span>
+                        {% elseif item.category == 'crypto' %}
+                             <span class="badge-custom badge-impact-high">High Impact</span>
+                        {% elseif item.category == 'financialjuice' %}
+                             <span class="badge-custom badge-sentiment-bear" style="background:#ef4444; color:#fff;">Breaking</span>
+                        {% elseif item.category == 'stockmarket' %}
+                             <span class="badge-custom badge-sentiment-bull" style="background:#3b82f6; color:#fff;">News</span>
+                        {% elseif item.category == 'marketbeat_alerts' %}
+                             <span class="badge-custom badge-impact-high" style="background:#7c3aed; color:#fff;">Instant Alert</span>
+                        {% else %}
+                             <span class="badge-custom badge-sentiment-neutral">Neutral</span>
+                        {% endif %}
+                    </div>
+                    <span><i class="far fa-clock me-1"></i> {{ item.timeAgo }}</span>
+                </div>
+
+                {% if item.imageUrl %}
+                    <img src="{{ item.imageUrl }}" alt="News Image" class="news-image" loading="lazy">
+                {% endif %}
+
+                <div class="news-title">{{ item.title }}</div>
+                
+                <div class="news-source">
+                    <i class="fas fa-rss"></i>
+                    <span>{{ item.author }}</span>
+                    <i class="fas fa-globe-americas ms-2"></i>
+                    <span>Global</span>
+                </div>
+
+                {# Description not always available in these RSS feeds properly, sometimes title is enough #}
+                {# <div class="news-content"></div> #}
+
+                <div class="news-footer">
+                    <a href="#" class="read-more" 
+                       data-bs-toggle="modal" 
+                       data-bs-target="#newsModal"
+                       data-title="{{ item.title }}"
+                       data-content="{{ item.description|default('No distinct content available in feed. Please read the full article at source.') }}"
+                       data-image="{{ item.imageUrl }}"
+                       data-source="{{ item.author }}"
+                       data-date="{{ item.timeAgo }}"
+                       data-link="{{ item.link }}">
+                        Read More <i class="fas fa-expand-alt ms-1" style="font-size: 0.7em;"></i>
+                    </a>
+                    <button class="bookmark-btn">
+                        <i class="far fa-bookmark"></i>
+                    </button>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <div class="load-more-container d-none" id="noResults">
+        <p class="text-muted">No news found matching your criteria.</p>
+    </div>
+
+    <!-- News Modal -->
+    <div class="modal fade" id="newsModal" tabindex="-1" aria-labelledby="newsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content" style="background: #ffffff; color: #111827; border: none; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
+                <div class="modal-header" style="border-bottom: 1px solid #e5e7eb;">
+                    <h5 class="modal-title" id="newsModalLabel">News Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <img id="modalImage" src="" alt="" class="img-fluid mb-3 rounded d-none" style="width: 100%; max-height: 300px; object-fit: cover;">
+                    <h4 id="modalTitle" class="mb-3"></h4>
+                    <div class="d-flex justify-content-between text-muted mb-3 small">
+                        <span id="modalSource"></span>
+                        <span id="modalDate"></span>
+                    </div>
+                    <p id="modalContent" class="text-body"></p>
+                </div>
+                <div class="modal-footer" style="border-top: 1px solid #e5e7eb;">
+                    <a href="#" id="modalLink" target="_blank" class="btn btn-outline-dark btn-sm">Read Original</a>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const filters = document.querySelectorAll('.filter-btn');
+        const cards = document.querySelectorAll('.news-card');
+        const searchInput = document.getElementById('newsSearch');
+        const noResults = document.getElementById('noResults');
+
+        function filterNews() {
+            const category = document.querySelector('.filter-btn.active').getAttribute('data-filter');
+            const query = searchInput.value.toLowerCase();
+            let visibleCount = 0;
+
+            cards.forEach(card => {
+                const cardCategory = card.getAttribute('data-category');
+                const cardTitle = card.getAttribute('data-title');
+                
+                const matchesCategory = category === 'all' || cardCategory === category;
+                const matchesSearch = cardTitle.includes(query);
+
+                if (matchesCategory && matchesSearch) {
+                    card.style.display = 'flex';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            if (visibleCount === 0) {
+                noResults.classList.remove('d-none');
+            } else {
+                noResults.classList.add('d-none');
+            }
+        }
+
+        filters.forEach(btn => {
+            btn.addEventListener('click', function() {
+                filters.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                filterNews();
+            });
+        });
+
+        searchInput.addEventListener('input', filterNews);
+
+        const newsModal = document.getElementById('newsModal');
+        if (newsModal) {
+            newsModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                
+                const title = button.getAttribute('data-title');
+                const content = button.getAttribute('data-content');
+                const image = button.getAttribute('data-image');
+                const source = button.getAttribute('data-source');
+                const date = button.getAttribute('data-date');
+                const link = button.getAttribute('data-link');
+
+                const modalTitle = newsModal.querySelector('#modalTitle');
+                const modalContent = newsModal.querySelector('#modalContent');
+                const modalImage = newsModal.querySelector('#modalImage');
+                const modalSource = newsModal.querySelector('#modalSource');
+                const modalDate = newsModal.querySelector('#modalDate');
+                const modalLink = newsModal.querySelector('#modalLink');
+
+                modalTitle.textContent = title;
+                modalContent.textContent = content; // Note: if content is HTML, use innerHTML, but stripped in backend so textContent is safer
+                modalSource.textContent = source;
+                modalDate.textContent = date;
+                modalLink.href = link;
+
+                if (image) {
+                    modalImage.src = image;
+                    modalImage.classList.remove('d-none');
+                } else {
+                    modalImage.classList.add('d-none');
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

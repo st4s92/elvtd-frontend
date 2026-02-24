@@ -188,15 +188,15 @@
                                                     <span class="d-block text-white text-xs text-center my-4">Dein Abonnement läuft bis zum <strong>{{ subscription.currentPeriodEnd|date('d.m.Y H:i:s') }}</strong></span>
                                                 {% endif %}
                                             {% else %}
-                                                <a href="https://elaliholding.com/?add-to-cart=55229" target="_blank" class="w-100 btn btn-icon bg-gradient-success mt-3 mb-0 d-flex justify-content-center">
+                                                <a href="https://shop.elaliholding.com/?add-to-cart=55229" target="_blank" class="w-100 btn btn-icon bg-gradient-success mt-3 mb-0 d-flex justify-content-center">
                                                     Jetzt starten (Kreditkarte)
                                                     <i class="fas fa-arrow-right my-auto mx-1"></i>
                                                 </a>
-                                                <br>
+                                                <br>{#
                                                 <a href="https://copecart.com/products/cdf18f78/checkout" target="_blank" class="w-100 btn btn-icon bg-gradient-success mt-0 mb-0 d-flex justify-content-center">
                                                     Jetzt starten (PayPal)
                                                     <i class="fas fa-arrow-right my-auto mx-1"></i>
-                                                </a>
+                                                </a>#}
                                             {% endif %}
                                         </div>
                                     </div>
@@ -310,15 +310,15 @@
                                                     <span class="d-block text-white text-xs text-center my-4">Dein Abonnement läuft bis zum <strong>{{ subscription.currentPeriodEnd|date('d.m.Y H:i:s') }}</strong></span>
                                                 {% endif %}
                                             {% else %}
-                                                <a href="https://elaliholding.com/?add-to-cart=55231" target="_blank" class="w-100 btn btn-icon bg-gradient-success mt-3 mb-0 d-flex justify-content-center">
+                                                <a href="https://shop.elaliholding.com/?add-to-cart=55231" target="_blank" class="w-100 btn btn-icon bg-gradient-success mt-3 mb-0 d-flex justify-content-center">
                                                     Jetzt starten (Kreditkarte)
                                                     <i class="fas fa-arrow-right my-auto mx-1"></i>
                                                 </a>
-                                                <br>
+                                                <br>{#
                                                 <a href="https://copecart.com/products/c46a571a/checkout" target="_blank" class="w-100 btn btn-icon bg-gradient-success mt-0 mb-0 d-flex justify-content-center">
                                                     Jetzt starten (PayPal)
                                                     <i class="fas fa-arrow-right my-auto mx-1"></i>
-                                                </a>
+                                                </a>#}
                                             {% endif %}
                                         </div>
                                     </div>
@@ -374,15 +374,15 @@
                                                     <span class="d-block text-white text-xs text-center my-4">Dein Abonnement läuft bis zum <strong>{{ subscription.currentPeriodEnd|date('d.m.Y H:i:s') }}</strong></span>
                                                 {% endif %}
                                             {% else %}
-                                                <a href="https://elaliholding.com/?add-to-cart=55236" target="_blank" class="w-100 btn btn-icon bg-gradient-success mt-3 mb-0 d-flex justify-content-center">
+                                                <a href="https://shop.elaliholding.com/?add-to-cart=55236" target="_blank" class="w-100 btn btn-icon bg-gradient-success mt-3 mb-0 d-flex justify-content-center">
                                                     Jetzt starten (Kreditkarte)
                                                     <i class="fas fa-arrow-right my-auto mx-1"></i>
                                                 </a>
-                                                <br>
+                                                <br>{#
                                                 <a href="https://copecart.com/products/4b1f2ef3/checkout" target="_blank" class="w-100 btn btn-icon bg-gradient-success mt-0 mb-0 d-flex justify-content-center">
                                                     Jetzt starten (PayPal)
                                                     <i class="fas fa-arrow-right my-auto mx-1"></i>
-                                                </a>
+                                                </a>#}
                                             {% endif %}
                                         </div>
                                     </div>
@@ -512,7 +512,9 @@
                                                 <strong>{{ account.name }}</strong>{{ account.isActive ? '<span class="badge badge-success mx-2">Online</span>' : '' }}<br>
                                             {% endif %}
                                             {% if account.error|length > 0 %}
-                                                <span class="badge badge-danger mx-0">Fehler: {{ account.error }}</span>
+                                                {% if is_granted('ROLE_ADMIN') %}
+                                                    <span class="badge badge-danger mx-0">Fehler: {{ account.error }}</span>
+                                                {% endif %}
                                             {% endif %}
                                             <small>{{ account.login }} - {{ account.broker }}</small>
                                         </td>

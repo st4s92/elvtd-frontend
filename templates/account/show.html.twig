@@ -9,12 +9,20 @@
             <div class="container my-4 mx-0 p-4 card">
                 <h3>
                     {% if is_granted('ROLE_ADMIN') %}
-                        {{ account.user.username }} {% if account.user.firstname|length > 1 %} - {{ account.user.firstname }} {{ account.user.lastname }}{% endif %} |
+                        {{ account.user.username }}  {% if account.user.firstname|length > 1 %} - {{ account.user.firstname }} {{ account.user.lastname }}{% endif %} |
                     {% endif %}
 
                     {{ account.name }} #{{ account.login }}
                     <span class="text-xs badge badge-sm bg-gradient-success text-uppercase mx-1">{{ account.platform }}</span>{{ account.type == 1 ? '<span class="text-xs badge badge-sm bg-gradient-success mx-1">Agent</span>' : (account.type == 2 ? '<span class="text-xs badge badge-sm bg-gradient-primary mx-1">Leader</span>' : '<span class="text-xs badge badge-sm bg-gradient-info mx-1">Subscriber</span>') }}
-                    {{ account.isActive ? '<span class="float-sm-end text-xs badge badge-sm bg-gradient-success">Online</span>' : '<span class="badge text-xs badge-sm bg-gradient-secondary">Pausiert</span>' }}</h3>
+                    {{ account.isActive ? '<span class="float-sm-end text-xs badge badge-sm bg-gradient-success">Online</span>' : '<span class="badge text-xs badge-sm bg-gradient-secondary">Pausiert</span>' }}
+                    {% if is_granted('ROLE_ADMIN') %}
+                        {% if account.host == 'denies' %}
+                            <a href="{{ path('app_account_update', {'meta_id': account.login}) }}" class="btn btn-link text-dark px-3 mb-0 float-sm-end" data-bs-toggle="tooltip" data-bs-placement="bottom" aria-label="Account aktualisieren" data-bs-original-title="Account aktualisieren"><i class="fa-classic fa-solid fa-refresh"></i></a>
+                        {% else %}
+                            <a href="{{ path('app_account_update', {'meta_id': account.metaId}) }}" class="btn btn-link text-dark px-3 mb-0 float-sm-end" data-bs-toggle="tooltip" data-bs-placement="bottom" aria-label="Account aktualisieren" data-bs-original-title="Account aktualisieren"><i class="fa-classic fa-solid fa-refresh"></i></a>
+                        {% endif %}
+                    {% endif %}
+                </h3>
                 <p class="mb-0 font-weight-normal text-sm">
                     {{ account.tradeServer }} <i class="material-symbols-rounded text-xs my-auto mx-1">schedule</i>aktualisiert am {{ account.lastUpdate|date('d.m.Y H:i:s') }}
                 </p>
