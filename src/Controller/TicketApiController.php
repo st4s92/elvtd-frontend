@@ -59,7 +59,7 @@ class TicketApiController extends AbstractController
             return $error;
         }
 
-        $tickets = $ticketRepository->findBy(['status' => 'open','status' => 'in_progress']);
+        $tickets = $ticketRepository->findBy(['status' => ['open', 'in_progress']]);
         return $this->formatTicketsJson($tickets);
     }
 
@@ -91,9 +91,11 @@ class TicketApiController extends AbstractController
         $stas = $entityManager->getRepository(\App\Entity\User::class)->findOneBy(['username' => 'stas']);
         $comment->setUser($stas);
         $comment->setTicket($ticket);
-        $comment->setStatus('in_progress');
         $entityManager->persist($comment);
         $entityManager->flush();
+
+        $ticket->setStatus('in_progress');
+        $entityManager->persist($ticket);
 
         // Send email to admin and user
         $this->sendTicketEmail($mailer, $ticket, 'comment_added');

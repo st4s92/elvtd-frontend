@@ -356,7 +356,7 @@ class AgentController extends AbstractController
                 }
             }
             elseif ($account->getHost() == 'denies') {
-                $deniesClient->updateSubscriber($account, $multiplier);
+                $deniesClient->updateSubscriber($account, $agent, $multiplier);
             }
             else {
                 $data = [
@@ -386,7 +386,8 @@ class AgentController extends AbstractController
          AgentRepository $agentRepository,
          AccountAgentSubscriptionRepository $accountAgentSubscriptionRepository,
          MetaApiClient $metaApiClient,
-         DuplikiumClient $duplikiumClient
+         DuplikiumClient $duplikiumClient,
+         DeniesClient $deniesClient
     ): RedirectResponse
     {
         // POST-Parameter auslesen
@@ -428,6 +429,9 @@ class AgentController extends AbstractController
 
             if ($account->getHost() == 'duplikium') {
                 $duplikiumClient->updateAccount($account, '');
+            }
+            elseif ($account->getHost() == 'denies') {
+                $deniesClient->removeSubscriber($account, $agent);
             }
             else {
                 // Aktualisiere den Subscriber auf der MetaApi
