@@ -77,6 +77,13 @@ const SidebarContent: MenuItem[] = [
         url: '/dashboard/servers',
         isPro: false,
       },
+      {
+        id: uniqueId(),
+        name: 'Master Orders',
+        icon: 'solar:clipboard-list-line-duotone',
+        url: '/dashboard/master-orders',
+        isPro: false,
+      },
       // {
       //   id: uniqueId(),
       //   name: 'Orders',

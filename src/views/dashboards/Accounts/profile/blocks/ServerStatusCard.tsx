@@ -10,6 +10,27 @@ const ServerStatusCard = ({ server, accountId }: any) => {
     }
   };
 
+  const triggerRestart = async (accountId: number) => {
+    if (confirm("Restart platform?")) {
+      await axiosClient.post(`/trader/account/${accountId}/restart`, {});
+    }
+  };
+
+  const triggerDelete = async (accountId: number) => {
+    if (confirm("Are you sure you want to delete this account? This action cannot be undone.")) {
+      try {
+        await axiosClient.delete(`/trader/account/${accountId}`);
+        alert("Account deleted successfully.");
+        // We could redirect here if we had navigate, but since we don't, 
+        // a simple alert and maybe reloading the page or letting the user go back is fine.
+        window.location.href = '/dashboard/accounts';
+      } catch (err) {
+        console.error("Failed to delete account", err);
+        alert("Failed to delete account.");
+      }
+    }
+  };
+
   return (
     <div
       className="p-6 rounded-3xl bg-[rgba(233,223,255,0.04)] backdrop-blur-md text-gray-200 shadow-sm transition-all duration-300 hover:shadow-lg"
@@ -50,7 +71,7 @@ const ServerStatusCard = ({ server, accountId }: any) => {
       <div className="d-flex justify-content-between align-items-center mt-3">
         <div className="text-muted small">Status</div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-3 items-center">
           <span
             style={{
               background: isRunning ? "#1f7a4c" : "#7a1f1f",
@@ -63,8 +84,14 @@ const ServerStatusCard = ({ server, accountId }: any) => {
           >
             {isRunning ? "Running" : "Stopped"}
           </span>
-          <a href="#" onClick={() => triggerInstall(accountId)} className="text-blue-400">
+          <a href="#" onClick={(e) => { e.preventDefault(); triggerRestart(accountId); }} className="text-amber-400 hover:text-amber-300 text-sm font-semibold transition-colors">
+            restart
+          </a>
+          <a href="#" onClick={(e) => { e.preventDefault(); triggerInstall(accountId); }} className="text-blue-400 hover:text-blue-300 text-sm font-semibold transition-colors">
             reinstall
+          </a>
+          <a href="#" onClick={(e) => { e.preventDefault(); triggerDelete(accountId); }} className="text-red-500 hover:text-red-400 text-sm font-semibold transition-colors">
+            delete
           </a>
         </div>
       </div>

@@ -6,10 +6,9 @@ import { Badge } from "src/components/ui/badge";
 
 type Props = {
   accountId: number;
-  role?: string;
 };
 
-const PositionHistoryTable = ({ accountId, role }: Props) => {
+const PositionHistoryTable = ({ accountId }: Props) => {
   const [rows, setRows] = useState<Record<string, any>[]>([]);
   const [totalRows, setTotalRows] = useState(0);
 

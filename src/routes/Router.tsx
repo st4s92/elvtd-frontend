@@ -9,11 +9,11 @@ import Accounts from 'src/views/dashboards/Accounts/Index';
 import AccountProfile from 'src/views/dashboards/Accounts/profile/Index';
 import Servers from 'src/views/dashboards/Servers/Index';
 
-/* ***Layouts**** */
 const FullLayout = Loadable(lazy(() => import('../layouts/full/FullLayout')));
 const BlankLayout = Loadable(lazy(() => import('../layouts/blank/BlankLayout')));
 
 const SymbolMap = Loadable(lazy(() => import('../views/dashboards/SymbolMap/Index')));
+const MasterOrders = Loadable(lazy(() => import('../views/dashboards/MasterOrders/Index')));
 
 // authentication
 
@@ -63,6 +63,7 @@ const Router = [
       { path: '/dashboard/accounts', element: <Accounts /> },
       { path: '/dashboard/accounts/:accountId', element: <AccountProfile /> },
       { path: '/dashboard/symbol-map', element: <SymbolMap /> },
+      { path: '/dashboard/master-orders', element: <MasterOrders /> },
       { path: '/utilities/form', element: <Form /> },
       { path: '/utilities/table', element: <Table /> },
       { path: '/apps/tickets', element: <Tickets /> },

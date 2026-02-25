@@ -45,7 +45,7 @@ const AccountProfile = () => {
     <div className="space-y-6">
       {/* TOP SECTION */}
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
-        <AccountDetailCard account={data.account} />
+        <AccountDetailCard account={data.account} serverAccount={data.serverAccount} />
 
         <div className="space-y-6">
           <ServerStatusCard
@@ -78,7 +78,6 @@ const AccountProfile = () => {
 
       <PositionHistoryTable
         accountId={data.account.id}
-        role={data.account.role}
       />
     </div>
   );

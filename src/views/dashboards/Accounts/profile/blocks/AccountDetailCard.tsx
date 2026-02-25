@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 
-const AccountDetailCard = ({ account }: any) => {
+const AccountDetailCard = ({ account, serverAccount }: any) => {
   console.log(account);
   const [copied, setCopied] = useState(false);
 
@@ -23,14 +23,32 @@ const AccountDetailCard = ({ account }: any) => {
           <h4 className="font-semibold text-lg">Account Detail</h4>
         </div>
 
-        <span
-          className={`px-3 py-1 rounded-full text-xs font-semibold ${account.status === 200
-            ? "bg-emerald-600 text-white"
-            : "bg-red-600 text-white"
-            }`}
-        >
-          {account.status === 200 ? "Running" : "Stopped"}
-        </span>
+        <div className="flex gap-2 items-center">
+          {serverAccount && (
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-semibold ${serverAccount.status === 100
+                ? "bg-amber-500/20 text-amber-400"
+                : serverAccount.status === 200
+                  ? "bg-emerald-600/20 text-emerald-400"
+                  : serverAccount.status === 300
+                    ? "bg-red-600/20 text-red-400"
+                    : "bg-gray-600/20 text-gray-400"
+                }`}
+            >
+              {serverAccount.message || "Unknown Status"}
+            </span>
+          )}
+
+
+          <span
+            className={`px-3 py-1 rounded-full text-xs font-semibold ${account.status === 200
+              ? "bg-emerald-600 text-white"
+              : "bg-red-600 text-white"
+              }`}
+          >
+            {account.status === 200 ? "Running" : "Stopped"}
+          </span>
+        </div>
       </div>
 
       {/* CONTENT */}
