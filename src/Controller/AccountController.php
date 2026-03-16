@@ -54,7 +54,59 @@ class AccountController extends AbstractController
         $users = $userRepository->findAll();
 
         // Hole alle offenen Positionen
-        $allOrders = $orderRepository->findAll();
+        $allOrders = [];
+        $openPositions = array_filter($allOrders, fn($order) => $order->getState() === 1);
+
+        $account = new Account();
+        $form = $this->createForm(AccountType::class, $account);
+
+        // Berechne die Anzahl der aktiven Benutzer
+        $now = new DateTime();
+        $thirtyMinutesAgo = (clone $now)->modify('-30 minutes');
+        $twentyFourHoursAgo = (clone $now)->modify('-24 hours');
+
+        $activeLast30Min = 0;
+        $activeLast24h = 0;
+
+        foreach ($users as $user) {
+            $lastLogin = $user->getLastLogin();
+            if ($lastLogin instanceof DateTime && $lastLogin >= $thirtyMinutesAgo) {
+                $activeLast30Min++;
+            }
+            if ($lastLogin instanceof DateTime && $lastLogin >= $twentyFourHoursAgo) {
+                $activeLast24h++;
+            }
+        }
+
+        return $this->render('account/index.html.twig', [
+            'accounts' => $accounts,
+            'users' => $users,
+            'openPositions' => $openPositions,
+            'form' => $form->createView(),
+            'admin_view' => true,
+            'activeLast30Min' => $activeLast30Min,
+            'activeLast24h' => $activeLast24h,
+        ]);
+    }
+
+    /**
+     * @Route("/admin_account_error", name="app_admin_account_error", methods={"GET"})
+     */
+    public function admin_account_error(AccountRepository $accountRepository, OrderRepository $orderRepository, UserRepository $userRepository): Response
+    {
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            $this->redirectToRoute('app_account_index', [], Response::HTTP_SEE_OTHER);
+        }
+
+        // Alle Accounts des aktuellen Nutzers finden
+        $accounts = $accountRepository->createQueryBuilder('a')
+            ->where("a.error != ''")
+            ->getQuery()
+            ->getResult();        
+        $users = $userRepository->findAll();
+
+        // Hole alle offenen Positionen
+        $allOrders = [];
         $openPositions = array_filter($allOrders, fn($order) => $order->getState() === 1);
 
         $account = new Account();
@@ -95,7 +147,9 @@ class AccountController extends AbstractController
     public function index(
         AccountRepository $accountRepository,
         OrderRepository $orderRepository,
-        EntityManagerInterface $entityManager
+        EntityManagerInterface $entityManager,
+        DeniesClient $deniesClient,
+        DuplikiumClient $duplikiumClient
     ): Response
     {
         // Last Login aktualisieren
@@ -107,6 +161,19 @@ class AccountController extends AbstractController
 
         // Hole alle Accounts des aktuellen Benutzers
         $accounts = $accountRepository->findBy(['user' => $this->getUser()]);
+
+        // Automatische Aktualisierung, wenn das letzte Update länger als 1 Minute her ist
+        $now = new \DateTime();
+        foreach ($accounts as $account) {
+            $lastUpdate = $account->getLastUpdate();
+            if (!$lastUpdate || ($now->getTimestamp() - $lastUpdate->getTimestamp()) > 60) {
+                try {
+                    $this->refreshAccountStats($account, $deniesClient, $duplikiumClient, $accountRepository);
+                } catch (\Exception $e) {
+                    // Fehler beim automatischen Update ignorieren, um die Anzeige nicht zu blockieren
+                }
+            }
+        }
 
         // Hole alle offenen Positionen
         $allOrders = $orderRepository->findBy(['account' => $accounts]);
@@ -360,9 +427,6 @@ class AccountController extends AbstractController
             if($this->isGranted('ROLE_ADMIN')) {
                 $account->setHost('denies');
                 $response = $deniesClient->addAccount($account);
-/*                echo "<pre>";
-                var_dump($response);
-                die;*/
             }
             else {
                 $account->setHost('duplikium');
@@ -374,6 +438,9 @@ class AccountController extends AbstractController
                 $account->setMetaId($response->data->accountNumber);
 
                 $account->setHost('denies');
+
+                // Account in die Datenbank speichern
+                $accountRepository->add($account, true);    
             }
             elseif($account->getHost() == 'duplikium' && isset($response->account->account_id) && strlen($response->account->account_id) > 1) {
                 $this->addFlash('success', 'Acount '. $response->account->account_id .' wurde erfolgreich verbunden.');
@@ -382,6 +449,9 @@ class AccountController extends AbstractController
                 $account->setMetaId($response->account->account_id);
                 $account->setBalance($response->account->balance);
                 $account->setEquity($response->account->equity);
+
+                // Account in die Datenbank speichern
+                $accountRepository->add($account, true);
             } else {
                 if (isset($response->error) && strlen($response->error) > 1) {
                     $this->addFlash('danger', strip_tags($response->error));
@@ -390,9 +460,6 @@ class AccountController extends AbstractController
                 }
                 return $this->redirectToRoute('app_account_index', [], Response::HTTP_SEE_OTHER);
             }
-
-            // Account in die Datenbank speichern
-            $accountRepository->add($account, true);
 
             // Flash-Nachricht hinzufügen
             $this->addFlash('success', 'Account wurde erfolgreich erstellt.');
@@ -410,13 +477,24 @@ class AccountController extends AbstractController
     /**
      * @Route("/account/{meta_id}", name="app_account_show", methods={"GET"})
      */
-    public function show(Account $account, OrderRepository $orderRepository, AccountAgentSubscriptionRepository $accountAgentSubscriptionRepository, AgentRepository $agentRepository, MetaApiClient $metaApiClient, DuplikiumClient $duplikiumClient): Response
+    public function show(Account $account, OrderRepository $orderRepository, AccountAgentSubscriptionRepository $accountAgentSubscriptionRepository, AgentRepository $agentRepository, MetaApiClient $metaApiClient, DuplikiumClient $duplikiumClient, DeniesClient $deniesClient, AccountRepository $accountRepository): Response
     {
         // Prüfen, ob der Account dem aktuellen Benutzer gehört
         if (!$account || $account->getUser() !== $this->getUser() && !$this->isGranted('ROLE_ADMIN')) {
             // Weiterleiten auf die Account-Übersicht
             $this->session->getFlashBag()->add('danger', 'Account-Validierung fehlgeschlagen. Account existiert nicht oder gehört einem anderen User.');
             return $this->redirectToRoute('app_account_index');
+        }
+
+        // Automatische Aktualisierung, wenn das letzte Update länger als 1 Minute her ist
+        $now = new \DateTime();
+        $lastUpdate = $account->getLastUpdate();
+        if (!$lastUpdate || ($now->getTimestamp() - $lastUpdate->getTimestamp()) > 60) {
+            try {
+                $this->refreshAccountStats($account, $deniesClient, $duplikiumClient, $accountRepository);
+            } catch (\Exception $e) {
+                // Fehler beim automatischen Update ignorieren, um die Anzeige nicht zu blockieren
+            }
         }
 
         // Fetch orders for the account
@@ -483,7 +561,13 @@ class AccountController extends AbstractController
             $dailyGrowth = $account->getDailyGrowth() ?? [];
         }
 
-        $multiplier = $account->getHost() == 'duplikium' ? $duplikiumClient->getMultiplier($account->getMetaId()) : 1 ; // $metaApiClient->getMultiplier($account->getMetaId());
+        if ($account->getHost() == 'duplikium') {
+            $multiplier = $duplikiumClient->getMultiplier($account->getMetaId());
+        } elseif ($account->getHost() == 'denies') {
+            $multiplier = $deniesClient->getMultiplier($account->getLogin());
+        } else {
+            $multiplier = ['multiplier' => 1, 'templateFullName' => 'MetaAPI'];
+        }
 
         return $this->render('account/show.html.twig', [
             'account' => $account,
@@ -643,6 +727,50 @@ class AccountController extends AbstractController
     }
 
     /**
+     * @Route("/account/{meta_id}/transfer-denies", name="app_account_transfer_denies", methods={"GET"})
+     */
+    public function transferToDenies(
+        Account $account,
+        DeniesClient $deniesClient,
+        AccountRepository $accountRepository
+    ): Response
+    {
+        // Prüfen, ob der Account dem aktuellen Benutzer gehört
+        if (!$account || $account->getUser() !== $this->getUser() && !$this->isGranted('ROLE_ADMIN')) {
+            $this->session->getFlashBag()->add('danger', 'Keine Berechtigung.');
+            return $this->redirectToRoute('app_account_index');
+        }
+
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            $this->session->getFlashBag()->add('danger', 'Nur für Administratoren verfügbar.');
+            return $this->redirectToRoute('app_account_show', ['meta_id' => $account->getMetaId()]);
+        }
+
+        try {
+            $account->setHost('denies');
+            $account->setMetaId($account->getLogin());
+            $response = $deniesClient->addAccount($account);
+
+            if(isset($response->data->accountNumber) && strlen($response->data->accountNumber) > 1) {
+                $this->addFlash('success', 'Account '. $response->data->accountNumber .' wurde erfolgreich zu Denies übertragen.');
+                $account->setMetaId($response->data->accountNumber);
+            } else {
+                if (isset($response->error) && strlen($response->error) > 1) {
+                    $this->addFlash('danger', strip_tags($response->error));
+                } else {
+                    $this->addFlash('danger', 'Account-Übertragung fehlgeschlagen.');
+                }
+            }
+        } catch (\Exception $e) {
+            $this->addFlash('danger', 'Fehler beim Übertragen: ' . $e->getMessage());
+        }
+
+        $accountRepository->add($account, true);
+
+        return $this->redirectToRoute('app_account_show', ['meta_id' => $account->getLogin()]);
+    }
+
+    /**
      * @Route("/account/{meta_id}/update", name="app_account_update", methods={"GET", "POST"})
      */
     public function update(
@@ -653,6 +781,7 @@ class AccountController extends AbstractController
         AccountRepository $accountRepository
     ): Response
     {
+
         // Prüfen, ob der Account dem aktuellen Benutzer gehört
         if (!$account || $account->getUser() !== $this->getUser() && !$this->isGranted('ROLE_ADMIN')) {
             // Weiterleiten auf die Account-Übersicht
@@ -673,45 +802,11 @@ class AccountController extends AbstractController
             }
         }
 
-        if($account->getHost() == 'denies') {
-            $response = $deniesClient->getAccount($account);
-
-            if ($response->code != 200) {
-                // Weiterleiten auf die Account-Übersicht
-                $this->session->getFlashBag()->add('danger', 'Account-Aktualisierung fehlgeschlagen.');
-                return $this->redirectToRoute('app_account_index');
-            }
-
-            $account->setEquity($response->data->equity);
-            $account->setBalance($response->data->balance);
-            $account->setBalance($response->data->balance);
-            $account->setError('');
-            $account->setIsActive($response->data->status == 200 ? 1 : 0);
-            $account->setLastUpdate($now);
-
-            $accountRepository->add($account, true);
-
-            $this->addFlash('success', 'Account '. $response->data->accountNumber .' wurde erfolgreich aktualisiert.');
-        }
-        else {
-            $response = $duplikiumClient->getAccount($account->getMetaId());
-
-            if ($response->accounts[0]->status != 1) {
-                // Weiterleiten auf die Account-Übersicht
-                $this->session->getFlashBag()->add('danger', 'Account-Aktualisierung fehlgeschlagen. Account wurde nicht korrekt initialisiert. Fehler: ' . $response->accounts[0]->state);
-                return $this->redirectToRoute('app_account_show', ['meta_id' =>  $account->getMetaId()], Response::HTTP_SEE_OTHER);
-            }
-
-            $account->setEquity($response->accounts[0]->equity);
-            $account->setBalance($response->accounts[0]->balance);
-            $account->setBalance($response->accounts[0]->balance);
-            $account->setError('');
-            $account->setIsActive($response->accounts[0]->status == 1 ? 1 : 0);
-            $account->setLastUpdate($now);
-
-            $accountRepository->add($account, true);
-
-            $this->addFlash('success', 'Account '. $response->data->accountNumber .' wurde erfolgreich aktualisiert.');
+        try {
+            $this->refreshAccountStats($account, $deniesClient, $duplikiumClient, $accountRepository);
+            $this->addFlash('success', 'Account wurde erfolgreich aktualisiert.');
+        } catch (\Exception $e) {
+            $this->addFlash('danger', 'Account-Aktualisierung fehlgeschlagen: ' . $e->getMessage());
         }
 
         if($account->getHost() == "denies") {
@@ -719,6 +814,53 @@ class AccountController extends AbstractController
         }
         else {
             return $this->redirectToRoute('app_account_show', ['meta_id' =>  $account->getMetaId()], Response::HTTP_SEE_OTHER);
+        }
+    }
+
+    /**
+     * Private helper to refresh account statistics from external APIs
+     */
+    private function refreshAccountStats(
+        Account $account,
+        DeniesClient $deniesClient,
+        DuplikiumClient $duplikiumClient,
+        AccountRepository $accountRepository
+    ): void {
+        $now = new \DateTime();
+
+        if (!$account->getHost()) {
+            $account->setHost('duplikium');
+        }
+
+        if ($account->getHost() == 'denies') {
+            $response = $deniesClient->getAccount($account);
+
+            if ($response->code != 200) {
+                throw new \Exception('Denies API error: ' . ($response->message ?? 'Unknown error'));
+            }
+
+            $account->setEquity($response->data->equity);
+            $account->setBalance($response->data->balance);
+            $account->setError('');
+            $account->setIsActive($response->data->status == 200 ? 1 : 0);
+            $account->setLastUpdate($now);
+
+            $accountRepository->add($account, true);
+        } else {
+            $response = $duplikiumClient->getAccount($account->getMetaId());
+
+            if (!isset($response->accounts[0]) || $response->accounts[0]->status != 1) {
+                $errorMsg = $response->accounts[0]->state ?? 'Account not found or not initialized';
+                throw new \Exception('Duplikium API error: ' . $errorMsg);
+            }
+
+            $account->setEquity($response->accounts[0]->equity);
+            $account->setBalance($response->accounts[0]->balance);
+            $account->setError('');
+            $account->setIsActive($response->accounts[0]->status == 1 ? 1 : 0);
+            $account->setLastUpdate($now);
+
+            $accountRepository->add($account, true);
         }
     }
 }

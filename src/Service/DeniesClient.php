@@ -39,12 +39,17 @@ class DeniesClient
 
         if ($statusCode !== 200) {
 
-/*            var_dump("$this->baseUrl . $endpoint");
+            $errorContent = $response->getContent(false);
+            $errorInfo = "Failed $method $endpoint: HTTP $statusCode - $errorContent - Data: " . json_encode($data);
+            file_put_contents('/tmp/denies_api_error.log', date('Y-m-d H:i:s') . ' ' . $errorInfo . PHP_EOL, FILE_APPEND);
+            
+
+            /*var_dump($this->baseUrl . $endpoint);
+            var_dump($errorContent);
             var_dump("<pre>");
             var_dump($response); die;*/
-
-            $errorContent = $response->getContent(false);
-            throw new \RuntimeException("Failed to request host api: HTTP $statusCode - $errorContent - Data: " . http_build_query($data));
+            
+            throw new \RuntimeException("Failed to request host api: HTTP $statusCode - $errorContent - Data: " . json_encode($data));
         }
 
         $responseContent = $response->getContent();
@@ -85,6 +90,12 @@ class DeniesClient
     {
         try {
             $id_response = $this->request('GET', "account/paginated?PerPage=100&Page=1&AccountNumber=" . $account->getLogin());
+
+
+            if (empty($id_response->data->data)) {
+                throw new \RuntimeException('Account nicht in gefunden.');
+            }
+
             $id = $id_response->data->data[0]->id;
             $response = $this->request('GET', "account/" . $id);
         }
@@ -94,7 +105,7 @@ class DeniesClient
 
         return $response;
     }
-    public function updateSubscriber(Account $account, Agent $agent, float $multiplier)
+    public function updateSubscriber(Account $account, Agent $agent, float $multiplier, $masterAccount)
     {
         try {
             // 1. Get Slave Account ID
@@ -107,16 +118,16 @@ class DeniesClient
             $slaveId = $slaveData->data->data[0]->id;
 
             // 2. Get Master Account ID (Agent)
-            $masterLogin = $agent->getMetaId(); // Assuming Agent's meta_id stores the Denies login/ID
-            $masterData = $this->request('GET', "account/paginated?PerPage=1&Page=1&AccountNumber=" . $masterLogin);
+            // $masterLogin = $masterAccount->getLogin();
+            // $masterData = $this->request('GET', "account/paginated?PerPage=1&Page=1&AccountNumber=" . $masterLogin);
             
-            if (empty($masterData->data->data)) {
-                 throw new \RuntimeException('Master Account (Agent) nicht in der Denies API gefunden.');
-            }
-            $masterId = $masterData->data->data[0]->id;
+            // if (empty($masterData->data->data)) {
+            //      throw new \RuntimeException('Master Account (Agent) nicht in der Denies API gefunden.');
+            // }
+            $masterId = $masterAccount;
 
             // 3. Find Master-Slave relationship
-            $masterSlaveData = $this->request('GET', "master-slave/paginated?PerPage=1&Page=1&MasterId=" . $masterId . "&SlaveId=" . $slaveId);
+            $masterSlaveData = $this->request('GET', "master-slave/paginated?PageSize=100&Page=1&MasterId=" . $masterId . "&SlaveId=" . $slaveId);
             $masterSlaveId = null;
 
             if (empty($masterSlaveData->data->data)) {
@@ -134,7 +145,7 @@ class DeniesClient
                       $masterSlaveId = $createResponse->data->id;
                  } else {
                      // Fallback: fetch again
-                     $masterSlaveDataRetry = $this->request('GET', "master-slave/paginated?PerPage=1&Page=1&MasterId=" . $masterId . "&SlaveId=" . $slaveId);
+                     $masterSlaveDataRetry = $this->request('GET', "master-slave/paginated?PageSize=100&Page=1&MasterId=" . $masterId . "&SlaveId=" . $slaveId);
                      if (!empty($masterSlaveDataRetry->data->data)) {
                          $masterSlaveId = $masterSlaveDataRetry->data->data[0]->id;
                      } else {
@@ -146,13 +157,20 @@ class DeniesClient
             }
 
             // 4. Set Config (Multiplier)
+            // Check if config already exists to avoid 400 error
+            $existingConfig = $this->request('GET', "master-slave-config/paginated?PageSize=1&Page=1&MasterSlaveId=" . $masterSlaveId);
+            
             $configData = [
                 'master_slave_id' => $masterSlaveId,
                 'multiplier' => $multiplier
             ];
 
-            // Swagger says POST /api/trader/master-slave-config
-            $response = $this->request('POST', "master-slave-config", $configData);
+            if (!empty($existingConfig->data->data)) {
+                $configId = $existingConfig->data->data[0]->id;
+                $response = $this->request('PUT', "master-slave-config/" . $configId, $configData);
+            } else {
+                $response = $this->request('POST', "master-slave-config", $configData);
+            }
 
             return $response;
             
@@ -161,7 +179,7 @@ class DeniesClient
         }
     }
 
-    public function removeSubscriber(Account $account, Agent $agent)
+    public function removeSubscriber(Account $account, Agent $agent, Account $masterAccount)
     {
         try {
             // 1. Get Slave Account ID
@@ -174,7 +192,7 @@ class DeniesClient
             $slaveId = $slaveData->data->data[0]->id;
 
             // 2. Get Master Account ID
-            $masterLogin = $agent->getMetaId(); 
+            $masterLogin = $masterAccount->getLogin(); 
             $masterData = $this->request('GET', "account/paginated?PerPage=1&Page=1&AccountNumber=" . $masterLogin);
             
             if (empty($masterData->data->data)) {
@@ -183,7 +201,7 @@ class DeniesClient
             $masterId = $masterData->data->data[0]->id;
 
             // 3. Find Master-Slave relationship
-            $masterSlaveData = $this->request('GET', "master-slave/paginated?PerPage=1&Page=1&MasterId=" . $masterId . "&SlaveId=" . $slaveId);
+            $masterSlaveData = $this->request('GET', "master-slave/paginated?PageSize=100&Page=1&MasterId=" . $masterId . "&SlaveId=" . $slaveId);
             
             if (!empty($masterSlaveData->data->data)) {
                 $masterSlaveId = $masterSlaveData->data->data[0]->id;
@@ -211,22 +229,17 @@ class DeniesClient
             $accountId = $accountData->data->data[0]->id;
 
             // 2. Get Master-Slave Pair to find MasterSlaveId
-            $masterSlaveData = $this->request('GET', "master-slave/paginated?PerPage=1&Page=1&SlaveId=" . $accountId);
+            $masterSlaveData = $this->request('GET', "master-slave/paginated?PageSize=1&Page=1&SlaveId=" . $accountId);
 
              if (empty($masterSlaveData->data->data)) {
                  return ['multiplier' => 0.0, 'templateFullName' => "NOT CONNECTED (No Master-Slave Pair)"];
             }
 
-            $masterSlaveId = $masterSlaveData->data->data[0]->id;
-
-            // 3. Get Config to get Multiplier
-            $configData = $this->request('GET', "master-slave/full-config/" . $masterSlaveId);
-
             $multiplier = 0.0;
-            if (isset($configData->multiplier)) {
-                 $multiplier = $configData->multiplier;
-            } elseif (isset($configData->data) && isset($configData->data->multiplier)) {
-                $multiplier = $configData->data->multiplier;
+            $masterSlave = $masterSlaveData->data->data[0];
+            
+            if (!empty($masterSlave->configs)) {
+                $multiplier = (float) $masterSlave->configs[0]->multiplier;
             }
 
             // Map Multiplier to Template Name

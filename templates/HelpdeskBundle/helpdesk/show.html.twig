@@ -1,53 +1,108 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Helpdesk - Ticket #{{ ticket.id }}{% endblock %}
+{% block title %}Helpdesk - Ticket #{{ ticket.id }}
+{% endblock %}
 
 {% block body %}
-    <div class="container">
-        <h3 class="mt-4 mb-4">Help Center</h3>
-        <div class="card">
-            <div class="card-header">
-                <h4 class="float-start">
-                    Ticket #{{ ticket.id }}: {{ ticket.title }}<br>
-                    <small>{{ ticket.user.firstname }} {{ ticket.user.lastname }} ({{ ticket.user.username }})</small><br>
-                    <span style="font-size: 14px; font-weight: normal">{{ ticket.createdAt|date('d.m.Y H:i:s') }}</span>
-                </h4>
-                <span class="float-end badge badge-sm bg-gradient-success"> {{ ticket.status }}</span>
-            </div>
-            <div class="card-body">
-                <div class="card">
-                    <div class="card-body">
-                        {{ ticket.description|nl2br }}
-                    </div>
-                </div>
+	<div class="container">
+		<h3 class="mt-4 mb-4">Help Center</h3>
+		<div class="card">
+			<div class="card-header">
+				<h4 class="float-start">
+					Ticket #{{ ticket.id }}:
+					{{ ticket.title }}<br>
+					<small>{{ ticket.user.firstname }}
+						{{ ticket.user.lastname }}
+						({{ ticket.user.username }})</small><br>
+					<span style="font-size: 14px; font-weight: normal">{{ ticket.createdAt|date('d.m.Y H:i:s') }}</span>
+				</h4>
+				<span class="float-end badge badge-sm bg-gradient-success">
+					{{ ticket.status }}</span>
+				{% if is_granted('ROLE_ADMIN') %}
+					<form action="{{ path('app_helpdesk_change_state', {'id': ticket.id}) }}" method="POST" class="float-end me-3">
+						<select name="state" onchange="this.form.submit()" class="form-select form-select-sm">
+							<option value="open" {% if ticket.status == 'open' %} selected {% endif %}>offen</option>
+							<option value="in_progress" {% if ticket.status == 'in_progress' %} selected {% endif %}>wird bearbeitet</option>
+							<option value="closed" {% if ticket.status == 'closed' %} selected {% endif %}>geschlossen</option>
+						</select>
+					</form>
+				{% endif %}
+			</div>
+			<div class="card-body">
+				<div class="card">
+					<div class="card-body">
+						{{ ticket.description|nl2br }}
+					</div>
+				</div>
 
-                <h6 class="mt-5">Antworten</h6>
-                {% if ticket.comments|length > 0 %}
-                    {% for comment in ticket.comments %}
-                        <div class="card mb-3">
-                            <div class="card-header">
-                                <strong>{{ comment.user.firstname }} {{ comment.user.lastname }}</strong> - <span style="font-size: 14px; font-weight: normal">{{ comment.createdAt|date('d.m.Y H:i:s') }}</span>
-                            </div>
-                            <div class="card-body">
-                                {{ comment.content|nl2br }}
-                            </div>
-                        </div>
-                    {% endfor %}
-                {% else %}
-                    <p>Ihr Ticket befindet sich derzeit in der Warteschlange. Die Antwortzeit beträgt in der Regel ca. 24 Stunden.</p>
-                {% endif %}
+				{% if is_granted('ROLE_ADMIN') and ticket.user.accounts|length > 0 %}
+					<h6 class="mt-5">Kunden-Accounts (Admin Ansicht)</h6>
+					<div class="table-responsive">
+						<table class="table table-sm text-sm">
+							<thead>
+								<tr>
+									<th>Host</th>
+									<th>Account Nummer</th>
+									<th>Server</th>
+									<th>Plattform</th>
+									<th>Action</th>
+								</tr>
+							</thead>
+							<tbody>
+								{% for acc in ticket.user.accounts %}
+									<tr>
+										<td>{{ acc.host }}</td>
+										<td>{{ acc.login }}</td>
+										<td>{{ acc.tradeServer }}</td>
+										<td>
+											<span class="badge badge-sm bg-gradient-info">{{ acc.platform }}</span>
+										</td>
+										<td>
+											<a href="{{ path('app_account_show', {'meta_id': acc.metaId}) }}" class="btn btn-sm btn-outline-dark mb-0" target="_blank">Open Account</a>
+										</td>
+									</tr>
+								{% endfor %}
+							</tbody>
+						</table>
+					</div>
+				{% endif %}
 
-                <h6 class="mt-5">Antwort hinzufügen</h6>
-                <form method="post" action="{{ path('app_helpdesk_comment', {'id': ticket.id}) }}">
-                    <div class="form-group">
-                        <label for="content">Antwort</label>
-                        <textarea name="content" id="content" class="form-control" rows="3" required></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-primary mt-2">Antwort hinzufügen</button>
-                </form>
+				<h6 class="mt-5">Antworten</h6>
+				{% if ticket.comments|length > 0 %}
+					{% for comment in ticket.comments %}
+						<div class="card mb-3">
+							<div class="card-header">
+								<strong>{{ comment.user.firstname }}
+									{{ comment.user.lastname }}</strong>
+								-
+								<span style="font-size: 14px; font-weight: normal">{{ comment.createdAt|date('d.m.Y H:i:s') }}</span>
+							</div>
+							<div class="card-body">
+								{{ comment.content|nl2br }}
+							</div>
+						</div>
+					{% endfor %}
+				{% else %}
+					<p>Ihr Ticket befindet sich derzeit in der Warteschlange. Die Antwortzeit beträgt in der Regel ca. 24 Stunden.</p>
+				{% endif %}
 
-                <a href="{{ path('app_helpdesk_index') }}" class="btn btn-outline-none mt-3">Zurück zur Übersicht</a>
-            </div>
-        </div>
-    </div>
+				{% if ticket.status != 'closed' %}
+					<h6 class="mt-5">Antwort hinzufügen</h6>
+					<form method="post" action="{{ path('app_helpdesk_comment', {'id': ticket.id}) }}">
+						<div class="form-group">
+							<label for="content">Antwort</label>
+							<textarea name="content" id="content" class="form-control" rows="3" required></textarea>
+						</div>
+						<button type="submit" class="btn btn-primary mt-2">Antwort hinzufügen</button>
+					</form>
+				{% else %}
+					<div class="alert alert-info mt-5">
+						Dieses Ticket wurde geschlossen. Falls Sie weitere Fragen oder neue Anliegen haben, erstellen Sie bitte ein neues Ticket.
+					</div>
+				{% endif %}
+
+				<a href="{{ path('app_helpdesk_index') }}" class="btn btn-outline-none mt-3">Zurück zur Übersicht</a>
+			</div>
+		</div>
+	</div>
 {% endblock %}

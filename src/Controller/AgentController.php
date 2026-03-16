@@ -356,7 +356,12 @@ class AgentController extends AbstractController
                 }
             }
             elseif ($account->getHost() == 'denies') {
-                $deniesClient->updateSubscriber($account, $agent, $multiplier);
+                $fromId = $agent->getFromAccountId();
+                $masterAccount = 27; // $accountRepository->find($fromId);
+                if (!$masterAccount) {
+                    throw new \Exception("Master Account for Agent not found. Agent ID: " . $agent->getId() . ", From Account ID: " . $fromId);
+                }
+                $deniesClient->updateSubscriber($account, $agent, $multiplier, $masterAccount);
             }
             else {
                 $data = [
@@ -431,7 +436,12 @@ class AgentController extends AbstractController
                 $duplikiumClient->updateAccount($account, '');
             }
             elseif ($account->getHost() == 'denies') {
-                $deniesClient->removeSubscriber($account, $agent);
+                $fromId = $agent->getFromAccountId();
+                $masterAccount =  27; // $accountRepository->find($fromId);
+                if (!$masterAccount) {
+                    throw new \Exception("Master Account for Agent not found. Agent ID: " . $agent->getId() . ", From Account ID: " . $fromId);
+                }
+                $deniesClient->removeSubscriber($account, $agent, $masterAccount);
             }
             else {
                 // Aktualisiere den Subscriber auf der MetaApi

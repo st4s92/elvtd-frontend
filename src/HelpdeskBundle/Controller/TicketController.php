@@ -158,6 +158,11 @@ class TicketController extends AbstractController
             $this->addFlash('error', 'Invalid state provided.');
         }
 
+        $referer = $request->headers->get('referer');
+        if ($referer && str_contains($referer, $this->generateUrl('app_helpdesk_show', ['id' => $ticket->getId()]))) {
+            return $this->redirectToRoute('app_helpdesk_show', ['id' => $ticket->getId()]);
+        }
+
         return $this->redirectToRoute('app_admin_helpdesk_index');
     }
 
@@ -183,6 +188,10 @@ class TicketController extends AbstractController
      */
     public function show(Ticket $ticket): Response
     {
+        if ($ticket->getUser() !== $this->getUser() && !$this->isGranted('ROLE_ADMIN')) {
+            return $this->redirectToRoute('app_helpdesk_index');
+        }
+
         return $this->render('HelpdeskBundle/helpdesk/show.html.twig', [
             'ticket' => $ticket,
         ]);
@@ -193,6 +202,10 @@ class TicketController extends AbstractController
      */
     public function addComment(Request $request, Ticket $ticket, EntityManagerInterface $entityManager, MailerInterface $mailer): Response
     {
+        if ($ticket->getUser() !== $this->getUser() && !$this->isGranted('ROLE_ADMIN')) {
+            return $this->redirectToRoute('app_helpdesk_index');
+        }
+
         $comment = new Comment();
         $comment->setContent($request->request->get('content'));
         $comment->setUser($this->getUser());

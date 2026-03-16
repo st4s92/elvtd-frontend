@@ -231,52 +231,7 @@ class DuplikiumClient
                     $templateFullName = 'DailyGrowthFX-5 (ROBOFOREX)';
                     break;
 
-                // CoreGrowth EURUSD (C63c)
-                case 'fEZdfafq':
-                    $multiplier = 1.0;
-                    $templateFullName = 'CoreGrowth-EURUSD-1';
-                    break;
-                case 'mEZdfafq':
-                    $multiplier = 2.0;
-                    $templateFullName = 'CoreGrowth-EURUSD-2';
-                    break;
-                case 'cJhdfafq':
-                    $multiplier = 3.0;
-                    $templateFullName = 'CoreGrowth-EURUSD-3';
-                    break;
-                case 'tJhdfafq':
-                    $multiplier = 4.0;
-                    $templateFullName = 'CoreGrowth-EURUSD-4';
-                    break;
-                case 'LJhdfafq':
-                    $multiplier = 5.0;
-                    $templateFullName = 'CoreGrowth-EURUSD-5';
-                    break;
-
-                // CoreGrowth USDCHF (Z6iT)
-                case 'qphdfafq':
-                    $multiplier = 1.0;
-                    $templateFullName = 'CoreGrowth-USDCHF-1';
-                    break;
-                case 'Gphdfafq':
-                    $multiplier = 2.0;
-                    $templateFullName = 'CoreGrowth-USDCHF-2';
-                    break;
-                case 'rphdfafq':
-                    $multiplier = 3.0;
-                    $templateFullName = 'CoreGrowth-USDCHF-3';
-                    break;
-                case 'Zqhdfafq':
-                    $multiplier = 4.0;
-                    $templateFullName = 'CoreGrowth-USDCHF-4';
-                    break;
-                case 'aqhdfafq':
-                    $multiplier = 5.0;
-                    $templateFullName = 'CoreGrowth-USDCHF-5';
-                    break;
-
                 default:
-                    // throw new \Exception('Unbekannte group_id: ' . $groupId);
                     $multiplier = 0.0;
                     $templateFullName = 'UNSET';
             }

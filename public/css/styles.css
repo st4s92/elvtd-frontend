@@ -93,6 +93,7 @@ table thead {
     background-image: none !important;
 }
 
-.alert-danger, .alert-success {
+.alert-danger,
+.alert-success {
     color: #fff !important;
 }
