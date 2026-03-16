@@ -45,6 +45,7 @@ const CreateAccountFormModal = ({
   const [showPassword, setShowPassword] = useState(false);
 
   // cTrader token fields
+  const [ctraderAccountNumber, setCtraderAccountNumber] = useState(0);
   const [accessToken, setAccessToken] = useState("");
   const [refreshToken, setRefreshToken] = useState("");
   const [expiryToken, setExpiryToken] = useState("");
@@ -56,6 +57,7 @@ const CreateAccountFormModal = ({
     setBrokerName("");
     setServerName("");
     setRole("");
+    setCtraderAccountNumber(0);
     setAccessToken("");
     setRefreshToken("");
     setExpiryToken("");
@@ -65,13 +67,14 @@ const CreateAccountFormModal = ({
 
   const handleSubmit = async () => {
     if (isCtrader) {
-      if (!accessToken || !refreshToken || !expiryToken || !role) {
-        alert("Bitte alle Token-Felder ausfüllen");
+      if (!ctraderAccountNumber || !accessToken || !refreshToken || !expiryToken || !role) {
+        alert("Bitte alle Felder ausfüllen");
         return;
       }
 
       const payload = {
         user_id: userId,
+        account_number: ctraderAccountNumber,
         access_token: accessToken,
         refresh_token: refreshToken,
         expiry_token: expiryToken,
@@ -79,7 +82,11 @@ const CreateAccountFormModal = ({
       };
 
       try {
-        await axiosClient.post("/ctrader/account/manual", payload);
+        const res: any = await axiosClient.post("/ctrader/account/manual", payload);
+        if (res?.status === false) {
+          alert(res?.data?.Message || res?.message || "Failed to create cTrader account");
+          return;
+        }
         resetForm();
         onOpenChange(false);
         onSuccess?.();
@@ -248,6 +255,18 @@ const CreateAccountFormModal = ({
 
             {isCtrader && (
               <>
+                {/* cTrader Account Number */}
+                <div className="mt-2">
+                  <Label>Account Number (ctid)</Label>
+                  <Input
+                    type="number"
+                    value={ctraderAccountNumber || ""}
+                    onChange={(e) => setCtraderAccountNumber(parseInt(e.target.value) || 0)}
+                    placeholder="e.g. 28373782"
+                    className="mt-2"
+                  />
+                </div>
+
                 <div className="mt-2">
                   <Label>Access Token</Label>
                   <Input
@@ -279,7 +298,7 @@ const CreateAccountFormModal = ({
                 </div>
 
                 <div className="p-3 rounded-lg border border-blue-500/30 bg-blue-500/10 text-xs text-blue-300/70">
-                  Tokens aus der cTrader Open API Playground eintragen. Account-Details werden automatisch abgerufen.
+                  cTrader Account Number (ctid) und OAuth Tokens eintragen.
                 </div>
               </>
             )}
