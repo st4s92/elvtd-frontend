@@ -44,6 +44,13 @@ const EditAccountFormModal = ({
   const [serverName, setServerName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  // cTrader token fields
+  const [accessToken, setAccessToken] = useState("");
+  const [refreshToken, setRefreshToken] = useState("");
+  const [expiryToken, setExpiryToken] = useState("");
+
+  const isCtrader = platformName === "cTrader";
+
   // 🔥 PREFILL DATA
   useEffect(() => {
     if (!account) return;
@@ -52,7 +59,12 @@ const EditAccountFormModal = ({
     setAccountNumber(account.accountNumber);
     setBrokerName(account.brokerName);
     setServerName(account.serverName);
-    setAccountPassword(account.accountPassword || ""); // kosongkan (optional update)
+    setAccountPassword(account.accountPassword || "");
+
+    // Reset cTrader token fields on open
+    setAccessToken("");
+    setRefreshToken("");
+    setExpiryToken("");
   }, [account, open]);
 
   const handleSubmit = async () => {
@@ -65,9 +77,16 @@ const EditAccountFormModal = ({
       server_name: serverName,
     };
 
-    // hanya kirim password kalau diisi
+    // Passwort nur senden wenn ausgefüllt (MT4/MT5)
     if (accountPassword.trim() !== "") {
       payload.account_password = accountPassword;
+    }
+
+    // cTrader Token-Felder mitsenden falls ausgefüllt
+    if (isCtrader) {
+      if (accessToken.trim() !== "") payload.access_token = accessToken;
+      if (refreshToken.trim() !== "") payload.refresh_token = refreshToken;
+      if (expiryToken.trim() !== "") payload.expiry_token = expiryToken;
     }
 
     try {
@@ -137,7 +156,7 @@ const EditAccountFormModal = ({
             />
           </div>
 
-          {platformName !== "cTrader" && (
+          {!isCtrader && (
             <div>
               <Label>Account Password</Label>
 
@@ -163,6 +182,41 @@ const EditAccountFormModal = ({
                 </button>
               </div>
             </div>
+          )}
+
+          {isCtrader && (
+            <>
+              <div>
+                <Label>Access Token</Label>
+                <Input
+                  value={accessToken}
+                  onChange={(e) => setAccessToken(e.target.value)}
+                  placeholder="cTrader Access Token"
+                  className="mt-2"
+                />
+              </div>
+
+              <div>
+                <Label>Refresh Token</Label>
+                <Input
+                  value={refreshToken}
+                  onChange={(e) => setRefreshToken(e.target.value)}
+                  placeholder="cTrader Refresh Token"
+                  className="mt-2"
+                />
+              </div>
+
+              <div>
+                <Label>Token Expiry</Label>
+                <Input
+                  type="datetime-local"
+                  value={expiryToken}
+                  onChange={(e) => setExpiryToken(e.target.value)}
+                  placeholder="Token Expiry Date"
+                  className="mt-2"
+                />
+              </div>
+            </>
           )}
         </div>
 

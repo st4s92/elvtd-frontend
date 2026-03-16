@@ -50,8 +50,9 @@ const AccountTable = () => {
   const [openEditAccount, setOpenEditAccount] = useState(false);
   const [editingAccount, setEditingAccount] = useState<any>(null);
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
-  const [roleFilter, setRoleFilter] = useState<"" | "MASTER" | "SLAVE">("");
+  const [roleFilter, setRoleFilter] = useState<"" | "MASTER" | "SLAVE" | "NONE">("");
   const [platformFilter, setPlatformFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [isRestartingBulk, setIsRestartingBulk] = useState(false);
 
@@ -60,6 +61,10 @@ const AccountTable = () => {
       PerPage: pageSize,
       Page: page,
     };
+    if (search) params.AccountNumber = search;
+    if (roleFilter && roleFilter.length > 0) params.Role = roleFilter;
+    if (platformFilter && platformFilter.length > 0) params.PlatformName = platformFilter;
+    if (statusFilter && statusFilter.length > 0) params.Status = statusFilter;
 
     try {
       const res: any = await axiosClient.get("/trader/account/paginated", { params });
@@ -76,7 +81,7 @@ const AccountTable = () => {
       setRows([]);
       setTotalRows(0);
     }
-  }, [page, pageSize, roleFilter, platformFilter, search, sorting]);
+  }, [page, pageSize, roleFilter, platformFilter, statusFilter, search, sorting]);
 
   const isAnyUIOpen =
     openCreateOrder ||
@@ -409,7 +414,7 @@ const AccountTable = () => {
         <Select
           value={roleFilter || "all"}
           onValueChange={(val) => {
-            const v = val === "all" ? "" : (val as "MASTER" | "SLAVE");
+            const v = val === "all" ? "" : (val as "MASTER" | "SLAVE" | "NONE");
             setRoleFilter(v);
             setPage(1);
           }}
@@ -421,6 +426,29 @@ const AccountTable = () => {
             <SelectItem value="all">All</SelectItem>
             <SelectItem value="MASTER">Master</SelectItem>
             <SelectItem value="SLAVE">Slave</SelectItem>
+            <SelectItem value="NONE">None</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-muted-foreground">Status:</span>
+        <Select
+          value={statusFilter || "all"}
+          onValueChange={(val) => {
+            const v = val === "all" ? "" : val;
+            setStatusFilter(v);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="w-28 h-9">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="100">None</SelectItem>
+            <SelectItem value="200">Success</SelectItem>
+            <SelectItem value="300">Error</SelectItem>
           </SelectContent>
         </Select>
       </div>
