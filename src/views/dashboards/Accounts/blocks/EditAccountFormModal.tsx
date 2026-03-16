@@ -122,6 +122,7 @@ const EditAccountFormModal = ({
               <SelectContent>
                 <SelectItem value="Metatrader 4">Metatrader 4</SelectItem>
                 <SelectItem value="Metatrader 5">Metatrader 5</SelectItem>
+                <SelectItem value="cTrader">cTrader</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -136,31 +137,33 @@ const EditAccountFormModal = ({
             />
           </div>
 
-          <div>
-            <Label>Account Password</Label>
+          {platformName !== "cTrader" && (
+            <div>
+              <Label>Account Password</Label>
 
-            <div className="relative">
-              <Input
-                type={showPassword ? "text" : "password"}
-                value={accountPassword}
-                onChange={(e) => setAccountPassword(e.target.value)}
-                placeholder="Trade Account Password"
-                className="pr-10 mt-2"
-              />
+              <div className="relative">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  value={accountPassword}
+                  onChange={(e) => setAccountPassword(e.target.value)}
+                  placeholder="Trade Account Password"
+                  className="pr-10 mt-2"
+                />
 
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
-              >
-                {showPassword ? (
-                  <Icon icon="solar:eye-closed-bold" width={20} />
-                ) : (
-                  <Icon icon="solar:eye-bold" width={20} />
-                )}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
+                >
+                  {showPassword ? (
+                    <Icon icon="solar:eye-closed-bold" width={20} />
+                  ) : (
+                    <Icon icon="solar:eye-bold" width={20} />
+                  )}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <DialogFooter>

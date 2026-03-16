@@ -45,7 +45,7 @@ const ServerStatusCard = ({ server, accountId }: any) => {
         <div className="text-muted small">Server Name</div>
         <div className="fw-semibold d-flex align-items-center gap-2">
           <Icon icon="solar:cloud-bold" height={16} />
-          {server?.serverName}
+          {server?.server_name || server?.serverName || '-'}
         </div>
       </div>
 
@@ -54,7 +54,7 @@ const ServerStatusCard = ({ server, accountId }: any) => {
         <div className="text-muted small">IP Address</div>
         <div className="fw-semibold d-flex align-items-center gap-2">
           <Icon icon="solar:global-bold" height={16} />
-          {server?.serverIp}
+          {server?.server_ip || server?.serverIp || '-'}
         </div>
       </div>
 

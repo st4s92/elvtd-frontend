@@ -44,6 +44,11 @@ const CreateAccountFormModal = ({
   const [role, setRole] = useState("SLAVE");
   const [showPassword, setShowPassword] = useState(false);
 
+  // cTrader token fields
+  const [accessToken, setAccessToken] = useState("");
+  const [refreshToken, setRefreshToken] = useState("");
+  const [expiryToken, setExpiryToken] = useState("");
+
   const resetForm = () => {
     setPlatformName("Metatrader 5");
     setAccountNumber(0);
@@ -51,9 +56,40 @@ const CreateAccountFormModal = ({
     setBrokerName("");
     setServerName("");
     setRole("");
+    setAccessToken("");
+    setRefreshToken("");
+    setExpiryToken("");
   };
 
+  const isCtrader = platformName === "cTrader";
+
   const handleSubmit = async () => {
+    if (isCtrader) {
+      if (!accessToken || !refreshToken || !expiryToken || !role) {
+        alert("Bitte alle Token-Felder ausfüllen");
+        return;
+      }
+
+      const payload = {
+        user_id: userId,
+        access_token: accessToken,
+        refresh_token: refreshToken,
+        expiry_token: expiryToken,
+        role: role,
+      };
+
+      try {
+        await axiosClient.post("/ctrader/account/manual", payload);
+        resetForm();
+        onOpenChange(false);
+        onSuccess?.();
+      } catch (err) {
+        console.error(err);
+        alert("Failed to create cTrader account");
+      }
+      return;
+    }
+
     if (
       platformName == "" ||
       accountNumber <= 0 ||
@@ -62,14 +98,6 @@ const CreateAccountFormModal = ({
       serverName == "" ||
       role == ""
     ) {
-      console.log({
-        platformName: platformName,
-        accountNumber: accountNumber,
-        accountPassword: accountPassword,
-        brokerName: brokerName,
-        serverName: serverName,
-        role: role,
-      });
       alert("recheck your data");
       return;
     }
@@ -116,28 +144,6 @@ const CreateAccountFormModal = ({
               />
             </div>
 
-            {/* Broker Name */}
-            <div className="mt-2">
-              <Label>Broker Name</Label>
-              <Input
-                value={brokerName}
-                onChange={(e) => setBrokerName(e.target.value)}
-                placeholder="e.g. Finex Bisnis Solution"
-                className="mt-2"
-              />
-            </div>
-
-            {/* Server Name */}
-            <div className="mt-2">
-              <Label>Server Name</Label>
-              <Input
-                value={serverName}
-                onChange={(e) => setServerName(e.target.value)}
-                placeholder="e.g. FinexBisnisSolusi-Demo"
-                className="mt-2"
-              />
-            </div>
-
             {/* Platform Name */}
             <div className="mt-2">
               <Label>Platform Name</Label>
@@ -152,6 +158,7 @@ const CreateAccountFormModal = ({
                 <SelectContent>
                   <SelectItem value="Metatrader 4">Metatrader 4</SelectItem>
                   <SelectItem value="Metatrader 5">Metatrader 5</SelectItem>
+                  <SelectItem value="cTrader">cTrader</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -174,44 +181,108 @@ const CreateAccountFormModal = ({
               </Select>
             </div>
 
-            {/* Account Number */}
-            <div className="mt-2">
-              <Label>Account Number</Label>
-              <Input
-                type="number"
-                value={accountNumber}
-                onChange={(e) => setAccountNumber(parseInt(e.target.value))}
-                placeholder="e.g. 12345678"
-                className="mt-2"
-              />
-            </div>
+            {!isCtrader && (
+              <>
+                {/* Broker Name */}
+                <div className="mt-2">
+                  <Label>Broker Name</Label>
+                  <Input
+                    value={brokerName}
+                    onChange={(e) => setBrokerName(e.target.value)}
+                    placeholder="e.g. Finex Bisnis Solution"
+                    className="mt-2"
+                  />
+                </div>
 
-            {/* Password */}
-            <div className="mt-2">
-              <Label>Account Password</Label>
+                {/* Server Name */}
+                <div className="mt-2">
+                  <Label>Server Name</Label>
+                  <Input
+                    value={serverName}
+                    onChange={(e) => setServerName(e.target.value)}
+                    placeholder="e.g. FinexBisnisSolusi-Demo"
+                    className="mt-2"
+                  />
+                </div>
 
-              <div className="relative">
-                <Input
-                  type={showPassword ? "text" : "password"}
-                  value={accountPassword}
-                  onChange={(e) => setAccountPassword(e.target.value)}
-                  placeholder="Trade Account Password"
-                  className="pr-10 mt-2"
-                />
+                {/* Account Number */}
+                <div className="mt-2">
+                  <Label>Account Number</Label>
+                  <Input
+                    type="number"
+                    value={accountNumber}
+                    onChange={(e) => setAccountNumber(parseInt(e.target.value))}
+                    placeholder="e.g. 12345678"
+                    className="mt-2"
+                  />
+                </div>
 
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
-                >
-                  {showPassword ? (
-                    <Icon icon="solar:eye-closed-bold" width={20} />
-                  ) : (
-                    <Icon icon="solar:eye-bold" width={20} />
-                  )}
-                </button>
-              </div>
-            </div>
+                {/* Password */}
+                <div className="mt-2">
+                  <Label>Account Password</Label>
+
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      value={accountPassword}
+                      onChange={(e) => setAccountPassword(e.target.value)}
+                      placeholder="Trade Account Password"
+                      className="pr-10 mt-2"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
+                    >
+                      {showPassword ? (
+                        <Icon icon="solar:eye-closed-bold" width={20} />
+                      ) : (
+                        <Icon icon="solar:eye-bold" width={20} />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {isCtrader && (
+              <>
+                <div className="mt-2">
+                  <Label>Access Token</Label>
+                  <Input
+                    value={accessToken}
+                    onChange={(e) => setAccessToken(e.target.value)}
+                    placeholder="eUPmNdhgcDIN0Def-tw_yVD_wOiQ5FeRg_SMYQr3LPs"
+                    className="mt-2 font-mono text-xs"
+                  />
+                </div>
+
+                <div className="mt-2">
+                  <Label>Refresh Token</Label>
+                  <Input
+                    value={refreshToken}
+                    onChange={(e) => setRefreshToken(e.target.value)}
+                    placeholder="lcKnTepeDSapOCiF5yEMIFKt598BY6NfDMqBqx8e3iY"
+                    className="mt-2 font-mono text-xs"
+                  />
+                </div>
+
+                <div className="mt-2">
+                  <Label>Expiry Date</Label>
+                  <Input
+                    value={expiryToken}
+                    onChange={(e) => setExpiryToken(e.target.value)}
+                    placeholder="2026-04-15 18:02:17"
+                    className="mt-2 font-mono text-xs"
+                  />
+                </div>
+
+                <div className="p-3 rounded-lg border border-blue-500/30 bg-blue-500/10 text-xs text-blue-300/70">
+                  Tokens aus der cTrader Open API Playground eintragen. Account-Details werden automatisch abgerufen.
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -219,7 +290,9 @@ const CreateAccountFormModal = ({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit}>Submit Account</Button>
+          <Button onClick={handleSubmit}>
+            {isCtrader ? "Connect cTrader" : "Submit Account"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

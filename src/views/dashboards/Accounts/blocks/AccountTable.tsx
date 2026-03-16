@@ -352,28 +352,32 @@ const AccountTable = () => {
                     <Icon icon="solar:pen-new-square-linear" height={18} />
                     <span>Edit Account</span>
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="flex gap-3 items-center cursor-pointer mt-4 hover:bg-gray-500"
-                    onSelect={() => {
-                      if (confirm(`Restart account ${row.original.account_number}?`)) {
-                        handleRestart(row.original.id);
-                      }
-                    }}
-                  >
-                    <Icon icon="solar:restart-bold" height={18} />
-                    <span>Restart</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    className="flex gap-3 items-center cursor-pointer mt-4 hover:bg-gray-500"
-                    onSelect={() => {
-                      if (confirm(`Reinstall account ${row.original.account_number}?`)) {
-                        handleInstall(row.original.id);
-                      }
-                    }}
-                  >
-                    <Icon icon="solar:download-bold" height={18} />
-                    <span>Reinstall</span>
-                  </DropdownMenuItem>
+                  {row.original.platform_name !== "cTrader" && (
+                    <>
+                      <DropdownMenuItem
+                        className="flex gap-3 items-center cursor-pointer mt-4 hover:bg-gray-500"
+                        onSelect={() => {
+                          if (confirm(`Restart account ${row.original.account_number}?`)) {
+                            handleRestart(row.original.id);
+                          }
+                        }}
+                      >
+                        <Icon icon="solar:restart-bold" height={18} />
+                        <span>Restart</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="flex gap-3 items-center cursor-pointer mt-4 hover:bg-gray-500"
+                        onSelect={() => {
+                          if (confirm(`Reinstall account ${row.original.account_number}?`)) {
+                            handleInstall(row.original.id);
+                          }
+                        }}
+                      >
+                        <Icon icon="solar:download-bold" height={18} />
+                        <span>Reinstall</span>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuItem
                     className="flex gap-3 items-center cursor-pointer mt-4 hover:bg-gray-500"
                     onSelect={() => {
