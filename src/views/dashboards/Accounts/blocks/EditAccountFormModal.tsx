@@ -43,7 +43,8 @@ const EditAccountFormModal = ({
   const [serverName, setServerName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  // cTrader token fields
+  // cTrader fields
+  const [ctidTraderAccountId, setCtidTraderAccountId] = useState<number>(0);
   const [accessToken, setAccessToken] = useState("");
   const [refreshToken, setRefreshToken] = useState("");
   const [expiryToken, setExpiryToken] = useState("");
@@ -60,7 +61,8 @@ const EditAccountFormModal = ({
     setServerName(account.server_name || account.serverName || "");
     setAccountPassword(account.account_password || account.accountPassword || "");
 
-    // Prefill cTrader token fields from account data
+    // Prefill cTrader fields from account data
+    setCtidTraderAccountId(account.ctid_trader_account_id || 0);
     setAccessToken(account.access_token || "");
     setRefreshToken(account.refresh_token || "");
     // token_expired_at comes as ISO string, convert to datetime-local format
@@ -94,8 +96,9 @@ const EditAccountFormModal = ({
       payload.account_password = accountPassword;
     }
 
-    // cTrader Token-Felder mitsenden falls ausgefüllt
+    // cTrader-spezifische Felder mitsenden
     if (isCtrader) {
+      if (ctidTraderAccountId > 0) payload.ctid_trader_account_id = ctidTraderAccountId;
       if (accessToken.trim() !== "") payload.access_token = accessToken;
       if (refreshToken.trim() !== "") payload.refresh_token = refreshToken;
       if (expiryToken.trim() !== "") payload.expiry_token = expiryToken;
@@ -227,6 +230,17 @@ const EditAccountFormModal = ({
 
           {isCtrader && (
             <>
+              <div>
+                <Label>cTrader Trading Account ID</Label>
+                <Input
+                  type="number"
+                  value={ctidTraderAccountId || ""}
+                  onChange={(e) => setCtidTraderAccountId(Number(e.target.value))}
+                  placeholder="ctidTraderAccountId (from cTrader)"
+                  className="mt-2"
+                />
+              </div>
+
               <div>
                 <Label>Access Token</Label>
                 <Input
