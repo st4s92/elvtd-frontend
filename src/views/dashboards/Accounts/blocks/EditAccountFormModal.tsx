@@ -17,13 +17,12 @@ import {
   SelectContent,
   SelectItem,
 } from "src/components/ui/select";
-import { Account } from "src/types/traders/account";
 import { Icon } from "@iconify/react";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  account: Account | null;
+  account: any;
   userName: string;
   userEmail: number;
   onSuccess?: () => void;
@@ -51,15 +50,15 @@ const EditAccountFormModal = ({
 
   const isCtrader = platformName === "cTrader";
 
-  // 🔥 PREFILL DATA
+  // 🔥 PREFILL DATA (API liefert snake_case)
   useEffect(() => {
     if (!account) return;
 
-    setPlatformName(account.platformName);
-    setAccountNumber(account.accountNumber);
-    setBrokerName(account.brokerName);
-    setServerName(account.serverName);
-    setAccountPassword(account.accountPassword || "");
+    setPlatformName(account.platform_name || account.platformName || "");
+    setAccountNumber(account.account_number || account.accountNumber || 0);
+    setBrokerName(account.broker_name || account.brokerName || "");
+    setServerName(account.server_name || account.serverName || "");
+    setAccountPassword(account.account_password || account.accountPassword || "");
 
     // Reset cTrader token fields on open
     setAccessToken("");
@@ -89,12 +88,41 @@ const EditAccountFormModal = ({
       if (expiryToken.trim() !== "") payload.expiry_token = expiryToken;
     }
 
+    console.log("[EditAccount] Sending payload:", JSON.stringify(payload, null, 2));
+
     try {
-      await axiosClient.patch(`/trader/account/${account.id}`, payload);
+      // 1. Account-Daten updaten
+      const res: any = await axiosClient.patch(`/trader/account/${account.id}`, payload);
+      console.log("[EditAccount] Account update response:", JSON.stringify(res, null, 2));
+
+      if (res?.status === false) {
+        alert(`Update failed: ${res?.data || res?.message || "Unknown error"}`);
+        return;
+      }
+
+      // 2. cTrader Token separat speichern über dedizierten Endpoint
+      if (isCtrader && accessToken.trim() !== "") {
+        const tokenPayload = {
+          account_number: accountNumber,
+          access_token: accessToken,
+          refresh_token: refreshToken,
+          expiry_token: expiryToken,
+        };
+        console.log("[EditAccount] Saving cTrader token:", JSON.stringify(tokenPayload, null, 2));
+
+        const tokenRes: any = await axiosClient.put("/ctrader/token/save", tokenPayload);
+        console.log("[EditAccount] Token save response:", JSON.stringify(tokenRes, null, 2));
+
+        if (tokenRes?.status === false) {
+          alert(`Token save failed: ${tokenRes?.data || tokenRes?.message || "Unknown error"}`);
+          return;
+        }
+      }
+
       onOpenChange(false);
       onSuccess?.();
     } catch (err) {
-      console.error(err);
+      console.error("[EditAccount] Error:", err);
       alert("Failed to update account");
     }
   };
