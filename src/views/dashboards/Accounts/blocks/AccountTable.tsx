@@ -1,4 +1,4 @@
-import { ColumnDef } from "@tanstack/react-table";
+import { ColumnDef, SortingState } from "@tanstack/react-table";
 import { DataTable } from "src/components/utilities/table/DataTable";
 import { useCallback, useEffect, useState } from "react";
 import axiosClient from "src/lib/axios";
@@ -24,6 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "src/components/ui/select";
+import { Checkbox } from "src/components/ui/checkbox";
+import { Button } from "src/components/ui/button";
 
 const AccountTable = () => {
   const navigate = useNavigate();
@@ -33,6 +35,7 @@ const AccountTable = () => {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState<string>("");
+  const [sorting, setSorting] = useState<SortingState>([]);
 
   const [openCreateOrder, setOpenCreateOrder] = useState(false);
   const [openCopyTradeConfig, setOpenCopyTradeConfig] = useState(false);
@@ -48,19 +51,32 @@ const AccountTable = () => {
   const [editingAccount, setEditingAccount] = useState<any>(null);
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
   const [roleFilter, setRoleFilter] = useState<"" | "MASTER" | "SLAVE">("");
+  const [platformFilter, setPlatformFilter] = useState<string>("");
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
+  const [isRestartingBulk, setIsRestartingBulk] = useState(false);
 
   const fetchData = useCallback(async () => {
-    const res = await axiosClient.get("/trader/account/paginated", {
-      params: {
-        PerPage: pageSize,
-        Page: page,
-        ...(roleFilter ? { Role: roleFilter } : {}),
-      },
-    });
+    const params: any = {
+      PerPage: pageSize,
+      Page: page,
+    };
 
-    setRows(res.data.data);
-    setTotalRows(res.data.total);
-  }, [page, pageSize, roleFilter]);
+    try {
+      const res: any = await axiosClient.get("/trader/account/paginated", { params });
+      if (res.status) {
+        setRows(res.data?.data || []);
+        setTotalRows(res.data?.total || 0);
+      } else {
+        console.error("Failed to fetch accounts:", res.message);
+        setRows([]);
+        setTotalRows(0);
+      }
+    } catch (error) {
+      console.error("Failed to fetch accounts", error);
+      setRows([]);
+      setTotalRows(0);
+    }
+  }, [page, pageSize, roleFilter, platformFilter, search, sorting]);
 
   const isAnyUIOpen =
     openCreateOrder ||
@@ -77,9 +93,47 @@ const AccountTable = () => {
     return () => clearInterval(interval);
   }, [fetchData, isAnyUIOpen]);
 
-  // const triggerInstall = async (accountId: number) => {
-  //   await axiosClient.post(`/trader/account/${accountId}/install`, {});
-  // };
+  const handleRestart = async (accountId: number) => {
+    try {
+      await axiosClient.post(`/trader/account/${accountId}/restart`);
+      return { id: accountId, success: true };
+    } catch (error) {
+      console.error("Failed to restart account", error);
+      return { id: accountId, success: false };
+    }
+  };
+
+  const handleBulkRestart = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Restart ${selectedIds.length} selected accounts?`)) return;
+
+    setIsRestartingBulk(true);
+    try {
+      const results = await Promise.allSettled(selectedIds.map(id => handleRestart(id)));
+      const failed = results.filter(r => r.status === 'rejected' || (r.status === 'fulfilled' && !r.value.success));
+
+      if (failed.length > 0) {
+        alert(`${selectedIds.length - failed.length} restarts sent, ${failed.length} failed.`);
+      } else {
+        alert("All restart commands sent successfully");
+      }
+      setSelectedIds([]);
+      fetchData();
+    } finally {
+      setIsRestartingBulk(false);
+    }
+  };
+
+  const handleInstall = async (accountId: number) => {
+    try {
+      await axiosClient.post(`/trader/account/${accountId}/install`);
+      alert("Reinstall command sent successfully");
+      fetchData();
+    } catch (error) {
+      console.error("Failed to reinstall account", error);
+      alert("Failed to reinstall account");
+    }
+  };
 
   const handleDelete = async (accountId: number) => {
     await axiosClient.delete(`/trader/account/${accountId}`);
@@ -87,6 +141,37 @@ const AccountTable = () => {
   };
 
   const columns: ColumnDef<Record<string, any>>[] = [
+    {
+      id: "select",
+      header: () => (
+        <Checkbox
+          checked={selectedIds.length === rows.length && rows.length > 0}
+          onCheckedChange={(value) => {
+            if (value) {
+              setSelectedIds(rows.map((r) => r.id));
+            } else {
+              setSelectedIds([]);
+            }
+          }}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={selectedIds.includes(row.original.id)}
+          onCheckedChange={(value) => {
+            if (value) {
+              setSelectedIds((prev) => [...prev, row.original.id]);
+            } else {
+              setSelectedIds((prev) => prev.filter((id) => id !== row.original.id));
+            }
+          }}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
     {
       accessorKey: "platform_name",
       header: "Platform",
@@ -153,6 +238,19 @@ const AccountTable = () => {
       header: "Ded. Server",
     },
     {
+      accessorKey: "copier_version",
+      header: "Version",
+      cell: ({ row }) => {
+        const version = row.original.copier_version;
+        if (!version) return <span className="text-gray-500">—</span>;
+        return (
+          <Badge variant="outline" className="font-mono text-[10px] border-primary/30 text-primary-foreground bg-primary/5">
+            {version}
+          </Badge>
+        );
+      },
+    },
+    {
       accessorKey: "updated_at",
       header: "Last Update",
       cell: ({ row }) => {
@@ -172,6 +270,7 @@ const AccountTable = () => {
       },
     },
     {
+      id: "actions",
       header: "Action",
       cell: ({ row }) => {
         const accountId = row.original.id;
@@ -243,17 +342,6 @@ const AccountTable = () => {
                       <span>Edit Config</span>
                     </DropdownMenuItem>
                   )}
-                  {/* <DropdownMenuItem
-                  className="flex gap-3 items-center cursor-pointer mt-4 hover:bg-gray-500"
-                  onSelect={() => {
-                    if (confirm("re run installation?")) {
-                      triggerInstall(row.original.id);
-                    }
-                  }}
-                >
-                  <Icon icon="solar:refresh-circle-broken" height={18} />
-                  <span>Reinstall</span>
-                </DropdownMenuItem> */}
                   <DropdownMenuItem
                     className="flex gap-3 items-center cursor-pointer mt-4 hover:bg-gray-500"
                     onSelect={() => {
@@ -263,6 +351,28 @@ const AccountTable = () => {
                   >
                     <Icon icon="solar:pen-new-square-linear" height={18} />
                     <span>Edit Account</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="flex gap-3 items-center cursor-pointer mt-4 hover:bg-gray-500"
+                    onSelect={() => {
+                      if (confirm(`Restart account ${row.original.account_number}?`)) {
+                        handleRestart(row.original.id);
+                      }
+                    }}
+                  >
+                    <Icon icon="solar:restart-bold" height={18} />
+                    <span>Restart</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="flex gap-3 items-center cursor-pointer mt-4 hover:bg-gray-500"
+                    onSelect={() => {
+                      if (confirm(`Reinstall account ${row.original.account_number}?`)) {
+                        handleInstall(row.original.id);
+                      }
+                    }}
+                  >
+                    <Icon icon="solar:download-bold" height={18} />
+                    <span>Reinstall</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     className="flex gap-3 items-center cursor-pointer mt-4 hover:bg-gray-500"
@@ -289,25 +399,67 @@ const AccountTable = () => {
   ];
 
   const roleFilterMenu = (
+    <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-muted-foreground">Type:</span>
+        <Select
+          value={roleFilter || "all"}
+          onValueChange={(val) => {
+            const v = val === "all" ? "" : (val as "MASTER" | "SLAVE");
+            setRoleFilter(v);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="w-28 h-9">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="MASTER">Master</SelectItem>
+            <SelectItem value="SLAVE">Slave</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-muted-foreground">Platform:</span>
+        <Select
+          value={platformFilter || "all"}
+          onValueChange={(val) => {
+            const v = val === "all" ? "" : val;
+            setPlatformFilter(v);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="w-28 h-9">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All</SelectItem>
+            <SelectItem value="MT4">MT4</SelectItem>
+            <SelectItem value="MT5">MT5</SelectItem>
+            <SelectItem value="cTrader">cTrader</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+
+  const bulkActionsMenu = (
     <div className="flex items-center gap-2">
-      <span className="text-sm text-muted-foreground">Type:</span>
-      <Select
-        value={roleFilter || "all"}
-        onValueChange={(val) => {
-          const v = val === "all" ? "" : (val as "MASTER" | "SLAVE");
-          setRoleFilter(v);
-          setPage(1); // reset ke page 1 saat filter berubah
-        }}
-      >
-        <SelectTrigger className="w-32 h-9">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All</SelectItem>
-          <SelectItem value="MASTER">Master</SelectItem>
-          <SelectItem value="SLAVE">Slave</SelectItem>
-        </SelectContent>
-      </Select>
+      {selectedIds.length > 0 && (
+        <Button
+          variant="warning"
+          size="sm"
+          className="h-9 gap-2 shadow-lg animate-in fade-in slide-in-from-right-4"
+          onClick={handleBulkRestart}
+          disabled={isRestartingBulk}
+        >
+          <Icon icon="solar:restart-bold" height={18} className={isRestartingBulk ? "animate-spin" : ""} />
+          <span>Restart Selected ({selectedIds.length})</span>
+        </Button>
+      )}
+      {roleFilterMenu}
     </div>
   );
 
@@ -322,11 +474,14 @@ const AccountTable = () => {
             downloadConfig={{
               enable: false,
             }}
-            rightMenu={roleFilterMenu}
+            rightMenu={bulkActionsMenu}
             searchConfig={{
-              enable: false,
+              enable: true,
               text: search,
-              setSearchChange: setSearch,
+              setSearchChange: (val) => {
+                setSearch(val);
+                setPage(1);
+              },
             }}
             pagination={{
               page,
@@ -335,8 +490,12 @@ const AccountTable = () => {
               onPageChange: setPage,
               onPageSizeChange: (size) => {
                 setPageSize(size);
-                setPage(1); // reset page
-              },
+                setPage(1);
+              }
+            }}
+            sortingConfig={{
+              sorting,
+              setSorting,
             }}
           />
         </div>

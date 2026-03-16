@@ -22,9 +22,9 @@ import { Icon } from "@iconify/react";
 
 type Account = {
   id: number;
-  accountNumber: number;
-  platformName: string;
-  serverName: string;
+  account_number: number;
+  platform_name: string;
+  server_name: string;
 };
 
 type Props = {
@@ -229,8 +229,8 @@ const CopyTradeConfigModal = ({
                     <SelectContent>
                       {accounts.map((acc) => (
                         <SelectItem key={acc.id} value={String(acc.id)}>
-                          {acc.platformName} - {acc.serverName} —{" "}
-                          {acc.accountNumber}
+                          {acc.platform_name} - {acc.server_name} —{" "}
+                          {acc.account_number}
                         </SelectItem>
                       ))}
                     </SelectContent>

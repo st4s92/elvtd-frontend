@@ -59,11 +59,11 @@ const ServerTable = () => {
 
   const columns: ColumnDef<Record<string, any>>[] = [
     {
-      accessorKey: "serverName",
+      accessorKey: "server_name",
       header: "Server Name",
     },
     {
-      accessorKey: "serverIp",
+      accessorKey: "server_ip",
       header: "Server IP",
     },
     {
@@ -110,7 +110,7 @@ const ServerTable = () => {
       },
     },
     {
-      accessorKey: "serverOs",
+      accessorKey: "server_os",
       header: "Server OS",
     },
     {
@@ -142,10 +142,10 @@ const ServerTable = () => {
       },
     },
     {
-      accessorKey: "updatedAt",
+      accessorKey: "updated_at",
       header: "Last Update",
       cell: ({ row }) => {
-        const updatedAt = row.original.updatedAt;
+        const updatedAt = row.original.updated_at;
         if (!updatedAt) return "-";
 
         // Force UTC parsing by appending 'Z' if not present

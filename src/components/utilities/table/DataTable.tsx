@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "src/components/ui/table";
-import type { ColumnDef, SortingState } from "@tanstack/react-table";
+import type { ColumnDef, SortingState, OnChangeFn } from "@tanstack/react-table";
 import { Input } from "src/components/ui/input";
 import { Button } from "src/components/ui/button";
 import { Icon } from "@iconify/react/dist/iconify.js";
@@ -51,6 +51,11 @@ interface DynamicTableProps {
     enable: boolean;
   };
   rightMenu?: ReactNode;
+  sortingConfig?: {
+    sorting: SortingState;
+    setSorting: OnChangeFn<SortingState>;
+  };
+  onRowClick?: (row: Record<string, any>) => void;
 }
 
 export const DataTable: React.FC<DynamicTableProps> = ({
@@ -61,8 +66,13 @@ export const DataTable: React.FC<DynamicTableProps> = ({
   downloadConfig,
   pagination,
   rightMenu,
+  sortingConfig,
+  onRowClick,
 }) => {
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [internalSorting, setInternalSorting] = useState<SortingState>([]);
+
+  const sorting = sortingConfig?.sorting ?? internalSorting;
+  const setSorting = sortingConfig?.setSorting ?? setInternalSorting;
 
   const paginationOptions = [5, 10, 20, 50];
 
@@ -78,7 +88,7 @@ export const DataTable: React.FC<DynamicTableProps> = ({
         pageSize: pagination.pageSize,
       },
     },
-    onPaginationChange: () => {}, // DISABLED, handled by parent
+    onPaginationChange: () => { }, // DISABLED, handled by parent
     pageCount: Math.ceil(pagination.totalRows / pagination.pageSize),
 
     onGlobalFilterChange: searchConfig?.setSearchChange,
@@ -208,7 +218,8 @@ export const DataTable: React.FC<DynamicTableProps> = ({
                           }) => (
                             <TableRow
                               key={row.id}
-                              className="hover:bg-primary/10 transition-colors"
+                              className={`transition-colors ${onRowClick ? "cursor-pointer hover:bg-primary/20" : "hover:bg-primary/10"}`}
+                              onClick={() => onRowClick && onRowClick((row as any).original)}
                             >
                               {row.getVisibleCells().map((cell) => (
                                 <TableCell

@@ -9,6 +9,7 @@ import axiosClient from "src/lib/axios";
 import ActiveOrdersTable from "./blocks/ActiveOrdersTable";
 import PositionHistoryTable from "./blocks/PositionHistoryTable";
 import SlaveOrdersSection from "./blocks/SlaveOrdersSection";
+import AccountConnectionsTable from "./blocks/AccountConnectionsTable";
 
 const AccountProfile = () => {
   const { accountId } = useParams();
@@ -59,6 +60,9 @@ const AccountProfile = () => {
 
       {/* BALANCE CHART */}
       <BalanceChart data={data.accountLogs} />
+
+      {/* CONNECTIONS (MASTER-SLAVE) */}
+      <AccountConnectionsTable accountId={data.account.id} role={data.account.role} />
 
       {data.orders && data.orders.length > 0 && (
         <ActiveOrdersTable

@@ -14,6 +14,8 @@ const BlankLayout = Loadable(lazy(() => import('../layouts/blank/BlankLayout')))
 
 const SymbolMap = Loadable(lazy(() => import('../views/dashboards/SymbolMap/Index')));
 const MasterOrders = Loadable(lazy(() => import('../views/dashboards/MasterOrders/Index')));
+const Orders = Loadable(lazy(() => import('../views/dashboards/Orders/Index')));
+const Jobs = Loadable(lazy(() => import('../views/dashboards/Jobs/Index')));
 
 // authentication
 
@@ -64,6 +66,8 @@ const Router = [
       { path: '/dashboard/accounts/:accountId', element: <AccountProfile /> },
       { path: '/dashboard/symbol-map', element: <SymbolMap /> },
       { path: '/dashboard/master-orders', element: <MasterOrders /> },
+      { path: '/dashboard/orders', element: <Orders /> },
+      { path: '/dashboard/jobs', element: <Jobs /> },
       { path: '/utilities/form', element: <Form /> },
       { path: '/utilities/table', element: <Table /> },
       { path: '/apps/tickets', element: <Tickets /> },

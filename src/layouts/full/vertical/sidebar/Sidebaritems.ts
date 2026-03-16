@@ -84,13 +84,20 @@ const SidebarContent: MenuItem[] = [
         url: '/dashboard/master-orders',
         isPro: false,
       },
-      // {
-      //   id: uniqueId(),
-      //   name: 'Orders',
-      //   icon: 'solar:clipboard-list-line-duotone',
-      //   url: '/dashboard/signals/1',
-      //   isPro: false,
-      // },
+      {
+        id: uniqueId(),
+        name: 'Jobs',
+        icon: 'solar:running-round-linear',
+        url: '/dashboard/jobs',
+        isPro: false,
+      },
+      {
+        id: uniqueId(),
+        name: 'Orders',
+        icon: 'solar:clipboard-list-line-duotone',
+        url: '/dashboard/orders',
+        isPro: false,
+      },
     ],
   },
   // {

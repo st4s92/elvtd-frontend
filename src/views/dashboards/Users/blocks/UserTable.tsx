@@ -1,6 +1,6 @@
-import { ColumnDef } from "@tanstack/react-table";
+import { ColumnDef, SortingState } from "@tanstack/react-table";
 import { DataTable } from "src/components/utilities/table/DataTable";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import axiosClient from "src/lib/axios";
 import {
   DropdownMenu,
@@ -13,31 +13,35 @@ import { TableCell } from "src/components/ui/table";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import CreateAccountFormModal from "./CreateAccountFormModal";
 
-const AccountTable = () => {
+const UserTable = () => {
   const [rows, setRows] = useState<Record<string, any>[]>([]);
   const [totalRows, setTotalRows] = useState(0);
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState<string>("");
+  const [sorting, setSorting] = useState<SortingState>([]);
 
   const [openCreateAccount, setOpenCreateAccount] = useState(false);
 
-  const fetchData = async () => {
-    const res = await axiosClient.get("/users/paginated", {
-      params: {
-        PerPage: pageSize,
-        Page: page,
-      },
-    });
+  const fetchData = useCallback(async () => {
+    const params: any = {
+      PerPage: pageSize,
+      Page: page,
+    };
 
-    setRows(res.data.data);
-    setTotalRows(res.data.total);
-  };
+    try {
+      const res = await axiosClient.get("/users/paginated", { params });
+      setRows(res.data.data);
+      setTotalRows(res.data.total);
+    } catch (error) {
+      console.error("Failed to fetch users", error);
+    }
+  }, [page, pageSize, search, sorting]);
 
   useEffect(() => {
     fetchData();
-  }, [page, pageSize]);
+  }, [fetchData]);
 
   const columns: ColumnDef<Record<string, any>>[] = [
     {
@@ -52,10 +56,11 @@ const AccountTable = () => {
       accessorKey: "role",
       header: "Role",
       cell: ({ row }) => {
-        return <span>{row.original.roleId === 1 ? 'Administrator' : 'User' }</span>;
+        return <span>{row.original.roleId === 1 ? 'Administrator' : 'User'}</span>;
       },
     },
     {
+      id: "actions",
       header: "Action",
       cell: ({ row }) => {
         const userName = row.original.name;
@@ -109,9 +114,12 @@ const AccountTable = () => {
               enable: false,
             }}
             searchConfig={{
-              enable: false,
+              enable: true,
               text: search,
-              setSearchChange: setSearch,
+              setSearchChange: (val) => {
+                setSearch(val);
+                setPage(1);
+              },
             }}
             pagination={{
               page,
@@ -120,8 +128,12 @@ const AccountTable = () => {
               onPageChange: setPage,
               onPageSizeChange: (size) => {
                 setPageSize(size);
-                setPage(1); // reset page
+                setPage(1);
               },
+            }}
+            sortingConfig={{
+              sorting,
+              setSorting,
             }}
           />
         </div>
@@ -130,4 +142,4 @@ const AccountTable = () => {
   );
 };
 
-export default AccountTable;
+export default UserTable;

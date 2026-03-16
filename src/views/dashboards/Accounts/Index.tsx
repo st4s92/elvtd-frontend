@@ -1,5 +1,6 @@
 import BreadcrumbComp from "src/layouts/full/shared/breadcrumb/BreadcrumbComp"
 import AccountTable from "./blocks/AccountTable";
+import GlobalConnectionsTable from "./blocks/GlobalConnectionsTable";
 import { Button } from "src/components/ui/button";
 import axiosClient from "src/lib/axios";
 
@@ -32,7 +33,7 @@ const Accounts = () => {
     <>
       <BreadcrumbComp title="Accounts" items={BCrumb} />
 
-      <div className="flex gap-4 mb-6">
+      <div className="flex gap-4 mb-6 text-xs sm:text-sm">
         <Button variant="error" onClick={handleForceCloseMaster}>
           Force Close All Master Trades
         </Button>
@@ -42,6 +43,8 @@ const Accounts = () => {
       </div>
 
       <AccountTable />
+
+      <GlobalConnectionsTable />
     </>
   )
 }

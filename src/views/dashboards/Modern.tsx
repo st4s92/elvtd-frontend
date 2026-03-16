@@ -1,44 +1,36 @@
-import { TopCards } from "src/components/dashboards/modern/TopCards";
-import { RevenueUpdate } from "src/components/dashboards/modern/RevenueUpdate";
-import { YearlyBreakup } from "src/components/dashboards/modern/YearlyBreakup";
-import { MonthlyEarning } from "src/components/dashboards/modern/MonthlyEarning";
-import { RecentTransaction } from "src/components/dashboards/modern/RecentTransaction";
-import { ProductPerformance } from "src/components/dashboards/modern/ProuctPerformance";
-import { Footer } from "src/components/dashboards/modern/Footer";
-import ProfileWelcome from "src/components/dashboards/modern/ProfileWelcome";
-import RetroFeatureCards from "src/components/ui/RetroFeatureCards";
+import ProfileWelcome from 'src/components/dashboards/modern/ProfileWelcome';
+import { MonitoringCards } from 'src/components/dashboards/modern/MonitoringCards';
+import { ServerLoadChart } from 'src/components/dashboards/modern/ServerLoadChart';
+import LiveMasterTradesCarousel from 'src/components/dashboards/modern/LiveMasterTradesCarousel';
+import {
+    TradeActivityChart,
+    AccountRatioChart,
+    SystemHealthSparkline,
+    RecentOrdersTable,
+} from 'src/components/dashboards/modern/TradingCharts';
+
 const Moderndash = () => {
     return (
-        <>
-            <div className="grid grid-cols-12 gap-6">
-                <div className="col-span-12">
-                    <ProfileWelcome />
-                </div>
-                <div className="col-span-12">
-                    <RetroFeatureCards />
-                </div>
-                <div className="col-span-12">
-                    <TopCards />
-                </div>
-                <div className="lg:col-span-8 col-span-12 flex">
-                    <RevenueUpdate />
-                </div>
-                <div className="lg:col-span-4 col-span-12 ">
-                    <YearlyBreakup />
-                    <MonthlyEarning />
-                </div>
-                <div className="lg:col-span-4 col-span-12">
-                    <RecentTransaction />
-                </div>
-                <div className="lg:col-span-8 col-span-12 flex">
-                    <ProductPerformance />
-                </div>
-                <div className="col-span-12">
-                    <Footer />
+        <div className="flex flex-col gap-6">
+            <ProfileWelcome />
+            <MonitoringCards />
+            <LiveMasterTradesCarousel />
+            <ServerLoadChart />
+
+            {/* Charts Row 1: Trade Activity (big) + Account Ratio + System Health (stacked) */}
+            <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
+                <TradeActivityChart />
+                <div className="flex flex-col gap-0">
+                    <AccountRatioChart />
+                    <SystemHealthSparkline />
                 </div>
             </div>
 
-        </>
+            {/* Charts Row 2: Recent Orders Table (full width) */}
+            <div className="grid grid-cols-1 gap-6">
+                <RecentOrdersTable />
+            </div>
+        </div>
     );
 };
 
