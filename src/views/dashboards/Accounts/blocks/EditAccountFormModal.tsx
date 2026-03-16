@@ -60,10 +60,23 @@ const EditAccountFormModal = ({
     setServerName(account.server_name || account.serverName || "");
     setAccountPassword(account.account_password || account.accountPassword || "");
 
-    // Reset cTrader token fields on open
-    setAccessToken("");
-    setRefreshToken("");
-    setExpiryToken("");
+    // Prefill cTrader token fields from account data
+    setAccessToken(account.access_token || "");
+    setRefreshToken(account.refresh_token || "");
+    // token_expired_at comes as ISO string, convert to datetime-local format
+    const expAt = account.token_expired_at;
+    if (expAt) {
+      const d = new Date(expAt);
+      // Format: YYYY-MM-DDTHH:mm (for datetime-local input)
+      const formatted = d.getFullYear() + "-" +
+        String(d.getMonth() + 1).padStart(2, "0") + "-" +
+        String(d.getDate()).padStart(2, "0") + "T" +
+        String(d.getHours()).padStart(2, "0") + ":" +
+        String(d.getMinutes()).padStart(2, "0");
+      setExpiryToken(formatted);
+    } else {
+      setExpiryToken("");
+    }
   }, [account, open]);
 
   const handleSubmit = async () => {
