@@ -91,21 +91,29 @@ const SlaveOrdersSection = ({ masterAccountId }: { masterAccountId: number }) =>
                                         </td>
                                     </tr>
                                 ) : (
-                                    slave.orders.map((order: any) => (
+                                    slave.orders.map((order: any) => {
+                                        // ActiveOrder model uses [JsonPropertyName] with snake_case
+                                        const ticket = order.order_ticket ?? order.orderTicket ?? 0;
+                                        const symbol = order.order_symbol ?? order.orderSymbol ?? "";
+                                        const type = order.order_type ?? order.orderType ?? "";
+                                        const lot = order.order_lot ?? order.orderLot ?? 0;
+                                        const price = order.order_price ?? order.orderPrice ?? 0;
+                                        const profit = order.order_profit ?? order.orderProfit ?? 0;
+                                        return (
                                         <tr key={order.id} className="border-b border-white/10 hover:bg-white/5 transition">
-                                            <td className="px-4 py-3">{order.orderTicket}</td>
-                                            <td className="px-4 py-3">{order.orderSymbol}</td>
+                                            <td className="px-4 py-3">{ticket}</td>
+                                            <td className="px-4 py-3">{symbol}</td>
                                             <td className="px-4 py-3">
-                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${order.orderType === "DEAL_TYPE_BUY" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
+                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${type === "DEAL_TYPE_BUY" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
                                                     }`}>
-                                                    {order.orderType?.replace("DEAL_TYPE_", "")}
+                                                    {type?.replace("DEAL_TYPE_", "")}
                                                 </span>
                                             </td>
-                                            <td className="px-4 py-3 font-mono">{order.orderLot.toFixed(2)}</td>
-                                            <td className="px-4 py-3 font-mono">{order.orderPrice.toFixed(5)}</td>
+                                            <td className="px-4 py-3 font-mono">{Number(lot).toFixed(2)}</td>
+                                            <td className="px-4 py-3 font-mono">{Number(price).toFixed(5)}</td>
                                             <td className="px-4 py-3">
-                                                <span className={`font-bold ${order.orderProfit >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                                                    {order.orderProfit?.toFixed(2)}
+                                                <span className={`font-bold ${Number(profit) >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                                                    {Number(profit).toFixed(2)}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3 text-right">
@@ -118,7 +126,8 @@ const SlaveOrdersSection = ({ masterAccountId }: { masterAccountId: number }) =>
                                                 </button>
                                             </td>
                                         </tr>
-                                    ))
+                                        );
+                                    })
                                 )}
                             </tbody>
                         </table>

@@ -7,10 +7,13 @@ import { Button } from "src/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "src/components/ui/dialog";
 import { Label } from "src/components/ui/label";
 import { Input } from "src/components/ui/input";
+import axiosClient from "src/lib/axios";
 
 const UserProfile = () => {
     const [openModal, setOpenModal] = useState(false);
-    const [modalType, setModalType] = useState<"personal" | "address" | null>(null);
+    const [userId, setUserId] = useState<number | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
 
     const BCrumb = [
         {
@@ -23,44 +26,93 @@ const UserProfile = () => {
     ];
 
     const [personal, setPersonal] = useState({
-        firstName: "Mathew",
-        lastName: "Anderson",
-        email: "mathew.anderson@gmail.com",
-        phone: "(347) 528-1947",
-        position: "Team Leader",
-        facebook: "https://www.facebook.com/wrappixel",
-        twitter: "https://twitter.com/wrappixel",
-        github: "https://github.com/wrappixel",
-        dribbble: "https://dribbble.com/wrappixel"
-    });
-
-    const [address, setAddress] = useState({
-        location: "United States",
-        state: "San Diego, California, United States",
-        pin: "92101",
-        zip: "30303",
-        taxNo: "GA45273910"
+        firstName: "Loading...",
+        lastName: "",
+        email: "loading@example.com",
+        password: "",
+        roleId: 1
     });
 
     const [tempPersonal, setTempPersonal] = useState(personal);
-    const [tempAddress, setTempAddress] = useState(address);
+
+    const fetchUser = async () => {
+        try {
+            setLoading(true);
+            // Attempt to get user from token if one exists
+            let activeUserId = null;
+            try {
+                const token = localStorage.getItem("token");
+                if (token) {
+                    const payload = JSON.parse(atob(token.split('.')[1]));
+                    activeUserId = payload.id || payload.sub;
+                }
+            } catch (e) {}
+
+            // Fallback: If no token or no id, just grab the first user from the database
+            if (!activeUserId) {
+                const res: any = await axiosClient.get("/users");
+                const users = res.data?.data || res.data || [];
+                if (users.length > 0) {
+                    activeUserId = users[0].id;
+                }
+            }
+
+            if (activeUserId) {
+                setUserId(activeUserId);
+                const userRes: any = await axiosClient.get(`/users/${activeUserId}`);
+                const userData = userRes.data || userRes;
+                if (userData) {
+                    const nameParts = userData.name ? userData.name.split(" ") : ["", ""];
+                    setPersonal({
+                        firstName: nameParts[0] || "",
+                        lastName: nameParts.slice(1).join(" ") || "",
+                        email: userData.email || "",
+                        password: "", // do not populate password back
+                        roleId: userData.roleId || 1
+                    });
+                }
+            }
+        } catch (error) {
+            console.error("Failed to load user profile", error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        if (openModal && modalType === "personal") {
-            setTempPersonal(personal);
-        }
-        if (openModal && modalType === "address") {
-            setTempAddress(address);
-        }
-    }, [openModal, modalType, personal, address]);
+        fetchUser();
+    }, []);
 
-    const handleSave = () => {
-        if (modalType === "personal") {
-            setPersonal(tempPersonal);
-        } else if (modalType === "address") {
-            setAddress(tempAddress);
+    useEffect(() => {
+        if (openModal) {
+            setTempPersonal({ ...personal, password: "" }); // Clear password field on open
         }
-        setOpenModal(false);
+    }, [openModal, personal]);
+
+    const handleSave = async () => {
+        if (!userId) return;
+        setSaving(true);
+        try {
+            const fullName = `${tempPersonal.firstName} ${tempPersonal.lastName}`.trim();
+            const payload: any = {
+                name: fullName,
+                email: tempPersonal.email,
+            };
+            
+            if (tempPersonal.password) {
+                payload.password = tempPersonal.password;
+            }
+
+            await axiosClient.put(`/users/${userId}`, payload);
+            alert("Profile updated successfully!");
+            setPersonal(tempPersonal);
+            setOpenModal(false);
+        } catch (error) {
+            console.error("Failed to update profile", error);
+            alert("Failed to update profile");
+        } finally {
+            setSaving(false);
+        }
     };
 
     const socialLinks = [
@@ -83,9 +135,9 @@ const UserProfile = () => {
                             <div className="flex flex-col sm:text-left text-center gap-1.5">
                                 <h5 className="card-title">{personal.firstName} {personal.lastName}</h5>
                                 <div className="flex flex-wrap items-center gap-1 md:gap-3">
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">{personal.position}</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">System Admin</p>
                                     <div className="hidden h-4 w-px bg-gray-300 dark:bg-gray-700 xl:block"></div>
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">{address.location}</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">Database User #{userId}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -99,51 +151,42 @@ const UserProfile = () => {
                     </div>
                 </CardBox>
 
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6">
                     <CardBox className="p-6 overflow-hidden">
-                        <h5 className="card-title mb-6">Personal Information</h5>
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:gap-7 2xl:gap-x-32 mb-6">
-                            <div><p className="text-xs text-gray-500">First Name</p><p>{personal.firstName}</p></div>
-                            <div><p className="text-xs text-gray-500">Last Name</p><p>{personal.lastName}</p></div>
-                            <div><p className="text-xs text-gray-500">Email</p><p>{personal.email}</p></div>
-                            <div><p className="text-xs text-gray-500">Phone</p><p>{personal.phone}</p></div>
-                            <div><p className="text-xs text-gray-500">Position</p><p>{personal.position}</p></div>
-                        </div>
-                        <div className="flex justify-end">
-                            <Button onClick={() => { setModalType("personal"); setOpenModal(true); }} color={"primary"} className="flex items-center gap-1.5 rounded-md">
+                        <div className="flex justify-between items-center mb-6">
+                            <h5 className="card-title">Personal Information</h5>
+                            <Button onClick={() => setOpenModal(true)} color={"primary"} disabled={loading} className="flex items-center gap-1.5 rounded-md">
                                 <Icon icon="ic:outline-edit" width="18" height="18" /> Edit
                             </Button>
                         </div>
-                    </CardBox>
-
-                    <CardBox className="p-6 overflow-hidden">
-                        <h5 className="card-title mb-6">Address Details</h5>
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:gap-7 2xl:gap-x-32 mb-6">
-                            <div><p className="text-xs text-gray-500">Location</p><p>{address.location}</p></div>
-                            <div><p className="text-xs text-gray-500">Province / State</p><p>{address.state}</p></div>
-                            <div><p className="text-xs text-gray-500">PIN Code</p><p>{address.pin}</p></div>
-                            <div><p className="text-xs text-gray-500">ZIP</p><p>{address.zip}</p></div>
-                            <div><p className="text-xs text-gray-500">Federal Tax No.</p><p>{address.taxNo}</p></div>
-                        </div>
-                        <div className="flex justify-end">
-                            <Button onClick={() => { setModalType("address"); setOpenModal(true); }} color={"primary"} className="flex items-center gap-1.5 rounded-md">
-                                <Icon icon="ic:outline-edit" width="18" height="18" /> Edit
-                            </Button>
-                        </div>
+                        
+                        {loading ? (
+                            <div className="animate-pulse flex flex-col gap-4">
+                                <div className="h-4 bg-white/10 rounded w-1/4"></div>
+                                <div className="h-4 bg-white/10 rounded w-1/2"></div>
+                                <div className="h-4 bg-white/10 rounded w-1/3"></div>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:gap-7 2xl:gap-x-32 mb-6">
+                                <div><p className="text-xs text-gray-500">First Name</p><p>{personal.firstName}</p></div>
+                                <div><p className="text-xs text-gray-500">Last Name</p><p>{personal.lastName}</p></div>
+                                <div><p className="text-xs text-gray-500">Email</p><p>{personal.email}</p></div>
+                                <div><p className="text-xs text-gray-500">User ID</p><p>#{userId || "Unknown"}</p></div>
+                            </div>
+                        )}
                     </CardBox>
                 </div>
             </div>
 
             <Dialog open={openModal} onOpenChange={setOpenModal}>
-                <DialogContent className="max-w-2xl">
+                <DialogContent className="max-w-xl">
                     <DialogHeader>
                         <DialogTitle className="mb-4">
-                            {modalType === "personal" ? "Edit Personal Information" : "Edit Address Details"}
+                            Edit Database Profile
                         </DialogTitle>
                     </DialogHeader>
 
-                    {modalType === "personal" ? (
-                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                             <div className="flex flex-col gap-2">
                                 <Label htmlFor="firstName">First Name</Label>
                                 <Input
@@ -171,117 +214,24 @@ const UserProfile = () => {
                                     onChange={(e) => setTempPersonal({ ...tempPersonal, email: e.target.value })}
                                 />
                             </div>
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="phone">Phone</Label>
+                            <div className="flex flex-col gap-2 lg:col-span-2 mt-2">
+                                <Label htmlFor="password">Update Password <span className="text-gray-500 font-normal ml-2">(leave blank to keep current password)</span></Label>
                                 <Input
-                                    id="phone"
-                                    placeholder="Phone"
-                                    value={tempPersonal.phone}
-                                    onChange={(e) => setTempPersonal({ ...tempPersonal, phone: e.target.value })}
-                                />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="position">Position</Label>
-                                <Input
-                                    id="position"
-                                    placeholder="Position"
-                                    value={tempPersonal.position}
-                                    onChange={(e) => setTempPersonal({ ...tempPersonal, position: e.target.value })}
-                                />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="facebook">Facebook URL</Label>
-                                <Input
-                                    id="facebook"
-                                    placeholder="Facebook URL"
-                                    value={tempPersonal.facebook}
-                                    onChange={(e) => setTempPersonal({ ...tempPersonal, facebook: e.target.value })}
-                                />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="twitter">Twitter URL</Label>
-                                <Input
-                                    id="twitter"
-                                    placeholder="Twitter URL"
-                                    value={tempPersonal.twitter}
-                                    onChange={(e) => setTempPersonal({ ...tempPersonal, twitter: e.target.value })}
-                                />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="github">GitHub URL</Label>
-                                <Input
-                                    id="github"
-                                    placeholder="GitHub URL"
-                                    value={tempPersonal.github}
-                                    onChange={(e) => setTempPersonal({ ...tempPersonal, github: e.target.value })}
-                                />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="dribbble">Dribbble URL</Label>
-                                <Input
-                                    id="dribbble"
-                                    placeholder="Dribbble URL"
-                                    value={tempPersonal.dribbble}
-                                    onChange={(e) => setTempPersonal({ ...tempPersonal, dribbble: e.target.value })}
+                                    id="password"
+                                    type="password"
+                                    placeholder="New Password"
+                                    value={tempPersonal.password}
+                                    onChange={(e) => setTempPersonal({ ...tempPersonal, password: e.target.value })}
                                 />
                             </div>
                         </div>
-                    ) : (
-                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="location">Location</Label>
-                                <Input
-                                    id="location"
-                                    placeholder="Location"
-                                    value={tempAddress.location}
-                                    onChange={(e) => setTempAddress({ ...tempAddress, location: e.target.value })}
-                                />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="state">Province / State</Label>
-                                <Input
-                                    id="state"
-                                    placeholder="Province / State"
-                                    value={tempAddress.state}
-                                    onChange={(e) => setTempAddress({ ...tempAddress, state: e.target.value })}
-                                />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="pin">PIN Code</Label>
-                                <Input
-                                    id="pin"
-                                    placeholder="PIN Code"
-                                    value={tempAddress.pin}
-                                    onChange={(e) => setTempAddress({ ...tempAddress, pin: e.target.value })}
-                                />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="zip">ZIP</Label>
-                                <Input
-                                    id="zip"
-                                    placeholder="ZIP"
-                                    value={tempAddress.zip}
-                                    onChange={(e) => setTempAddress({ ...tempAddress, zip: e.target.value })}
-                                />
-                            </div>
-                            <div className="flex flex-col gap-2">
-                                <Label htmlFor="taxNo">Federal Tax No.</Label>
-                                <Input
-                                    id="taxNo"
-                                    placeholder="Federal Tax No."
-                                    value={tempAddress.taxNo}
-                                    onChange={(e) => setTempAddress({ ...tempAddress, taxNo: e.target.value })}
-                                />
-                            </div>
-                        </div>
-                    )}
-
+                    
                     <DialogFooter className="flex gap-2 mt-4">
-                        <Button color={"primary"} className="rounded-md" onClick={handleSave}>
-                            Save Changes
+                        <Button color={"primary"} className="rounded-md" onClick={handleSave} disabled={saving}>
+                            {saving ? "Saving..." : "Save Changes"}
                         </Button>
-                        <Button color={"lighterror"} className="rounded-md bg-lighterror dark:bg-darkerror text-error hover:bg-error hover:text-white" onClick={() => setOpenModal(false)}>
-                            Close
+                        <Button color={"lighterror"} className="rounded-md bg-lighterror dark:bg-darkerror text-error hover:bg-error hover:text-white" onClick={() => setOpenModal(false)} disabled={saving}>
+                            Cancel
                         </Button>
                     </DialogFooter>
                 </DialogContent>

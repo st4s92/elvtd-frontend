@@ -5,7 +5,7 @@ const AccountDetailCard = ({ account, serverAccount }: any) => {
   console.log(account);
   const [copied, setCopied] = useState(false);
 
-  const profit = (account.equity - account.balance).toFixed(2);
+  const profit = ((account.equity ?? 0) - (account.balance ?? 0)).toFixed(2);
   const isProfit = Number(profit) >= 0;
 
   const handleCopy = () => {
