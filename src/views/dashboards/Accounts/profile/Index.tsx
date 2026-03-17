@@ -67,8 +67,8 @@ const AccountProfile = () => {
       {data.orders && data.orders.length > 0 && (
         <ActiveOrdersTable
           accountId={data.account.id}
-          accountNumber={data.account.accountNumber}
-          serverName={data.account.serverName}
+          accountNumber={data.account.account_number}
+          serverName={data.account.server_name}
           orders={data.orders}
           onRefresh={fetchDetail}
           role={data.account.role}

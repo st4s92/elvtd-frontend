@@ -80,6 +80,14 @@ const PositionHistoryTable = ({ accountId }: Props) => {
         return price ? Number(price).toFixed(5) : "-";
       },
     },
+    {
+      accessorKey: "close_price",
+      header: "Close Price",
+      cell: ({ row }) => {
+        const price = row.original.close_price;
+        return price ? Number(price).toFixed(5) : "-";
+      },
+    },
   ];
 
   // ===== CONDITIONAL PROFIT COLUMN =====

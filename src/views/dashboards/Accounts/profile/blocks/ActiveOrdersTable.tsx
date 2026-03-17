@@ -31,35 +31,56 @@ const ActiveOrdersTable = ({
   const handleDeleteSelected = async () => {
     if (selected.length === 0) return;
 
-    if (!confirm(`Delete ${selected.length} selected orders?`)) return;
+    if (!confirm(`Close ${selected.length} selected orders on the trading platform?`)) return;
 
     try {
-      await axiosClient.delete("/trader/orders/master-order", {
-        data: {
-          account_id: accountId,
-          is_flush_order: false,
-          order_ids: selected,
-        },
-      });
+      if (role === "SLAVE") {
+        // For slaves: close each active order individually (sends close to cTrader/MT5)
+        for (const activeOrderId of selected) {
+          await axiosClient.delete(`/trader/orders/active-order/${activeOrderId}`);
+        }
+      } else {
+        // For masters: use the master order delete endpoint
+        await axiosClient.delete("/trader/orders/master-order", {
+          data: {
+            account_id: accountId,
+            is_flush_order: false,
+            order_ids: selected,
+          },
+        });
+      }
 
       setSelected([]);
       onRefresh?.();
     } catch (err) {
       console.error(err);
-      alert("Failed to delete selected orders");
+      alert("Failed to close selected orders");
     }
   };
 
   const handleFlushAll = async () => {
-    if (!confirm("Flush all master orders?")) return;
+    const msg = role === "SLAVE"
+      ? "Close ALL open positions on this slave account?"
+      : "Close ALL open positions (master + all slaves)?";
+    if (!confirm(msg)) return;
 
     try {
-      await axiosClient.delete("/trader/orders/master-order", {
-        data: {
-          account_id: accountId,
-          is_flush_order: true,
-        },
-      });
+      if (role === "SLAVE") {
+        // For slaves: close each active order individually
+        for (const o of orders) {
+          if (o.id) {
+            await axiosClient.delete(`/trader/orders/active-order/${o.id}`);
+          }
+        }
+      } else {
+        // For masters: use the flush endpoint
+        await axiosClient.delete("/trader/orders/master-order", {
+          data: {
+            account_id: accountId,
+            is_flush_order: true,
+          },
+        });
+      }
 
       setSelected([]);
       onRefresh?.();
@@ -78,27 +99,25 @@ const ActiveOrdersTable = ({
           <h4 className="text-lg font-semibold text-gray-200">Active Orders</h4>
         </div>
 
-        {role === "MASTER" &&
-          <div className="flex gap-3">
-            <button
-              onClick={handleFlushAll}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
-            >
-              Flush All
-            </button>
+        <div className="flex gap-3">
+          <button
+            onClick={handleFlushAll}
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition"
+          >
+            Flush All
+          </button>
 
-            <button
-              onClick={handleDeleteSelected}
-              disabled={selected.length === 0}
-              className={`px-4 py-2 rounded-lg text-sm transition ${selected.length === 0
-                ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-                : "bg-red-500 hover:bg-red-600 text-white"
-                }`}
-            >
-              Delete Selected ({selected.length})
-            </button>
-          </div>
-        }
+          <button
+            onClick={handleDeleteSelected}
+            disabled={selected.length === 0}
+            className={`px-4 py-2 rounded-lg text-sm transition ${selected.length === 0
+              ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+              : "bg-red-500 hover:bg-red-600 text-white"
+              }`}
+          >
+            Close Selected ({selected.length})
+          </button>
+        </div>
       </div>
 
       {/* TABLE */}
@@ -120,7 +139,7 @@ const ActiveOrdersTable = ({
               <th className="px-4 py-3">Type</th>
               <th className="px-4 py-3">Lot</th>
               <th className="px-4 py-3">Price</th>
-              {role === "SLAVE" && <th className="px-4 py-3">Profit</th>}
+              <th className="px-4 py-3">Profit</th>
             </tr>
           </thead>
 
@@ -155,16 +174,14 @@ const ActiveOrdersTable = ({
                 <td className="px-4 py-3">{o.orderLot}</td>
                 <td className="px-4 py-3">{o.orderPrice}</td>
 
-                {role === "SLAVE" && (
-                  <td className="px-4 py-3">
-                    <span
-                      className={`font-semibold ${o.orderProfit >= 0 ? "text-emerald-400" : "text-red-400"
-                        }`}
-                    >
-                      {o.orderProfit?.toFixed(2)}
-                    </span>
-                  </td>
-                )}
+                <td className="px-4 py-3">
+                  <span
+                    className={`font-semibold ${(o.orderProfit ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"
+                      }`}
+                  >
+                    {o.orderProfit != null ? `$${Number(o.orderProfit).toFixed(2)}` : "-"}
+                  </span>
+                </td>
               </tr>
             ))}
           </tbody>
