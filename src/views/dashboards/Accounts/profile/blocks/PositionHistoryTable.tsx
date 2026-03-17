@@ -47,10 +47,18 @@ const PositionHistoryTable = ({ accountId }: Props) => {
     {
       accessorKey: "order_ticket",
       header: "Ticket",
+      cell: ({ row }) => {
+        const ticket = row.original.order_ticket;
+        return ticket && ticket !== 0 ? ticket : "-";
+      },
     },
     {
       accessorKey: "order_symbol",
       header: "Symbol",
+      cell: ({ row }) => {
+        const symbol = row.original.order_symbol;
+        return symbol || "-";
+      },
     },
     {
       accessorKey: "order_type",
@@ -71,13 +79,17 @@ const PositionHistoryTable = ({ accountId }: Props) => {
     {
       accessorKey: "order_lot",
       header: "Lot",
+      cell: ({ row }) => {
+        const lot = row.original.order_lot;
+        return lot != null && lot !== 0 ? lot : "-";
+      },
     },
     {
       accessorKey: "order_price",
       header: "Open Price",
       cell: ({ row }) => {
         const price = row.original.order_price;
-        return price ? Number(price).toFixed(5) : "-";
+        return price != null && price !== 0 ? Number(price).toFixed(5) : "-";
       },
     },
     {
@@ -85,12 +97,12 @@ const PositionHistoryTable = ({ accountId }: Props) => {
       header: "Close Price",
       cell: ({ row }) => {
         const price = row.original.close_price;
-        return price ? Number(price).toFixed(5) : "-";
+        return price != null && price !== 0 ? Number(price).toFixed(5) : "-";
       },
     },
   ];
 
-  // ===== CONDITIONAL PROFIT COLUMN =====
+  // ===== PROFIT COLUMN =====
   const profitColumn: ColumnDef<Record<string, any>> = {
     accessorKey: "order_profit",
     header: "Profit",
@@ -113,8 +125,18 @@ const PositionHistoryTable = ({ accountId }: Props) => {
     },
   };
 
-  // ===== REST COLUMNS =====
+  // ===== TIME + STATUS COLUMNS =====
   const endColumns: ColumnDef<Record<string, any>>[] = [
+    {
+      accessorKey: "order_open_at",
+      header: "Open Time",
+      cell: ({ row }) => {
+        const date = row.original.order_open_at;
+        return date
+          ? new Date(date).toLocaleString()
+          : "-";
+      },
+    },
     {
       accessorKey: "order_close_at",
       header: "Close Time",

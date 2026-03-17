@@ -53,6 +53,7 @@ const AccountProfile = () => {
             server={data.server}
             serverAccount={data.serverAccount}
             accountId={data.account.id}
+            account={data.account}
           />
           <AccountUserCard user={data.user} />
         </div>

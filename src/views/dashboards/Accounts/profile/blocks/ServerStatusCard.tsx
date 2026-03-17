@@ -1,8 +1,14 @@
 import { Icon } from "@iconify/react/dist/iconify.js";
 import axiosClient from "src/lib/axios";
 
-const ServerStatusCard = ({ server, accountId }: any) => {
-  const isRunning = server?.status === 200;
+const ServerStatusCard = ({ server, serverAccount, accountId, account }: any) => {
+  const isCtrader = account?.platform_name === "cTrader";
+
+  // For cTrader: use account connection status (200 = Success = Running)
+  // For MT5: use the dedicated server status
+  const isRunning = isCtrader
+    ? account?.status === 200
+    : server?.status === 200;
 
   const triggerInstall = async (accountId: number) => {
     if (confirm("re run installation?")) {
@@ -21,8 +27,6 @@ const ServerStatusCard = ({ server, accountId }: any) => {
       try {
         await axiosClient.delete(`/trader/account/${accountId}`);
         alert("Account deleted successfully.");
-        // We could redirect here if we had navigate, but since we don't, 
-        // a simple alert and maybe reloading the page or letting the user go back is fine.
         window.location.href = '/dashboard/accounts';
       } catch (err) {
         console.error("Failed to delete account", err);
@@ -37,35 +41,58 @@ const ServerStatusCard = ({ server, accountId }: any) => {
     >
       <div className="d-flex align-items-center gap-2 mb-4">
         <Icon icon="solar:server-bold" height={20} />
-        <h5 className="m-0 fw-semibold text-white">Server Status</h5>
+        <h5 className="m-0 fw-semibold text-white">
+          {isCtrader ? "Connection Status" : "Server Status"}
+        </h5>
       </div>
 
-      {/* SERVER NAME */}
-      <div className="mb-3">
-        <div className="text-muted small">Server Name</div>
-        <div className="fw-semibold d-flex align-items-center gap-2">
-          <Icon icon="solar:cloud-bold" height={16} />
-          {server?.server_name || server?.serverName || '-'}
-        </div>
-      </div>
+      {isCtrader ? (
+        <>
+          {/* cTrader Cloud Info */}
+          <div className="mb-3">
+            <div className="text-muted small">Platform</div>
+            <div className="fw-semibold d-flex align-items-center gap-2">
+              <Icon icon="solar:cloud-bold" height={16} />
+              cTrader Cloud
+            </div>
+          </div>
 
-      {/* IP */}
-      <div className="mb-3">
-        <div className="text-muted small">IP Address</div>
-        <div className="fw-semibold d-flex align-items-center gap-2">
-          <Icon icon="solar:global-bold" height={16} />
-          {server?.server_ip || server?.serverIp || '-'}
-        </div>
-      </div>
+          <div className="mb-3">
+            <div className="text-muted small">Connection</div>
+            <div className="fw-semibold d-flex align-items-center gap-2">
+              <Icon icon="solar:global-bold" height={16} />
+              {isRunning ? "Connected via Bridge" : "Disconnected"}
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* MT5 Server Info */}
+          <div className="mb-3">
+            <div className="text-muted small">Server Name</div>
+            <div className="fw-semibold d-flex align-items-center gap-2">
+              <Icon icon="solar:cloud-bold" height={16} />
+              {server?.server_name || server?.serverName || '-'}
+            </div>
+          </div>
 
-      {/* PID */}
-      <div className="mb-3">
-        <div className="text-muted small">Platform PID</div>
-        <div className="fw-semibold d-flex align-items-center gap-2">
-          <Icon icon="solar:cpu-bold" height={16} />
-          {server?.platformPid}
-        </div>
-      </div>
+          <div className="mb-3">
+            <div className="text-muted small">IP Address</div>
+            <div className="fw-semibold d-flex align-items-center gap-2">
+              <Icon icon="solar:global-bold" height={16} />
+              {server?.server_ip || server?.serverIp || '-'}
+            </div>
+          </div>
+
+          <div className="mb-3">
+            <div className="text-muted small">Platform PID</div>
+            <div className="fw-semibold d-flex align-items-center gap-2">
+              <Icon icon="solar:cpu-bold" height={16} />
+              {serverAccount?.platformPid || serverAccount?.platform_pid || '-'}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* STATUS */}
       <div className="d-flex justify-content-between align-items-center mt-3">
@@ -84,12 +111,16 @@ const ServerStatusCard = ({ server, accountId }: any) => {
           >
             {isRunning ? "Running" : "Stopped"}
           </span>
-          <a href="#" onClick={(e) => { e.preventDefault(); triggerRestart(accountId); }} className="text-amber-400 hover:text-amber-300 text-sm font-semibold transition-colors">
-            restart
-          </a>
-          <a href="#" onClick={(e) => { e.preventDefault(); triggerInstall(accountId); }} className="text-blue-400 hover:text-blue-300 text-sm font-semibold transition-colors">
-            reinstall
-          </a>
+          {!isCtrader && (
+            <>
+              <a href="#" onClick={(e) => { e.preventDefault(); triggerRestart(accountId); }} className="text-amber-400 hover:text-amber-300 text-sm font-semibold transition-colors">
+                restart
+              </a>
+              <a href="#" onClick={(e) => { e.preventDefault(); triggerInstall(accountId); }} className="text-blue-400 hover:text-blue-300 text-sm font-semibold transition-colors">
+                reinstall
+              </a>
+            </>
+          )}
           <a href="#" onClick={(e) => { e.preventDefault(); triggerDelete(accountId); }} className="text-red-500 hover:text-red-400 text-sm font-semibold transition-colors">
             delete
           </a>
@@ -97,7 +128,7 @@ const ServerStatusCard = ({ server, accountId }: any) => {
       </div>
 
       {/* MESSAGE */}
-      {server?.message && (
+      {(server?.message || serverAccount?.message) && (
         <div
           className="mt-3 p-2 rounded-xl"
           style={{
@@ -106,7 +137,7 @@ const ServerStatusCard = ({ server, accountId }: any) => {
             color: "#ccc",
           }}
         >
-          <Icon icon="solar:info-circle-bold" height={14} /> {server?.message}
+          <Icon icon="solar:info-circle-bold" height={14} /> {server?.message || serverAccount?.message}
         </div>
       )}
     </div>

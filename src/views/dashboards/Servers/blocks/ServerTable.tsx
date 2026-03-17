@@ -5,7 +5,8 @@ import axiosClient from "src/lib/axios";
 import { Badge } from "src/components/ui/badge";
 import { Button } from "src/components/ui/button";
 import CreateServerFormModal from "./CreateServerFormModal";
-import { Trash2 } from "lucide-react";
+import EditServerFormModal from "./EditServerFormModal";
+import { Trash2, Pencil } from "lucide-react";
 import { formatDistanceToNow, differenceInMinutes } from "date-fns";
 
 const ServerTable = () => {
@@ -18,6 +19,9 @@ const ServerTable = () => {
 
   const [openCreateServer, setOpenCreateServer] = useState(false);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+
+  const [openEditServer, setOpenEditServer] = useState(false);
+  const [editingServer, setEditingServer] = useState<Record<string, any> | null>(null);
 
   const fetchData = async () => {
     const res = await axiosClient.get("/trader/servers/paginated", {
@@ -188,14 +192,26 @@ const ServerTable = () => {
       cell: ({ row }) => {
         const id = row.original.id;
         return (
-          <Button
-            variant="lighterror"
-            size="icon"
-            onClick={() => handleDelete(id)}
-            disabled={isDeleting === id}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => {
+                setEditingServer(row.original);
+                setOpenEditServer(true);
+              }}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="lighterror"
+              size="icon"
+              onClick={() => handleDelete(id)}
+              disabled={isDeleting === id}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
         );
       },
     },
@@ -251,6 +267,14 @@ const ServerTable = () => {
           onOpenChange={setOpenCreateServer}
           onSuccess={() => {
             console.log("Server created!");
+            fetchData();
+          }}
+        />
+        <EditServerFormModal
+          open={openEditServer}
+          onOpenChange={setOpenEditServer}
+          server={editingServer}
+          onSuccess={() => {
             fetchData();
           }}
         />
