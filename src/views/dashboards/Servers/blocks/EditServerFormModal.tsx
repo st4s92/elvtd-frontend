@@ -43,9 +43,8 @@ const EditServerFormModal = ({
     setSaving(true);
     try {
       await axiosClient.put(`/trader/servers/${server.id}`, {
+        ...server,
         server_name: serverName,
-        server_ip: server.server_ip || server.serverIp,
-        server_os: server.serverOs || server.server_os || "",
       });
       onOpenChange(false);
       onSuccess?.();
