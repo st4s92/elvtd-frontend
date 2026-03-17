@@ -126,8 +126,13 @@ const SlaveOrdersModal = ({ open, onOpenChange, masterOrder }: SlaveOrdersModalP
         },
         {
             accessorKey: "order_price",
-            header: "PRICE",
-            cell: ({ row }) => <span className="font-mono">{row.original.order_price}</span>
+            header: "OPEN PRICE",
+            cell: ({ row }) => <span className="font-mono">{row.original.order_price ?? "-"}</span>
+        },
+        {
+            accessorKey: "close_price",
+            header: "CLOSE PRICE",
+            cell: ({ row }) => <span className="font-mono">{row.original.close_price ?? "-"}</span>
         },
         {
             accessorKey: "order_profit",
@@ -206,7 +211,7 @@ const SlaveOrdersModal = ({ open, onOpenChange, masterOrder }: SlaveOrdersModalP
                     </DialogHeader>
 
                     {/* Master Info Strip */}
-                    <div className="grid grid-cols-11 gap-4 mb-8 text-xs uppercase text-gray-400 font-medium">
+                    <div className="grid grid-cols-12 gap-4 mb-8 text-xs uppercase text-gray-400 font-medium">
                         <div className="col-span-1 flex flex-col gap-1">
                             <span>Open Time</span>
                             <span className="text-white text-sm">
@@ -257,8 +262,12 @@ const SlaveOrdersModal = ({ open, onOpenChange, masterOrder }: SlaveOrdersModalP
                             <span className="text-white text-sm">{masterOrder?.order_lot}</span>
                         </div>
                         <div className="col-span-1 flex flex-col gap-1">
-                            <span>Price</span>
-                            <span className="text-white text-sm">{masterOrder?.order_price}</span>
+                            <span>Open Price</span>
+                            <span className="text-white text-sm font-mono">{masterOrder?.order_price ?? "-"}</span>
+                        </div>
+                        <div className="col-span-1 flex flex-col gap-1">
+                            <span>Close Price</span>
+                            <span className="text-white text-sm font-mono">{masterOrder?.close_price ?? "-"}</span>
                         </div>
                         <div className="col-span-1 flex flex-col gap-1">
                             <span>Profit</span>

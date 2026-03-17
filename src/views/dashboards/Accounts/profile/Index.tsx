@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 import AccountDetailCard from "./blocks/AccountDetailCard";
 import AccountUserCard from "./blocks/AccountUserCard";
@@ -10,12 +10,15 @@ import ActiveOrdersTable from "./blocks/ActiveOrdersTable";
 import PositionHistoryTable from "./blocks/PositionHistoryTable";
 import SlaveOrdersSection from "./blocks/SlaveOrdersSection";
 import AccountConnectionsTable from "./blocks/AccountConnectionsTable";
+import TradeAnalyticsSection from "./blocks/TradeAnalyticsSection";
 
 const AccountProfile = () => {
   const { accountId } = useParams();
 
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchDetail = async () => {
     try {
@@ -34,6 +37,16 @@ const AccountProfile = () => {
     fetchDetail();
   }, [accountId]);
 
+  // Auto-refresh every 5 seconds
+  useEffect(() => {
+    if (autoRefresh) {
+      intervalRef.current = setInterval(fetchDetail, 5000);
+    }
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [autoRefresh, accountId]);
+
   if (loading) {
     return <div className="p-6 text-gray-400">Loading account detail...</div>;
   }
@@ -44,6 +57,21 @@ const AccountProfile = () => {
 
   return (
     <div className="space-y-6">
+      {/* AUTO-REFRESH TOGGLE */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => setAutoRefresh(!autoRefresh)}
+          className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+            autoRefresh
+              ? "bg-green-500 text-white border-green-600 hover:bg-green-600"
+              : "bg-[rgba(233,223,255,0.04)] border-white/10 text-gray-400 hover:bg-white/5"
+          }`}
+        >
+          <span className={`inline-block w-2 h-2 rounded-full ${autoRefresh ? "bg-white animate-pulse" : "bg-gray-500"}`} />
+          {autoRefresh ? "Live" : "Auto-Refresh"}
+        </button>
+      </div>
+
       {/* TOP SECTION */}
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
         <AccountDetailCard account={data.account} serverAccount={data.serverAccount} />
@@ -61,6 +89,9 @@ const AccountProfile = () => {
 
       {/* BALANCE CHART */}
       <BalanceChart data={data.accountLogs} />
+
+      {/* TRADE ANALYTICS (Calendar + Stats + Charts) */}
+      <TradeAnalyticsSection accountId={data.account.id} />
 
       {/* CONNECTIONS (MASTER-SLAVE) */}
       <AccountConnectionsTable accountId={data.account.id} role={data.account.role} />
