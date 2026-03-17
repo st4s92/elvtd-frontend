@@ -1,6 +1,6 @@
 import { ColumnDef, SortingState } from "@tanstack/react-table";
 import { DataTable } from "src/components/utilities/table/DataTable";
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import axiosClient from "src/lib/axios";
 import {
   DropdownMenu,
@@ -29,9 +29,7 @@ import { Button } from "src/components/ui/button";
 
 const AccountTable = () => {
   const navigate = useNavigate();
-  const [rows, setRows] = useState<Record<string, any>[]>([]);
-  const [totalRows, setTotalRows] = useState(0);
-
+  const [allAccounts, setAllAccounts] = useState<Record<string, any>[]>([]);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [search, setSearch] = useState<string>("");
@@ -57,31 +55,79 @@ const AccountTable = () => {
   const [isRestartingBulk, setIsRestartingBulk] = useState(false);
 
   const fetchData = useCallback(async () => {
-    const params: any = {
-      PerPage: pageSize,
-      Page: page,
-    };
-    if (search) params.AccountNumber = search;
-    if (roleFilter && roleFilter.length > 0) params.Role = roleFilter;
-    if (platformFilter && platformFilter.length > 0) params.PlatformName = platformFilter;
-    if (statusFilter && statusFilter.length > 0) params.Status = statusFilter;
-
     try {
-      const res: any = await axiosClient.get("/trader/account/paginated", { params });
+      const res: any = await axiosClient.get("/trader/account");
       if (res.status) {
-        setRows(res.data?.data || []);
-        setTotalRows(res.data?.total || 0);
+        setAllAccounts(res.data?.data || res.data || []);
       } else {
         console.error("Failed to fetch accounts:", res.message);
-        setRows([]);
-        setTotalRows(0);
+        setAllAccounts([]);
       }
     } catch (error) {
       console.error("Failed to fetch accounts", error);
-      setRows([]);
-      setTotalRows(0);
+      setAllAccounts([]);
     }
-  }, [page, pageSize, roleFilter, platformFilter, statusFilter, search, sorting]);
+  }, []);
+
+  const filteredAccounts = React.useMemo(() => {
+    return allAccounts.filter((row) => {
+      // Search
+      if (search) {
+        const query = search.toLowerCase();
+        const matchesSearch =
+          String(row.account_number || "").toLowerCase().includes(query) ||
+          String(row.server_name || "").toLowerCase().includes(query) ||
+          String(row.dedicated_server_name || "").toLowerCase().includes(query) ||
+          String(row.copier_version || "").toLowerCase().includes(query) ||
+          String(row.platform_name || "").toLowerCase().includes(query);
+        
+        if (!matchesSearch) return false;
+      }
+
+      // Role
+      if (roleFilter && roleFilter.length > 0) {
+        if (row.role !== roleFilter) return false;
+      }
+
+      // Platform
+      if (platformFilter && platformFilter !== "") {
+        if (row.platform_name !== platformFilter) return false;
+      }
+
+      // Status
+      if (statusFilter && statusFilter !== "") {
+        const updatedAt = row.updated_at;
+        
+        if (statusFilter === "100") { // None
+          if (row.status !== 100) return false;
+        } else {
+          // Success (200) or Error (300) based on 5-minute timeout
+          if (!updatedAt) return statusFilter === "300"; // No updated_at = Error automatically
+          
+          try {
+            const dateStr = updatedAt.endsWith('Z') ? updatedAt : updatedAt + 'Z';
+            const date = parseISO(dateStr);
+            const diff = differenceInMinutes(new Date(), date);
+            const isError = diff > 5;
+            
+            if (statusFilter === "200" && isError) return false;
+            if (statusFilter === "300" && !isError) return false;
+          } catch (e) {
+            return statusFilter === "300"; // Parsing failed = Error
+          }
+        }
+      }
+
+      return true;
+    });
+  }, [allAccounts, search, roleFilter, platformFilter, statusFilter]);
+
+  const totalRows = filteredAccounts.length;
+
+  const paginatedRows = React.useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+    return filteredAccounts.slice(startIndex, startIndex + pageSize);
+  }, [filteredAccounts, page, pageSize]);
 
   const isAnyUIOpen =
     openCreateOrder ||
@@ -150,10 +196,10 @@ const AccountTable = () => {
       id: "select",
       header: () => (
         <Checkbox
-          checked={selectedIds.length === rows.length && rows.length > 0}
+          checked={selectedIds.length === filteredAccounts.length && filteredAccounts.length > 0}
           onCheckedChange={(value) => {
             if (value) {
-              setSelectedIds(rows.map((r) => r.id));
+              setSelectedIds(filteredAccounts.map((r) => r.id));
             } else {
               setSelectedIds([]);
             }
@@ -501,7 +547,7 @@ const AccountTable = () => {
         <div className="w-full overflow-x-auto">
           <DataTable
             title="Accounts"
-            data={rows}
+            data={paginatedRows}
             columnsConfig={columns}
             downloadConfig={{
               enable: false,

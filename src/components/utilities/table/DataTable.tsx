@@ -134,40 +134,41 @@ export const DataTable: React.FC<DynamicTableProps> = ({
   return (
     <CardBox>
       <div>
+        {/* Search + Download Always Visible */}
+        <div className="p-4 pt-4 flex items-center justify-between flex-wrap gap-4">
+          <h3 className="text-xl font-semibold mb-2">{title}</h3>
+          <div className="flex items-center gap-2 flex-wrap">
+            {rightMenu && rightMenu}
+            {searchConfig?.enable && (
+              <Input
+                type="text"
+                className="max-w-96 lg:min-w-96 min-w-full placeholder:text-gray-400 dark:placeholder:text-white/20"
+                value={searchConfig?.text ?? ""}
+                onChange={(e) =>
+                  searchConfig?.setSearchChange(e.target.value)
+                }
+                placeholder="Search your relevant items..."
+              />
+            )}
+            {downloadConfig?.enable && (
+              <Button
+                onClick={handleDownload}
+                className="p-2 px-4 rounded-md "
+              >
+                <Icon
+                  icon="material-symbols:download-rounded"
+                  width={24}
+                  height={24}
+                />
+              </Button>
+            )}
+          </div>
+        </div>
+
         {data.length === 0 ? (
           <p className="text-center py-8 text-gray-500">No data available.</p>
         ) : (
           <>
-            {/* Search + Download */}
-            <div className="p-4 pt-0 flex items-center justify-between flex-wrap gap-4">
-              <h3 className="text-xl font-semibold mb-2">{title}</h3>
-              <div className="flex items-center gap-2 flex-wrap">
-                {rightMenu && rightMenu}
-                {searchConfig?.enable && (
-                  <Input
-                    type="text"
-                    className="max-w-96 lg:min-w-96 min-w-full placeholder:text-gray-400 dark:placeholder:text-white/20"
-                    value={searchConfig?.text ?? ""}
-                    onChange={(e) =>
-                      searchConfig?.setSearchChange(e.target.value)
-                    }
-                    placeholder="Search your relevant items..."
-                  />
-                )}
-                {downloadConfig?.enable && (
-                  <Button
-                    onClick={handleDownload}
-                    className="p-2 px-4 rounded-md "
-                  >
-                    <Icon
-                      icon="material-symbols:download-rounded"
-                      width={24}
-                      height={24}
-                    />
-                  </Button>
-                )}
-              </div>
-            </div>
 
             {/* Table */}
             <div className="w-full max-w-full overflow-x-auto">
