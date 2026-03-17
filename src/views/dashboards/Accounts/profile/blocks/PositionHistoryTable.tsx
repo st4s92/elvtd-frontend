@@ -45,18 +45,18 @@ const PositionHistoryTable = ({ accountId }: Props) => {
   // ===== BASE COLUMNS =====
   const baseColumns: ColumnDef<Record<string, any>>[] = [
     {
-      accessorKey: "orderTicket",
+      accessorKey: "order_ticket",
       header: "Ticket",
     },
     {
-      accessorKey: "orderSymbol",
+      accessorKey: "order_symbol",
       header: "Symbol",
     },
     {
-      accessorKey: "orderType",
+      accessorKey: "order_type",
       header: "Type",
       cell: ({ row }) => {
-        const type = row.original.orderType;
+        const type = row.original.order_type;
         return (
           <Badge
             variant={
@@ -69,21 +69,25 @@ const PositionHistoryTable = ({ accountId }: Props) => {
       },
     },
     {
-      accessorKey: "orderLot",
+      accessorKey: "order_lot",
       header: "Lot",
     },
     {
-      accessorKey: "orderPrice",
+      accessorKey: "order_price",
       header: "Open Price",
+      cell: ({ row }) => {
+        const price = row.original.order_price;
+        return price ? Number(price).toFixed(5) : "-";
+      },
     },
   ];
 
   // ===== CONDITIONAL PROFIT COLUMN =====
   const profitColumn: ColumnDef<Record<string, any>> = {
-    accessorKey: "orderProfit",
+    accessorKey: "order_profit",
     header: "Profit",
     cell: ({ row }) => {
-      const profit = row.original.orderProfit;
+      const profit = row.original.order_profit;
 
       if (profit == null) return "-";
 
@@ -95,7 +99,7 @@ const PositionHistoryTable = ({ accountId }: Props) => {
               : "text-red-500 font-semibold"
           }
         >
-          {profit}
+          ${Number(profit).toFixed(2)}
         </span>
       );
     },
@@ -104,10 +108,10 @@ const PositionHistoryTable = ({ accountId }: Props) => {
   // ===== REST COLUMNS =====
   const endColumns: ColumnDef<Record<string, any>>[] = [
     {
-      accessorKey: "orderCloseAt",
+      accessorKey: "order_close_at",
       header: "Close Time",
       cell: ({ row }) => {
-        const date = row.original.orderCloseAt;
+        const date = row.original.order_close_at;
         return date
           ? new Date(date).toLocaleString()
           : "-";

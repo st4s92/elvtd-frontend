@@ -206,11 +206,17 @@ const SlaveOrdersModal = ({ open, onOpenChange, masterOrder }: SlaveOrdersModalP
                     </DialogHeader>
 
                     {/* Master Info Strip */}
-                    <div className="grid grid-cols-9 gap-4 mb-8 text-xs uppercase text-gray-400 font-medium">
+                    <div className="grid grid-cols-11 gap-4 mb-8 text-xs uppercase text-gray-400 font-medium">
                         <div className="col-span-1 flex flex-col gap-1">
                             <span>Open Time</span>
                             <span className="text-white text-sm">
                                 {masterOrder?.order_open_at ? new Date(masterOrder.order_open_at).toLocaleString() : "-"}
+                            </span>
+                        </div>
+                        <div className="col-span-1 flex flex-col gap-1">
+                            <span>Close Time</span>
+                            <span className="text-white text-sm">
+                                {masterOrder?.order_close_at ? new Date(masterOrder.order_close_at).toLocaleString() : "-"}
                             </span>
                         </div>
                         <div className="col-span-2 flex flex-col gap-1">
@@ -257,7 +263,7 @@ const SlaveOrdersModal = ({ open, onOpenChange, masterOrder }: SlaveOrdersModalP
                         <div className="col-span-1 flex flex-col gap-1">
                             <span>Profit</span>
                             <span className={`text-sm font-bold ${masterOrder?.order_profit > 0 ? "text-success" : masterOrder?.order_profit < 0 ? "text-error" : "text-white"}`}>
-                                {masterOrder?.order_profit !== undefined ? `$${masterOrder.order_profit}` : "-"}
+                                {masterOrder?.order_profit !== undefined && masterOrder?.order_profit !== null ? `$${Number(masterOrder.order_profit).toFixed(2)}` : "-"}
                             </span>
                         </div>
                     </div>

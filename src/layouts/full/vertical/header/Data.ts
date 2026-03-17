@@ -242,8 +242,6 @@ interface ProfileType {
 }
 
 import acccountIcon from 'src/assets/images/svgs/icon-account.svg';
-import inboxIcon from 'src/assets/images/svgs/icon-inbox.svg';
-import taskIcon from 'src/assets/images/svgs/icon-tasks.svg';
 
 const profileDD: ProfileType[] = [
   {
@@ -252,20 +250,6 @@ const profileDD: ProfileType[] = [
     subtitle: 'Account settings',
     icon: "tabler:user",
     url: '/user-profile',
-  },
-  {
-    img: inboxIcon,
-    title: 'My Notes',
-    subtitle: 'My Daily Notes',
-    icon: "tabler:mail",
-    url: '/apps/Notes',
-  },
-  {
-    img: taskIcon,
-    title: 'My Blogs',
-    subtitle: 'Stories, insights, and updates',
-    icon: "tabler:list-check",
-    url: '/apps/blog/post',
   },
 ];
 

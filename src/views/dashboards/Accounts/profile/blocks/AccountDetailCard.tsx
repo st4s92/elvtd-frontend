@@ -58,7 +58,7 @@ const AccountDetailCard = ({ account, serverAccount }: any) => {
           <Icon icon="solar:monitor-bold" className="text-gray-400" />
           <div>
             <div className="text-gray-400 text-xs">Platform</div>
-            <div className="font-medium">{account.platformName}</div>
+            <div className="font-medium">{account.platform_name}</div>
           </div>
         </div>
 
@@ -69,7 +69,7 @@ const AccountDetailCard = ({ account, serverAccount }: any) => {
             <div>
               <div className="text-gray-400 text-xs">Account Number</div>
               <div className="font-semibold tracking-wide">
-                {account.accountNumber}
+                {account.account_number}
               </div>
             </div>
           </div>
@@ -90,7 +90,7 @@ const AccountDetailCard = ({ account, serverAccount }: any) => {
           <Icon icon="solar:buildings-bold" className="text-gray-400" />
           <div>
             <div className="text-gray-400 text-xs">Broker</div>
-            <div className="font-medium">{account.brokerName}</div>
+            <div className="font-medium">{account.broker_name}</div>
           </div>
         </div>
 
@@ -99,7 +99,7 @@ const AccountDetailCard = ({ account, serverAccount }: any) => {
           <Icon icon="solar:cloud-bold" className="text-gray-400" />
           <div>
             <div className="text-gray-400 text-xs">Server</div>
-            <div className="font-medium">{account.serverName}</div>
+            <div className="font-medium">{account.server_name}</div>
           </div>
         </div>
 
