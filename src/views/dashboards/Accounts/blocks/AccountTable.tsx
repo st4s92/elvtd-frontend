@@ -122,12 +122,27 @@ const AccountTable = () => {
     });
   }, [allAccounts, search, roleFilter, platformFilter, statusFilter]);
 
-  const totalRows = filteredAccounts.length;
+  const sortedAccounts = React.useMemo(() => {
+    if (!sorting.length) return filteredAccounts;
+    const { id, desc } = sorting[0];
+    return [...filteredAccounts].sort((a, b) => {
+      const aVal = a[id] ?? "";
+      const bVal = b[id] ?? "";
+      if (typeof aVal === "number" && typeof bVal === "number") {
+        return desc ? bVal - aVal : aVal - bVal;
+      }
+      return desc
+        ? String(bVal).localeCompare(String(aVal))
+        : String(aVal).localeCompare(String(bVal));
+    });
+  }, [filteredAccounts, sorting]);
+
+  const totalRows = sortedAccounts.length;
 
   const paginatedRows = React.useMemo(() => {
     const startIndex = (page - 1) * pageSize;
-    return filteredAccounts.slice(startIndex, startIndex + pageSize);
-  }, [filteredAccounts, page, pageSize]);
+    return sortedAccounts.slice(startIndex, startIndex + pageSize);
+  }, [sortedAccounts, page, pageSize]);
 
   const isAnyUIOpen =
     openCreateOrder ||

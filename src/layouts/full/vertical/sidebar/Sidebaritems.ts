@@ -100,6 +100,19 @@ const SidebarContent: MenuItem[] = [
       },
     ],
   },
+  {
+    heading: 'AI',
+    children: [
+      {
+        id: uniqueId(),
+        name: 'AI Assistant',
+        icon: 'solar:star-circle-linear',
+        url: '/dashboard/ai',
+        isPro: false,
+      },
+    ],
+  },
+
   // {
   //   heading: 'Apps',
   //   children: [
