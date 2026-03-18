@@ -356,12 +356,8 @@ class AgentController extends AbstractController
                 }
             }
             elseif ($account->getHost() == 'denies') {
-                $fromId = $agent->getFromAccountId();
-                $masterAccount = 27; // $accountRepository->find($fromId);
-                if (!$masterAccount) {
-                    throw new \Exception("Master Account for Agent not found. Agent ID: " . $agent->getId() . ", From Account ID: " . $fromId);
-                }
-                $deniesClient->updateSubscriber($account, $agent, $multiplier, $masterAccount);
+                $masterId = ($account->getPlatform() === 'ctrader') ? 120 : 27;
+                $deniesClient->updateSubscriber($account, $agent, $multiplier, $masterId);
             }
             else {
                 $data = [
@@ -378,6 +374,11 @@ class AgentController extends AbstractController
             $this->flashBag->add('success', 'Die Strategie wurde erfolgreich abonniert.');
         } catch (\Exception $e) {
             $this->flashBag->add('primary', 'Error updateSubscriber: ' . $e->getMessage());
+        }
+
+        $redirectTo = $request->request->get('redirectTo');
+        if ($redirectTo) {
+            return new RedirectResponse($redirectTo);
         }
 
         return new RedirectResponse($this->urlGenerator->generate('app_agents_index'));
@@ -436,12 +437,8 @@ class AgentController extends AbstractController
                 $duplikiumClient->updateAccount($account, '');
             }
             elseif ($account->getHost() == 'denies') {
-                $fromId = $agent->getFromAccountId();
-                $masterAccount =  27; // $accountRepository->find($fromId);
-                if (!$masterAccount) {
-                    throw new \Exception("Master Account for Agent not found. Agent ID: " . $agent->getId() . ", From Account ID: " . $fromId);
-                }
-                $deniesClient->removeSubscriber($account, $agent, $masterAccount);
+                $masterId = ($account->getPlatform() === 'ctrader') ? 120 : 27;
+                $deniesClient->removeSubscriber($account, $agent, $masterId);
             }
             else {
                 // Aktualisiere den Subscriber auf der MetaApi

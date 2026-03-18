@@ -1,0 +1,740 @@
+{# templates/account/show_denies.html.twig — TradeZella-style Denies account view #}
+{% extends 'base.html.twig' %}
+
+{% block title %}
+	{{ account.name }}
+	#{{ account.login }}
+{% endblock %}
+
+{% block body %}
+	<style>
+		/* ── Base ── */
+		.dn {
+			--g: #16a34a;
+			--gd: rgba(22, 163, 74, 0.1);
+			--r: #dc2626;
+			--rd: rgba(220, 38, 38, 0.08);
+			--bg1: #f4f6f9;
+			--bg2: #f9f7f6;
+			--bg3: #f0f2f5;
+			--border: rgba(0, 0, 0, 0.08);
+			--txt: #1e293b;
+			--txt2: rgba(0, 0, 0, 0.4);
+		}
+		.dn-wrap {
+			min-height: 100vh;
+			padding: 1.5rem 0 3rem;
+			color: var(--txt);
+		}
+		.dn .card-d {
+			background: var(--bg2);
+			border: 1px solid var(--border);
+			border-radius: 14px;
+			transition: transform 0.2s, box-shadow 0.2s;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+		}
+		.dn .card-d:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+		}
+
+		/* ── Typography ── */
+		.dn .val {
+			font-size: 1.75rem;
+			font-weight: 800;
+			letter-spacing: -0.02em;
+		}
+		.dn .lbl {
+			font-size: 0.68rem;
+			text-transform: uppercase;
+			letter-spacing: 0.1em;
+			color: var(--txt2);
+			font-weight: 600;
+		}
+		.dn .tg {
+			color: var(--g);
+		}
+		.dn .tr {
+			color: var(--r);
+		}
+		.dn .sec-t {
+			font-size: 0.95rem;
+			font-weight: 700;
+			display: flex;
+			align-items: center;
+			gap: 0.4rem;
+			margin-bottom: 0.75rem;
+		}
+		.dn .sec-t i {
+			opacity: .35;
+			font-size: 0.8rem;
+		}
+
+		/* ── Badges ── */
+		.dn .pill {
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
+			font-size: 0.7rem;
+			font-weight: 600;
+			padding: 0.25rem 0.6rem;
+			border-radius: 20px;
+			border: 1px solid var(--border);
+			background: var(--bg3);
+			color: var(--txt);
+		}
+		.dn .b-buy {
+			background: var(--gd);
+			color: var(--g);
+			font-size: 0.65rem;
+			font-weight: 700;
+			padding: 0.15rem 0.45rem;
+			border-radius: 3px;
+			text-transform: uppercase;
+		}
+		.dn .b-sell {
+			background: var(--rd);
+			color: var(--r);
+			font-size: 0.65rem;
+			font-weight: 700;
+			padding: 0.15rem 0.45rem;
+			border-radius: 3px;
+			text-transform: uppercase;
+		}
+
+		/* ── Pulse ── */
+		.dn .dot {
+			width: 8px;
+			height: 8px;
+			border-radius: 50%;
+			display: inline-block;
+		}
+		.dn .dot-on {
+			background: var(--g);
+			animation: dp 1.6s infinite;
+		}
+		.dn .dot-off {
+			background: var(--r);
+			animation: dp 1.6s infinite;
+		}
+		@keyframes dp {
+			0,
+			100% {
+				box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4)
+			}
+			50% {
+				box-shadow: 0 0 0 6px rgba(34, 197, 94, 0)
+			}
+		}
+
+		/* ── Table ── */
+		.dn .tt {
+			width: 100%;
+			border-collapse: collapse;
+		}
+		.dn .tt th {
+			font-size: 0.65rem;
+			text-transform: uppercase;
+			letter-spacing: 0.08em;
+			color: var(--txt2);
+			font-weight: 600;
+			padding: 0.5rem 0.7rem;
+			border-bottom: 1px solid var(--border);
+			text-align: left;
+		}
+		.dn .tt td {
+			padding: 0.45rem 0.7rem;
+			border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+			font-size: 0.82rem;
+		}
+		.dn .tt tr:hover {
+			background: rgba(0, 0, 0, 0.02);
+		}
+		.dn .scroll-t {
+			max-height: 380px;
+			overflow-y: auto;
+		}
+		.dn .scroll-t::-webkit-scrollbar {
+			width: 3px;
+		}
+		.dn .scroll-t::-webkit-scrollbar-thumb {
+			background: rgba(0, 0, 0, 0.12);
+			border-radius: 3px;
+		}
+
+		/* ── Calendar ── */
+		.dn .cal-grid {
+			display: grid;
+			grid-template-columns: repeat(7, 1fr);
+			gap: 2px;
+		}
+		.dn .cal-head {
+			font-size: 0.6rem;
+			text-transform: uppercase;
+			color: var(--txt2);
+			text-align: center;
+			padding: 0.4rem 0;
+			font-weight: 700;
+		}
+		.dn .cal-day {
+			background: var(--bg3);
+			border-radius: 6px;
+			padding: 0.35rem 0.3rem;
+			min-height: 58px;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: 2px;
+			font-size: 0.7rem;
+			transition: background 0.15s;
+			cursor: default;
+			position: relative;
+		}
+		.dn .cal-day:hover {
+			background: rgba(0, 0, 0, 0.04);
+		}
+		.dn .cal-day.today {
+			border: 1px solid rgba(34, 197, 94, 0.4);
+		}
+		.dn .cal-day.outside {
+			opacity: .2;
+		}
+		.dn .cal-day .day-num {
+			font-weight: 700;
+			font-size: 0.72rem;
+			color: var(--txt);
+		}
+		.dn .cal-day .day-pnl {
+			font-weight: 800;
+			font-size: 0.68rem;
+		}
+		.dn .cal-day .day-cnt {
+			font-size: 0.55rem;
+			color: var(--txt2);
+		}
+		.dn .cal-day .day-bar {
+			position: absolute;
+			bottom: 0;
+			left: 15%;
+			right: 15%;
+			height: 3px;
+			border-radius: 2px;
+		}
+		.dn .cal-nav {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			margin-bottom: 0.75rem;
+		}
+		.dn .cal-nav button {
+			background: var(--bg2);
+			border: 1px solid var(--border);
+			color: var(--txt);
+			border-radius: 6px;
+			padding: 0.3rem 0.6rem;
+			cursor: pointer;
+			font-size: 0.8rem;
+		}
+		.dn .cal-nav button:hover {
+			background: var(--bg3);
+		}
+		.dn .cal-nav .cal-month {
+			font-weight: 700;
+			font-size: 0.95rem;
+		}
+		.dn .cal-summary {
+			display: flex;
+			gap: 1.5rem;
+			margin-top: 0.6rem;
+			font-size: 0.75rem;
+			color: var(--txt2);
+		}
+		.dn .cal-summary strong {
+			color: var(--txt);
+		}
+
+		/* ── Animations ── */
+		@keyframes fu {
+			from {
+				opacity: 0;
+				transform: translateY(16px)
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0)
+			}
+		}
+		.dn .fu {
+			animation: fu 0.45s ease forwards;
+			opacity: 0;
+		}
+		.dn .d1 {
+			animation-delay: 0.05s
+		}
+		.dn .d2 {
+			animation-delay: 0.1s
+		}
+		.dn .d3 {
+			animation-delay: 0.15s
+		}
+		.dn .d4 {
+			animation-delay: 0.2s
+		}
+		.dn .d5 {
+			animation-delay: 0.25s
+		}
+		.dn .d6 {
+			animation-delay: 0.3s
+		}
+		.dn .d7 {
+			animation-delay: 0.35s
+		}
+
+		/* ── Empty ── */
+		.dn .empty {
+			text-align: center;
+			padding: 2rem;
+			opacity: .25;
+		}
+		.dn .empty i {
+			font-size: 2rem;
+			display: block;
+			margin-bottom: 0.3rem;
+		}
+
+		/* ── AI Loading Animation ── */
+		.dn .ai-loader {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			padding: 3rem 1rem;
+			gap: 1rem;
+		}
+		.dn .ai-loader .ai-spinner {
+			width: 40px;
+			height: 40px;
+			border: 3px solid var(--border);
+			border-top-color: var(--g);
+			border-radius: 50%;
+			animation: ai-spin 0.8s linear infinite;
+		}
+		@keyframes ai-spin {
+			to {
+				transform: rotate(360deg);
+			}
+		}
+		.dn .ai-loader .ai-text {
+			font-size: 0.78rem;
+			color: var(--txt2);
+			letter-spacing: 0.06em;
+		}
+		.dn .ai-loader .ai-text::after {
+			content: '';
+			animation: ai-dots 1.5s steps(4, end) infinite;
+		}
+		@keyframes ai-dots {
+			0% {
+				content: '';
+			}
+			25% {
+				content: '.';
+			}
+			50% {
+				content: '..';
+			}
+			75% {
+				content: '...';
+			}
+		}
+		.dn .ai-bar {
+			height: 2px;
+			background: linear-gradient(90deg, transparent, var(--g), transparent);
+			animation: ai-scan 2s ease-in-out infinite;
+			border-radius: 1px;
+			width: 60%;
+			margin: 0 auto;
+		}
+		@keyframes ai-scan {
+			0,
+			100% {
+				opacity: .2;
+				transform: scaleX(0.3);
+			}
+			50% {
+				opacity: 1;
+				transform: scaleX(1);
+			}
+		}
+		.dn [data-ai-reveal] {
+			opacity: 0;
+			transform: translateY(12px);
+		}
+		.dn [data-ai-reveal].revealed {
+			opacity: 1;
+			transform: translateY(0);
+			transition: opacity 0.6s ease, transform 0.6s ease;
+		}
+
+		/* ── Stat card accent lines ── */
+		.dn .accent-top {
+			border-top: 2px solid var(--g);
+		}
+		.dn .accent-top-r {
+			border-top: 2px solid var(--r);
+		}
+	</style>
+
+	{% set api = apiData %}
+	{% set bal = api ? api.account.balance : account.balance %}
+	{% set eq = api ? api.account.equity : account.equity %}
+	{% set orders = api ? (api.orders ?? []) : [] %}
+	{% set trades = allClosedTrades ?? [] %}
+	{% set sa = api ? (api.serverAccount ?? null) : null %}
+	{% set isOn = api and api.account is defined %}
+
+	{# Open profit = sum of all active position profits #}
+	{% set op = 0 %}
+	{% for o in orders %}
+		{% set op = op + (o.OrderProfit ?? o.orderProfit ?? o.order_profit ?? 0) %}
+	{% endfor %}
+	{% set opPct = bal > 0 ? ((op / bal) * 100) : 0 %}
+
+	<div class="dn">
+		<div class="dn-wrap">
+			<div
+				class="container" style="max-width:1160px;">
+
+				{# ═══ AI LOADING OVERLAY ═══ #}
+				<div id="aiLoader" class="card-d p-4 mb-3" style="text-align:center;">
+					<div class="ai-loader">
+						<div class="ai-spinner"></div>
+						<div class="ai-text" style="font-weight:600;font-size:.85rem;color:var(--txt);">Analysing Account Data</div>
+						<div class="ai-bar"></div>
+						<div style="display:flex;gap:1.5rem;font-size:.7rem;color:var(--txt2);margin-top:.5rem;">
+							<span>
+								<i class="fas fa-server" style="margin-right:4px;"></i>Fetching positions</span>
+							<span>
+								<i class="fas fa-chart-bar" style="margin-right:4px;"></i>Computing analytics</span>
+							<span>
+								<i class="fas fa-calendar" style="margin-right:4px;"></i>Building calendar</span>
+						</div>
+					</div>
+				</div>
+
+				<div
+					id="aiContent" style="display:none;">
+
+					{# ═══ HEADER ═══ #}
+					<div class="card-d p-4 mb-3 fu">
+						<div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+							<div>
+								{% if is_granted('ROLE_ADMIN') and account.user %}
+									<span style="opacity:.3;font-size:.75rem;">{{ account.user.username }}
+										{% if account.user.firstname|length > 1 %}
+											—
+											{{ account.user.firstname }}
+											{{ account.user.lastname }}
+										{% endif %}
+									</span><br>
+								{% endif %}
+								<h3 style="font-weight:800;font-size:1.4rem;margin:0;">
+									{{ account.name }}
+									<span style="opacity:.25">#{{ account.login }}</span>
+								</h3>
+								<div class="d-flex flex-wrap gap-2 mt-2">
+									<span class="pill">
+										<span class="dot {{ isOn ? 'dot-on' : 'dot-off' }}"></span>
+										{{ isOn ? 'Live' : 'Offline' }}</span>
+									<span class="pill">{{ account.platform|upper }}</span>
+									<span class="pill">{{ account.type == 1 ? 'Agent' : (account.type == 2 ? 'Leader' : 'Subscriber') }}</span>
+									{% if account.broker is defined and account.broker %}
+										<span class="pill">
+											<i class="fas fa-building" style="font-size:.55rem;opacity:.4;"></i>
+											{{ account.broker }}</span>
+									{% endif %}
+									<span class="pill">
+										<i class="fas fa-server" style="font-size:.55rem;opacity:.4;"></i>
+										{{ account.tradeServer ?? '-' }}</span>
+								</div>
+								<div style="font-size:.7rem;color:var(--txt2);margin-top:.4rem;">
+									<i class="fas fa-clock" style="font-size:.55rem;"></i>
+									Aktualisiert:
+									{{ account.lastUpdate ? account.lastUpdate|date('d.m.Y H:i:s') : '-' }}
+								</div>
+							</div>
+							<div class="d-flex gap-2">
+								<a href="{{ path('app_account_update', {'meta_id': account.login}) }}" class="btn btn-sm btn-dark mb-0">
+									<i class="fas fa-sync-alt me-1"></i>Aktualisieren</a>
+								<a href="{{ path('app_account_edit', {'meta_id': account.metaId}) }}" class="btn btn-sm btn-outline-secondary mb-0">
+									<i class="fas fa-pen me-1"></i>Bearbeiten</a>
+								<form method="post" action="{{ path('app_account_delete', {'meta_id': account.metaId}) }}" style="display:inline;" onsubmit="return confirm('Account wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.');">
+									<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ account.metaId) }}">
+									<button class="btn btn-sm btn-outline-danger mb-0" type="submit">
+										<i class="fas fa-trash me-1"></i>Löschen</button>
+								</form>
+							</div>
+						</div>
+					</div>
+
+					{# ═══ AGENT ═══ #}
+					{% if agent is not null and multiplier.multiplier > 0 %}
+						<div class="card-d p-3 mb-3 fu d1" style="border-left:3px solid var(--g);">
+							<div class="d-flex align-items-center gap-2" style="font-size:.82rem;">
+								<i class="fas fa-link tg"></i>
+								Verbunden mit
+								<strong>{{ agent.name }}</strong>
+								&middot; Multiplikator
+								<strong>{{ multiplier.multiplier }}</strong>
+								<a href="/agents" class="btn btn-sm btn-dark mb-0 ms-auto">Agents
+									<i class="fas fa-arrow-right ms-1"></i>
+								</a>
+							</div>
+						</div>
+					{% else %}
+						<div class="card-d p-3 mb-3 fu d1" style="border-left:3px solid var(--r);">
+							<div class="d-flex align-items-center gap-2" style="font-size:.82rem;">
+								<i class="fas fa-unlink tr"></i>
+								Nicht mit einem Agent verbunden
+								<button type="button" class="btn btn-sm btn-dark mb-0 ms-auto" data-bs-toggle="modal" data-bs-target="#connectAgentModal">
+									<i class="fas fa-link me-1"></i>Verbinden
+								</button>
+							</div>
+						</div>
+
+						{# ═══ CONNECT AGENT MODAL ═══ #}
+						<div class="modal fade" id="connectAgentModal" tabindex="-1" aria-labelledby="connectAgentModalLabel" aria-hidden="true">
+							<div class="modal-dialog modal-dialog-centered">
+								<div class="modal-content">
+									<div class="modal-header">
+										<h5 class="modal-title" id="connectAgentModalLabel">
+											<i class="fas fa-link me-2"></i>Agent verbinden</h5>
+										<button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close">
+											<span aria-hidden="true">&times;</span>
+										</button>
+									</div>
+									<form action="{{ path('app_agents_update_subscriber') }}" method="post">
+										<div class="modal-body">
+											<div class="py-2">
+												<p>
+													<strong>Risikohinweis:</strong><br>
+													Die Nutzung dieser automatisierten Handelsplattform erfolgt auf eigenes Risiko. Aufgrund von Marktvolatilität, wirtschaftlichen sowie politischen Unwägbarkeiten kann es zu erheblichen Verlusten bis hin zum vollständigen Verlust des eingesetzten Kapitals kommen.
+													<br>
+													Mit der Teilnahme an der Automatisierung erkennen Sie diese Risiken ausdrücklich an und erklären sich mit deren Bedingungen einverstanden.
+												</p>
+											</div>
+											<label for="agentSelect" class="ms-0">Agent auswählen</label>
+											<select class="form-control" id="agentSelect" name="strategyId">
+												{% for ag in agents %}
+													<option value="{{ ag.metaId }}">{{ ag.name }}</option>
+												{% endfor %}
+											</select>
+											<input type="hidden" name="subscriberId" value="{{ account.metaId }}">
+											<input type="hidden" name="multiplier" value="1">
+											<input type="hidden" name="redirectTo" value="{{ path('app_account_show', {meta_id: account.metaId}) }}">
+										</div>
+										<div class="modal-footer">
+											<button type="button" class="btn bg-danger-soft" data-bs-dismiss="modal">Abbrechen</button>
+											<button type="submit" class="btn btn-dark">
+												<i class="fas fa-link me-1"></i>Verbinden</button>
+										</div>
+									</form>
+								</div>
+							</div>
+						</div>
+					{% endif %}
+
+					{# ═══ STATS ═══ #}
+					<div class="row g-3 mb-3">
+						<div class="col-6 col-lg-3 fu d1">
+							<div class="card-d p-3 h-100 accent-top">
+								<div class="lbl mb-1">Balance</div>
+								<div class="val">${{ bal|number_format(2, ',', '.') }}</div>
+							</div>
+						</div>
+						<div class="col-6 col-lg-3 fu d2">
+							<div class="card-d p-3 h-100 accent-top">
+								<div class="lbl mb-1">Equity</div>
+								<div class="val">${{ eq|number_format(2, ',', '.') }}</div>
+							</div>
+						</div>
+						<div class="col-6 col-lg-3 fu d3">
+							<div class="card-d p-3 h-100 {{ op >= 0 ? 'accent-top' : 'accent-top-r' }}">
+								<div class="lbl mb-1">Open Profit</div>
+								<div class="val {{ op >= 0 ? 'tg' : 'tr' }}">{{ op >= 0 ? '+' : '' }}${{ op|number_format(2, ',', '.') }}</div>
+								<div style="font-size:.72rem;color:var(--txt2);">{{ opPct|number_format(2) }}%</div>
+							</div>
+						</div>
+						<div class="col-6 col-lg-3 fu d4">
+							<div class="card-d p-3 h-100 accent-top">
+								<div class="lbl mb-1">Positions</div>
+								<div class="val">{{ orders|length }}</div>
+							</div>
+						</div>
+					</div>
+
+					{# ═══ OPEN POSITIONS ═══ #}
+					<div class="card-d p-4 mb-3 fu d4">
+						<div class="d-flex justify-content-between align-items-center mb-3">
+							<div class="sec-t mb-0">
+								<i class="fas fa-chart-line"></i>
+								Open Positions
+							</div>
+							{% if orders|length > 0 %}
+								<form method="post" action="{{ path('app_account_flush_positions', {'meta_id': account.metaId}) }}" style="display:inline;" onsubmit="return confirm('Alle {{ orders|length }} Positionen schließen?');">
+									<input type="hidden" name="_token" value="{{ csrf_token('flush' ~ account.metaId) }}">
+									<button type="submit" class="btn btn-sm" style="background:var(--r);color:#fff;border:none;border-radius:8px;font-size:.75rem;padding:.35rem .8rem;">
+										<i class="fas fa-times-circle me-1"></i>Alle schließen
+									</button>
+								</form>
+							{% endif %}
+						</div>
+						{% if orders|length > 0 %}
+							<div class="scroll-t">
+								<table class="tt">
+									<thead>
+										<tr>
+											<th>Ticket</th>
+											<th>Symbol</th>
+											<th>Type</th>
+											<th>Lot</th>
+											<th>Entry</th>
+											<th style="text-align:right">Profit</th>
+											<th style="text-align:center;width:40px;"></th>
+										</tr>
+									</thead>
+									<tbody>
+										{% for o in orders %}
+											{% set buy = 'BUY' in (o.OrderType ?? o.orderType ?? o.order_type ?? '')|upper %}
+											{% set pnl = o.OrderProfit ?? o.orderProfit ?? o.order_profit ?? 0 %}
+											{% set oid = o.Id ?? o.id ?? 0 %}
+											<tr>
+												<td style="opacity:.4;">{{ o.OrderTicket ?? o.orderTicket ?? o.order_ticket ?? '-' }}</td>
+												<td>
+													<strong>{{ o.OrderSymbol ?? o.orderSymbol ?? o.order_symbol ?? '-' }}</strong>
+												</td>
+												<td>
+													<span class="{{ buy ? 'b-buy' : 'b-sell' }}">{{ buy ? 'BUY' : 'SELL' }}</span>
+												</td>
+												<td>{{ (o.OrderLot ?? o.orderLot ?? o.order_lot ?? 0)|number_format(2) }}</td>
+												<td>{{ (o.OrderPrice ?? o.orderPrice ?? o.order_price ?? 0)|number_format(5) }}</td>
+												<td style="text-align:right;font-weight:700" class="{{ pnl >= 0 ? 'tg' : 'tr' }}">{{ pnl >= 0 ? '+' : '' }}{{ pnl|number_format(2) }}</td>
+												<td style="text-align:center;">
+													{% if oid > 0 %}
+														<form method="post" action="{{ path('app_account_close_order', {'meta_id': account.metaId, 'orderId': oid}) }}" style="display:inline;" onsubmit="return confirm('Position schließen?');">
+															<input type="hidden" name="_token" value="{{ csrf_token('close' ~ oid) }}">
+															<button type="submit" style="background:none;border:none;cursor:pointer;color:var(--r);font-size:.85rem;padding:2px 6px;" title="Position schließen">
+																<i class="fas fa-times"></i>
+															</button>
+														</form>
+													{% endif %}
+												</td>
+											</tr>
+										{% endfor %}
+									</tbody>
+								</table>
+							</div>
+						{% else %}
+							<div class="empty">
+								<i class="fas fa-inbox"></i>No open positions</div>
+						{% endif %}
+					</div>
+
+					{# ═══ ANALYTICS STATS (computed in JS) ═══ #}
+					<div id="analyticsStats" class="fu d5"></div>
+
+					{# ═══ TRADE CALENDAR ═══ #}
+					<div class="card-d p-4 mb-3 fu d5">
+						<div class="sec-t">
+							<i class="fas fa-calendar-alt"></i>
+							Trade Calendar</div>
+						<div id="tradeCalendar"></div>
+					</div>
+
+					{# ═══ DAILY P/L CHART ═══ #}
+					<div class="card-d p-4 mb-3 fu d6">
+						<div class="sec-t">
+							<i class="fas fa-chart-bar"></i>
+							Daily Performance</div>
+						<div style="position:relative;height:260px;">
+							<canvas id="dailyPnlChart"></canvas>
+						</div>
+					</div>
+
+					{# ═══ CUMULATIVE P/L CHART ═══ #}
+					<div class="card-d p-4 mb-3 fu d6">
+						<div class="sec-t">
+							<i class="fas fa-chart-area"></i>
+							Cumulative P/L</div>
+						<div style="position:relative;height:260px;">
+							<canvas id="cumulativeChart"></canvas>
+						</div>
+					</div>
+
+					{# ═══ TRADE HISTORY (ALL TRADES) ═══ #}
+					<div class="card-d p-4 mb-3 fu d7">
+						<div class="sec-t">
+							<i class="fas fa-history"></i>
+							Trade History
+							{% if trades|length > 0 %}
+								<span class="pill ms-2">{{ trades|length }}
+									trades</span>
+							{% endif %}
+						</div>
+						{% if trades|length > 0 %}
+							<div class="scroll-t">
+								<table class="tt">
+									<thead>
+										<tr>
+											<th>Symbol</th>
+											<th>Type</th>
+											<th>Lot</th>
+											<th>Entry</th>
+											<th>Close</th>
+											<th>Profit</th>
+											<th>Opened</th>
+											<th>Closed</th>
+										</tr>
+									</thead>
+									<tbody>
+										{% for t in trades %}
+											{% set buy = 'BUY' in (t.order_type ?? t.orderType ?? '')|upper %}
+											{% set pnl = t.order_profit ?? t.orderProfit ?? 0 %}
+											<tr>
+												<td>
+													<strong>{{ t.order_symbol ?? t.orderSymbol ?? '-' }}</strong>
+												</td>
+												<td>
+													<span class="{{ buy ? 'b-buy' : 'b-sell' }}">{{ buy ? 'BUY' : 'SELL' }}</span>
+												</td>
+												<td>{{ (t.order_lot ?? t.orderLot ?? 0)|number_format(2) }}</td>
+												<td>{{ (t.order_price ?? t.orderPrice ?? 0)|number_format(5) }}</td>
+												<td>{{ (t.order_close_price ?? t.orderClosePrice ?? 0)|number_format(5) }}</td>
+												<td class="{{ pnl >= 0 ? 'tg' : 'tr' }}" style="font-weight:700">{{ pnl >= 0 ? '+' : '' }}{{ pnl|number_format(2) }}</td>
+												<td style="opacity:.35;font-size:.72rem;">{{ t.order_open_at ?? t.orderOpenAt ?? '-' }}</td>
+												<td style="opacity:.35;font-size:.72rem;">{{ t.order_close_at ?? t.orderCloseAt ?? '-' }}</td>
+											</tr>
+										{% endfor %}
+									</tbody>
+								</table>
+							</div>
+						{% else %}
+							<div class="empty">
+								<i class="fas fa-inbox"></i>No trade history</div>
+						{% endif %}
+					</div>
+
+				</div>
+				{# /aiContent #}
+
+			</div>
+		</div>
+	</div>
+
+	{# ═══ DATA + EXTERNAL SCRIPT (separate JS file to prevent linter damage) ═══ #}
+	<script>
+		window.__DENIES_TRADES__ = {{ trades|json_encode|raw }};
+	</script>
+	<script src="/assets/js/denies-account.js"></script>
+{% endblock %}
+{# END — old inline JS removed, now in /assets/js/denies-account.js #}

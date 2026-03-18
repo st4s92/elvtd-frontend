@@ -61,20 +61,34 @@ class DeniesClient
     }
 
     public function addAccount(Account $account)
-    {
-        $decryptedPassword = $this->decryptPassword($account->getPassword(), $_SERVER['ENCRYPTION_KEY']);
+    {  
+        $platformMapping = [
+            'ctrader' => 'cTrader',
+            'mt5' => 'Metatrader 5',
+            'mt4' => 'Metatrader 4',
+        ];
+
+        $platformName = $platformMapping[$account->getPlatform()] ?? 'Metatrader 5';
 
         // Adding data to POST
         $data = [
-            'platform_name' => "Metatrader 5", // $account->getPlatform(),
+            'platform_name' => $platformName,
             'account_number' => $account->getLogin(),
-            'account_password' => $decryptedPassword,
             'server_name' => $account->getTradeServer(),
             'broker_name' => $account->getBroker(),
             'user_id' => '1',
             'role' => 'SLAVE',
         ];
 
+        if ($account->getPlatform() === 'ctrader') {
+            $data['access_token'] = $account->getCtraderAccessToken();
+            $data['refresh_token'] = $account->getCtraderRefreshToken();
+            $data['expired_at'] = $account->getCtraderTokenExpiresAt() ? $account->getCtraderTokenExpiresAt()->format('Y-m-d H:i:s') : null;
+        }
+        else {  
+            $decryptedPassword = $this->decryptPassword($account->getPassword(), $_SERVER['ENCRYPTION_KEY']);   
+            $data['account_password'] = $decryptedPassword;  
+        }
 
         try {
             $response = $this->request('POST', "account", $data);
@@ -84,6 +98,92 @@ class DeniesClient
         }
 
         return $response;
+    }
+    /**
+     * Get the backend account ID by trading account login number.
+     * Returns just the integer ID, or null if not found.
+     */
+    public function getAccountIdByLogin(int $login): ?int
+    {
+        try {
+            $response = $this->request('GET', "account/paginated?PerPage=1&Page=1&AccountNumber=" . $login);
+            if (empty($response->data->data)) {
+                return null;
+            }
+            return (int) $response->data->data[0]->id;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Get full account detail with live data (active orders, order logs, server status).
+     * Calls GET /trader/account/{id}/detail
+     */
+    public function getAccountDetail(int $accountId): ?object
+    {
+        try {
+            $response = $this->request('GET', "account/{$accountId}/detail");
+            return $response->data ?? null;
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Get all closed orders for an account (for trade history + analytics).
+     * Uses paginated orders endpoint with large page size.
+     */
+    public function getClosedOrders(int $accountId): array
+    {
+        try {
+            $response = $this->request('GET', "orders/paginated?PerPage=9999&Page=1&AccountId=" . $accountId . "&Status=700");
+            return $response->data->data ?? [];
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Flush all open positions for an account (close all).
+     * For MASTER: uses DELETE /trader/orders/master-order with is_flush_order=true
+     * For SLAVE: deletes each active order individually
+     */
+    public function flushAllPositions(int $accountId, string $role, array $activeOrderIds = []): bool
+    {
+        try {
+            if ($role === 'MASTER') {
+                $this->request('DELETE', "orders/master-order", [
+                    'account_id' => $accountId,
+                    'is_flush_order' => true,
+                ]);
+            } else {
+                // SLAVE: delete each active order individually
+                foreach ($activeOrderIds as $orderId) {
+                    try {
+                        $this->request('DELETE', "orders/active-order/" . $orderId);
+                    } catch (\Exception $e) {
+                        // Continue with remaining orders
+                    }
+                }
+            }
+            return true;
+        } catch (\Exception $e) {
+            throw new \RuntimeException('Fehler beim Schließen aller Positionen: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Close a single active order by its ID.
+     */
+    public function closeActiveOrder(int $activeOrderId): bool
+    {
+        try {
+            $this->request('DELETE', "orders/active-order/" . $activeOrderId);
+            return true;
+        } catch (\Exception $e) {
+            throw new \RuntimeException('Fehler beim Schließen der Position: ' . $e->getMessage());
+        }
     }
 
     public function getAccount(Account $account)
@@ -97,7 +197,7 @@ class DeniesClient
             }
 
             $id = $id_response->data->data[0]->id;
-            $response = $this->request('GET', "account/" . $id);
+            $response = $this->request('GET', "account?Id=" . $id);
         }
         catch (\Exception $e) {
             throw new \RuntimeException('Fehler beim Verbinden mit dem Host: ' . $e->getMessage());
@@ -166,8 +266,8 @@ class DeniesClient
             ];
 
             if (!empty($existingConfig->data->data)) {
-                $configId = $existingConfig->data->data[0]->id;
-                $response = $this->request('PUT', "master-slave-config/" . $configId, $configData);
+                // Use POST even for updates as PUT might be disabled, similar to other endpoints
+                $response = $this->request('POST', "master-slave-config", $configData);
             } else {
                 $response = $this->request('POST', "master-slave-config", $configData);
             }
@@ -179,7 +279,7 @@ class DeniesClient
         }
     }
 
-    public function removeSubscriber(Account $account, Agent $agent, Account $masterAccount)
+    public function removeSubscriber(Account $account, Agent $agent, $masterAccount)
     {
         try {
             // 1. Get Slave Account ID
@@ -192,13 +292,17 @@ class DeniesClient
             $slaveId = $slaveData->data->data[0]->id;
 
             // 2. Get Master Account ID
-            $masterLogin = $masterAccount->getLogin(); 
-            $masterData = $this->request('GET', "account/paginated?PerPage=1&Page=1&AccountNumber=" . $masterLogin);
-            
-            if (empty($masterData->data->data)) {
-                 return true;
+            if (is_numeric($masterAccount)) {
+                $masterId = $masterAccount;
+            } else {
+                $masterLogin = $masterAccount->getLogin();
+                $masterData = $this->request('GET', "account/paginated?PerPage=1&Page=1&AccountNumber=" . $masterLogin);
+
+                if (empty($masterData->data->data)) {
+                    return true;
+                }
+                $masterId = $masterData->data->data[0]->id;
             }
-            $masterId = $masterData->data->data[0]->id;
 
             // 3. Find Master-Slave relationship
             $masterSlaveData = $this->request('GET', "master-slave/paginated?PageSize=100&Page=1&MasterId=" . $masterId . "&SlaveId=" . $slaveId);

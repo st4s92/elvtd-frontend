@@ -569,6 +569,44 @@ class AccountController extends AbstractController
             $multiplier = ['multiplier' => 1, 'templateFullName' => 'MetaAPI'];
         }
 
+        // Denies accounts: use new modern template with live API data
+        if ($account->getHost() === 'denies') {
+            $apiData = null;
+            $allClosedTrades = [];
+            try {
+                $backendId = $deniesClient->getAccountIdByLogin($account->getLogin());
+                if ($backendId) {
+                    $apiData = $deniesClient->getAccountDetail($backendId);
+                    $allClosedTrades = $deniesClient->getClosedOrders($backendId);
+                }
+            } catch (\Exception $e) {
+                // Fallback: apiData bleibt null, Template zeigt lokale DB-Daten
+            }
+
+            // Sort closed trades descending by close date (newest first)
+            if (!empty($allClosedTrades)) {
+                usort($allClosedTrades, function($a, $b) {
+                    $dateA = $a->order_close_at ?? $a->orderCloseAt ?? '';
+                    $dateB = $b->order_close_at ?? $b->orderCloseAt ?? '';
+                    return strcmp($dateB, $dateA);
+                });
+            }
+
+            $agents = $agentRepository->findAll();
+
+            return $this->render('account/show_denies.html.twig', [
+                'account' => $account,
+                'apiData' => $apiData,
+                'allClosedTrades' => $allClosedTrades,
+                'openPositions' => $openPositions,
+                'closedPositions' => $closedPositions,
+                'dailyGrowth' => $dailyGrowth,
+                'agent' => $agent,
+                'multiplier' => $multiplier,
+                'agents' => $agents,
+            ]);
+        }
+
         return $this->render('account/show.html.twig', [
             'account' => $account,
             'openPositions' => $openPositions,
@@ -577,6 +615,75 @@ class AccountController extends AbstractController
             'agent' => $agent,
             'multiplier' => $multiplier,
         ]);
+    }
+
+    /**
+     * @Route("/account/{meta_id}/flush-positions", name="app_account_flush_positions", methods={"POST"})
+     */
+    public function flushPositions(Request $request, Account $account, DeniesClient $deniesClient): Response
+    {
+        if (!$account || ($account->getUser() !== $this->getUser() && !$this->isGranted('ROLE_ADMIN'))) {
+            $this->session->getFlashBag()->add('danger', 'Zugriff verweigert.');
+            return $this->redirectToRoute('app_account_index');
+        }
+
+        if ($account->getHost() !== 'denies') {
+            $this->session->getFlashBag()->add('danger', 'Diese Funktion ist nur für Denies-Accounts verfügbar.');
+            return $this->redirectToRoute('app_account_show', ['meta_id' => $account->getMetaId()]);
+        }
+
+        try {
+            $backendId = $deniesClient->getAccountIdByLogin($account->getLogin());
+            if (!$backendId) {
+                throw new \RuntimeException('Account im Backend nicht gefunden.');
+            }
+
+            // Get active order IDs for slave accounts
+            $activeOrderIds = [];
+            if ($account->getType() !== 2) { // Not a leader/master
+                $apiData = $deniesClient->getAccountDetail($backendId);
+                if ($apiData && isset($apiData->orders)) {
+                    foreach ($apiData->orders as $order) {
+                        $id = $order->Id ?? $order->id ?? null;
+                        if ($id) $activeOrderIds[] = (int) $id;
+                    }
+                }
+            }
+
+            $role = ($account->getType() === 2) ? 'MASTER' : 'SLAVE';
+            $deniesClient->flushAllPositions($backendId, $role, $activeOrderIds);
+
+            $this->session->getFlashBag()->add('success', 'Alle Positionen werden geschlossen.');
+        } catch (\Exception $e) {
+            $this->session->getFlashBag()->add('danger', 'Fehler: ' . $e->getMessage());
+        }
+
+        return $this->redirectToRoute('app_account_show', ['meta_id' => $account->getHost() === 'denies' ? $account->getLogin() : $account->getMetaId()]);
+    }
+
+    /**
+     * @Route("/account/{meta_id}/close-order/{orderId}", name="app_account_close_order", methods={"POST"})
+     */
+    public function closeOrder(Request $request, Account $account, int $orderId, DeniesClient $deniesClient): Response
+    {
+        if (!$account || ($account->getUser() !== $this->getUser() && !$this->isGranted('ROLE_ADMIN'))) {
+            $this->session->getFlashBag()->add('danger', 'Zugriff verweigert.');
+            return $this->redirectToRoute('app_account_index');
+        }
+
+        if ($account->getHost() !== 'denies') {
+            $this->session->getFlashBag()->add('danger', 'Diese Funktion ist nur für Denies-Accounts verfügbar.');
+            return $this->redirectToRoute('app_account_show', ['meta_id' => $account->getMetaId()]);
+        }
+
+        try {
+            $deniesClient->closeActiveOrder($orderId);
+            $this->session->getFlashBag()->add('success', 'Position wird geschlossen.');
+        } catch (\Exception $e) {
+            $this->session->getFlashBag()->add('danger', 'Fehler: ' . $e->getMessage());
+        }
+
+        return $this->redirectToRoute('app_account_show', ['meta_id' => $account->getHost() === 'denies' ? $account->getLogin() : $account->getMetaId()]);
     }
 
     /**
@@ -611,7 +718,7 @@ class AccountController extends AbstractController
     /**
      * @Route("/account/{meta_id}", name="app_account_delete", methods={"POST"})
      */
-    public function delete(string $meta_id, Request $request, AccountRepository $accountRepository, MetaApiClient $metaApiClient, DuplikiumClient $duplikiumClient): Response
+    public function delete(string $meta_id, Request $request, AccountRepository $accountRepository, MetaApiClient $metaApiClient, DuplikiumClient $duplikiumClient, DeniesClient $deniesClient): Response
     {
         // Account anhand der meta_id finden
         $account = $accountRepository->findOneBy(['meta_id' => $meta_id]);
@@ -633,10 +740,11 @@ class AccountController extends AbstractController
         if ($this->isCsrfTokenValid('delete' . $account->getMetaId(), $request->request->get('_token'))) {
 
             try {
-                if ($account->getHost() == "duplikium") {
+                if ($account->getHost() == "denies") {
+                    $deniesClient->deleteAccount($account);
+                } elseif ($account->getHost() == "duplikium") {
                     $duplikiumClient->deleteAccount($meta_id);
-                }
-                else {
+                } else {
                     $metaApiClient->deleteAccount($meta_id);
                 }
             }
@@ -833,16 +941,50 @@ class AccountController extends AbstractController
         }
 
         if ($account->getHost() == 'denies') {
-            $response = $deniesClient->getAccount($account);
+            try {
+                $response = $deniesClient->getAccount($account);
 
-            if ($response->code != 200) {
-                throw new \Exception('Denies API error: ' . ($response->message ?? 'Unknown error'));
+                if ($response->code != 200) {
+                    throw new \Exception('Denies API error: ' . ($response->message ?? 'Unknown error'));
+                }
+
+                $accountData = $response->data[0] ?? $response->data->data[0] ?? null;
+
+                if (!$accountData) {
+                    throw new \Exception('Denies API error: Account data not found in response');
+                }
+
+                $account->setEquity((float)($accountData->equity ?? 0));
+                $account->setBalance((float)($accountData->balance ?? 0));
+                
+                // Check for server errors
+                $serverStatus = $accountData->server_status ?? $accountData->serverStatus ?? 'Success';
+                $serverMessage = $accountData->server_status_message ?? $accountData->serverStatusMessage ?? '';
+                $apiDateStr = $accountData->updated_at ?? $accountData->updatedAt ?? null;
+                $apiUpdatedAt = $apiDateStr ? new \DateTime($apiDateStr) : null;
+                $isOld = false;
+                if ($apiUpdatedAt) {
+                    $diffSeconds = $now->getTimestamp() - $apiUpdatedAt->getTimestamp();
+                    $isOld = ($diffSeconds > 300);
+                }
+
+                if ($serverStatus !== 'Success' && $serverStatus !== 'None') {
+                    $errorMessage = $serverMessage ?: $serverStatus;
+                    $errorMessage = str_replace('MT5_PYTHON_START_FAILED: ', '', $errorMessage);
+                    $account->setError($errorMessage);
+                    $account->setIsActive(false);
+                } elseif ($isOld) {
+                    $account->setError('DISCONNECTED');
+                    $account->setIsActive(false);
+                } else {
+                    $account->setError('');
+                    $account->setIsActive(true);
+                }
+            } catch (\Exception $e) {
+                // Account not found in Denies API → mark as DISCONNECTED
+                $account->setError('DISCONNECTED');
+                $account->setIsActive(false);
             }
-
-            $account->setEquity($response->data->equity);
-            $account->setBalance($response->data->balance);
-            $account->setError('');
-            $account->setIsActive($response->data->status == 200 ? 1 : 0);
             $account->setLastUpdate($now);
 
             $accountRepository->add($account, true);
