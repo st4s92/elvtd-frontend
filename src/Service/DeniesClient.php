@@ -130,14 +130,24 @@ class DeniesClient
         }
     }
 
-    /**
-     * Get all closed orders for an account (for trade history + analytics).
-     * Uses paginated orders endpoint with large page size.
-     */
     public function getClosedOrders(int $accountId): array
     {
         try {
             $response = $this->request('GET', "orders/paginated?PerPage=9999&Page=1&AccountId=" . $accountId . "&Status=700");
+            return $response->data->data ?? [];
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Get all currently open positions (active orders) for an account.
+     */
+    public function getOpenPositions(int $accountId): array
+    {
+        try {
+            // Using orders/paginated with IsClosed=false as per OpenAPI schema
+            $response = $this->request('GET', "orders/paginated?PerPage=100&Page=1&AccountId=" . $accountId . "&IsClosed=false");
             return $response->data->data ?? [];
         } catch (\Exception $e) {
             return [];

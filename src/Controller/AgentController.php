@@ -399,11 +399,13 @@ class AgentController extends AbstractController
         // POST-Parameter auslesen
         $subscriberId = $request->request->get('subscriberId');
         $strategyId = $request->request->get('strategyId');
+        $redirectTo = $request->request->get('redirectTo');
+        $fallbackRedirect = $redirectTo ?: $this->urlGenerator->generate('app_agents_index');
 
         // Überprüfen, ob beide Parameter vorhanden sind
         if (!$subscriberId || !$strategyId) {
             $this->flashBag->add('primary', 'Ungültige Daten bereitgestellt.');
-            return new RedirectResponse($this->urlGenerator->generate('app_agents_index'));
+            return new RedirectResponse($fallbackRedirect);
         }
 
         $account = $accountRepository->findOneBy(['meta_id' => $subscriberId]);
@@ -411,22 +413,20 @@ class AgentController extends AbstractController
         // Überprüfen, ob der Account existiert
         if (!$account) {
             $this->flashBag->add('danger', 'Der angegebene Account wurde nicht gefunden.');
-            return new RedirectResponse($this->urlGenerator->generate('app_agents_index'));
+            return new RedirectResponse($fallbackRedirect);
         }
 
-        // Überprüfen, ob der Account dem aktuellen Benutzer gehört
-        if ($account->getUser() !== $this->getUser()) {
+        // Überprüfen, ob der Account dem aktuellen Benutzer gehört oder Admin
+        if ($account->getUser() !== $this->getUser() && !$this->isGranted('ROLE_ADMIN')) {
             $this->flashBag->add('danger', 'Sie haben keine Berechtigung, diesen Account zu verwalten.');
-            return new RedirectResponse($this->urlGenerator->generate('app_agents_index'));
+            return new RedirectResponse($fallbackRedirect);
         }
 
-        // Account und Agent aus der Datenbank abrufen
-        $account = $accountRepository->findOneBy(['meta_id' => $subscriberId]);
         $agent = $agentRepository->findOneBy(['meta_id' => $strategyId]);
 
-        if (!$account || !$agent) {
-            $this->flashBag->add('primary', 'Account oder Agent nicht gefunden.');
-            return new RedirectResponse($this->urlGenerator->generate('app_agents_index'));
+        if (!$agent) {
+            $this->flashBag->add('primary', 'Agent nicht gefunden.');
+            return new RedirectResponse($fallbackRedirect);
         }
 
         try {
@@ -453,6 +453,6 @@ class AgentController extends AbstractController
             $this->flashBag->add('primary', 'Error removeSubscriber: ' . $e->getMessage());
         }
 
-        return new RedirectResponse($this->urlGenerator->generate('app_agents_index'));
+        return new RedirectResponse($fallbackRedirect);
     }
 }

@@ -392,6 +392,10 @@
 	{% set trades = allClosedTrades ?? [] %}
 	{% set sa = api ? (api.serverAccount ?? null) : null %}
 	{% set isOn = api and api.account is defined %}
+	{% set apiUpdatedAt = (api and api.account.updated_at is defined and api.account.updated_at) ? api.account.updated_at : null %}
+	{% set isDisconnected = account.platform == 'ctrader' and (apiUpdatedAt is null or (date().timestamp - apiUpdatedAt|date('U') > 300)) %}
+	{% set tokenExpiresAt = (api and api.account.token_expired_at is defined and api.account.token_expired_at) ? api.account.token_expired_at : null %}
+	{% set tokenExpiresSoon = tokenExpiresAt and (tokenExpiresAt|date('U') - date().timestamp < 259200) %}
 
 	{# Open profit = sum of all active position profits #}
 	{% set op = 0 %}
@@ -443,9 +447,24 @@
 									<span style="opacity:.25">#{{ account.login }}</span>
 								</h3>
 								<div class="d-flex flex-wrap gap-2 mt-2">
-									<span class="pill">
-										<span class="dot {{ isOn ? 'dot-on' : 'dot-off' }}"></span>
-										{{ isOn ? 'Live' : 'Offline' }}</span>
+									{% if isDisconnected %}
+										<span class="pill" style="color:var(--r);">
+											<span class="dot dot-off"></span>
+											Disconnected</span>
+										<a href="{{ path('app_auth_ctrader_reauth', {meta_id: account.metaId}) }}" class="pill" style="color:var(--warn,#f0ad4e);cursor:pointer;text-decoration:none;" onclick="return confirm('Tokens bei cTrader neu autorisieren?');">
+											<i class="fas fa-key" style="font-size:.55rem;"></i>
+											Neu autorisieren</a>
+									{% else %}
+										<span class="pill">
+											<span class="dot {{ isOn ? 'dot-on' : 'dot-off' }}"></span>
+											{{ isOn ? 'Live' : 'Offline' }}</span>
+										{% if tokenExpiresSoon %}
+											<a href="{{ path('app_auth_ctrader_reauth', {meta_id: account.metaId}) }}" class="pill" style="color:var(--warn,#f0ad4e);cursor:pointer;text-decoration:none;" onclick="return confirm('Token läuft bald ab. Jetzt neu autorisieren?');">
+												<i class="fas fa-exclamation-triangle" style="font-size:.55rem;"></i>
+												Token läuft ab
+												{{ tokenExpiresAt|date('d.m.Y') }}</a>
+										{% endif %}
+									{% endif %}
 									<span class="pill">{{ account.platform|upper }}</span>
 									<span class="pill">{{ account.type == 1 ? 'Agent' : (account.type == 2 ? 'Leader' : 'Subscriber') }}</span>
 									{% if account.broker is defined and account.broker %}
@@ -460,7 +479,7 @@
 								<div style="font-size:.7rem;color:var(--txt2);margin-top:.4rem;">
 									<i class="fas fa-clock" style="font-size:.55rem;"></i>
 									Aktualisiert:
-									{{ account.lastUpdate ? account.lastUpdate|date('d.m.Y H:i:s') : '-' }}
+									{{ apiUpdatedAt ? apiUpdatedAt|date('d.m.Y H:i:s') : (account.lastUpdate ? account.lastUpdate|date('d.m.Y H:i:s') : '-') }}
 								</div>
 							</div>
 							<div class="d-flex gap-2">
@@ -486,9 +505,19 @@
 								<strong>{{ agent.name }}</strong>
 								&middot; Multiplikator
 								<strong>{{ multiplier.multiplier }}</strong>
-								<a href="/agents" class="btn btn-sm btn-dark mb-0 ms-auto">Agents
-									<i class="fas fa-arrow-right ms-1"></i>
-								</a>
+								<div class="d-flex gap-2 ms-auto">
+									<a href="/agents" class="btn btn-sm btn-dark mb-0">Agents
+										<i class="fas fa-arrow-right ms-1"></i>
+									</a>
+									<form action="{{ path('app_agents_remove_subscriber') }}" method="post" class="d-inline" onsubmit="return confirm('Verbindung wirklich trennen?');">
+										<input type="hidden" name="subscriberId" value="{{ account.metaId }}">
+										<input type="hidden" name="strategyId" value="{{ agent.metaId }}">
+										<input type="hidden" name="redirectTo" value="{{ path('app_account_show', {meta_id: account.metaId}) }}">
+										<button type="submit" class="btn btn-sm btn-outline-danger mb-0">
+											<i class="fas fa-unlink me-1"></i>Verbindung trennen
+										</button>
+									</form>
+								</div>
 							</div>
 						</div>
 					{% else %}
@@ -595,6 +624,7 @@
 									<thead>
 										<tr>
 											<th>Ticket</th>
+											<th>Open Time</th>
 											<th>Symbol</th>
 											<th>Type</th>
 											<th>Lot</th>
@@ -610,6 +640,7 @@
 											{% set oid = o.Id ?? o.id ?? 0 %}
 											<tr>
 												<td style="opacity:.4;">{{ o.OrderTicket ?? o.orderTicket ?? o.order_ticket ?? '-' }}</td>
+												<td style="opacity:.6; font-size: 0.72rem;">{{ o.OrderOpenAt ?? o.orderOpenAt ?? o.order_open_at ?? o.OpenTime ?? o.openTime ?? o.open_time ?? o.CreatedAt ?? o.createdAt ?? o.created_at ?? '-' }}</td>
 												<td>
 													<strong>{{ o.OrderSymbol ?? o.orderSymbol ?? o.order_symbol ?? '-' }}</strong>
 												</td>

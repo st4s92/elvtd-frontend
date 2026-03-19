@@ -168,7 +168,7 @@ class AccountController extends AbstractController
             $lastUpdate = $account->getLastUpdate();
             if (!$lastUpdate || ($now->getTimestamp() - $lastUpdate->getTimestamp()) > 60) {
                 try {
-                    $this->refreshAccountStats($account, $deniesClient, $duplikiumClient, $accountRepository);
+                    $this->refreshAccountStats($account, $deniesClient, $duplikiumClient, $accountRepository, $orderRepository);
                 } catch (\Exception $e) {
                     // Fehler beim automatischen Update ignorieren, um die Anzeige nicht zu blockieren
                 }
@@ -240,6 +240,28 @@ class AccountController extends AbstractController
     }
 
     /**
+     * @Route("/auth/ctrader/reauth/{meta_id}", name="app_auth_ctrader_reauth", methods={"GET"})
+     */
+    public function reauthCtrader(string $meta_id, AccountRepository $accountRepository): Response
+    {
+        $account = $accountRepository->findOneBy(['meta_id' => $meta_id]);
+        if (!$account) {
+            $this->session->getFlashBag()->add('danger', 'Account nicht gefunden.');
+            return $this->redirectToRoute('app_account_index');
+        }
+
+        if ($account->getUser() !== $this->getUser() && !$this->isGranted('ROLE_ADMIN')) {
+            $this->session->getFlashBag()->add('danger', 'Keine Berechtigung.');
+            return $this->redirectToRoute('app_account_index');
+        }
+
+        $this->session->set('ctrader_auth_login', $account->getLogin());
+        $this->session->set('ctrader_reauth', true);
+
+        return $this->redirectToRoute('app_auth_ctrader');
+    }
+
+    /**
      * @Route("/auth/ctrader", name="app_auth_ctrader", methods={"GET"})
      */
     public function authCtrader(Request $request): Response
@@ -267,7 +289,7 @@ class AccountController extends AbstractController
     /**
      * @Route("/auth/ctrader/callback", name="app_auth_ctrader_callback", methods={"GET"})
      */
-    public function authCtraderCallback(Request $request, AccountRepository $accountRepository, EntityManagerInterface $entityManager, DuplikiumClient $duplikiumClient): Response
+    public function authCtraderCallback(Request $request, AccountRepository $accountRepository, EntityManagerInterface $entityManager, DeniesClient $deniesClient): Response
     {
         // Hole den Autorisierungscode und den State (login) aus den Query-Parametern
         $code = $request->query->get('code');
@@ -317,14 +339,29 @@ class AccountController extends AbstractController
         $account->setCtraderRefreshToken($tokenData['refresh_token']);
         $account->setCtraderTokenExpiresAt((new \DateTime())->modify('+'.$tokenData['expires_in'].' seconds'));
 
-        $response = $duplikiumClient->addAccount($account);
+        $isReauth = $this->session->get('ctrader_reauth', false);
 
-        if (isset($response->account->account_id) && strlen($response->account->account_id) > 1) {
-            $this->addFlash('success', 'cTrader wurde erfolgreich verbunden.');
+        if ($isReauth && $account->getMetaId()) {
+            // Reauth: Nur Tokens aktualisieren, Account existiert bereits bei Denies
+            $entityManager->persist($account);
+            $entityManager->flush();
 
-            $account->setMetaId($response->account->account_id);
-            $account->setBalance($response->account->balance);
-            $account->setEquity($response->account->equity);
+            $this->session->remove('ctrader_auth_login');
+            $this->session->remove('ctrader_reauth');
+
+            $this->addFlash('success', 'cTrader Tokens für Account ' . $account->getLogin() . ' wurden erfolgreich aktualisiert.');
+
+            return $this->redirectToRoute('app_account_show', ['meta_id' => $account->getMetaId()]);
+        }
+
+        // Neuer Account: Bei Denies registrieren
+        $account->setHost('denies');
+        $response = $deniesClient->addAccount($account);
+
+        if (isset($response->data->accountNumber) && strlen($response->data->accountNumber) > 1) {
+            $this->addFlash('success', 'cTrader Account ' . $response->data->accountNumber . ' wurde erfolgreich verbunden.');
+
+            $account->setMetaId($response->data->accountNumber);
         } else {
             if (isset($response->error) && strlen($response->error) > 1) {
                 $this->addFlash('danger', strip_tags($response->error));
@@ -338,7 +375,6 @@ class AccountController extends AbstractController
         $entityManager->flush();
 
         $this->session->getFlashBag()->add('success', 'cTrader Authentifizierung erfolgreich.');
-
 
         // Entferne den Login-Wert aus der Session
         $this->session->remove('ctrader_auth_login');
@@ -424,7 +460,7 @@ class AccountController extends AbstractController
                 $account->setPassword($encryptedPassword); // Verschlüsseltes Passwort setzen
             }
 
-            if($this->isGranted('ROLE_ADMIN')) {
+            if($account->getPlatform() == 'ctrader' || $this->isGranted('ROLE_ADMIN')) {
                 $account->setHost('denies');
                 $response = $deniesClient->addAccount($account);
             }
@@ -491,7 +527,7 @@ class AccountController extends AbstractController
         $lastUpdate = $account->getLastUpdate();
         if (!$lastUpdate || ($now->getTimestamp() - $lastUpdate->getTimestamp()) > 60) {
             try {
-                $this->refreshAccountStats($account, $deniesClient, $duplikiumClient, $accountRepository);
+                $this->refreshAccountStats($account, $deniesClient, $duplikiumClient, $accountRepository, $orderRepository);
             } catch (\Exception $e) {
                 // Fehler beim automatischen Update ignorieren, um die Anzeige nicht zu blockieren
             }
@@ -578,6 +614,30 @@ class AccountController extends AbstractController
                 if ($backendId) {
                     $apiData = $deniesClient->getAccountDetail($backendId);
                     $allClosedTrades = $deniesClient->getClosedOrders($backendId);
+
+                    // Enrich active orders with open time from getOpenPositions endpoint
+                    if ($apiData && isset($apiData->orders) && !empty($apiData->orders)) {
+                        $openPositionsApi = $deniesClient->getOpenPositions($backendId);
+
+                        // Build ticket -> order_open_at lookup from paginated orders
+                        $openTimeByTicket = [];
+                        foreach ($openPositionsApi as $op) {
+                            $ticket = $op->order_ticket ?? $op->orderTicket ?? $op->OrderTicket ?? null;
+                            $openAt = $op->order_open_at ?? $op->orderOpenAt ?? $op->OrderOpenAt ?? null;
+                            if ($ticket && $openAt) {
+                                $openTimeByTicket[(string)$ticket] = $openAt;
+                            }
+                        }
+
+                        // Merge open time into apiData->orders
+                        foreach ($apiData->orders as &$order) {
+                            $ticket = $order->OrderTicket ?? $order->orderTicket ?? $order->order_ticket ?? null;
+                            if ($ticket && isset($openTimeByTicket[(string)$ticket])) {
+                                $order->order_open_at = $openTimeByTicket[(string)$ticket];
+                            }
+                        }
+                        unset($order); // break reference
+                    }
                 }
             } catch (\Exception $e) {
                 // Fallback: apiData bleibt null, Template zeigt lokale DB-Daten
@@ -886,7 +946,8 @@ class AccountController extends AbstractController
         Account $account,
         DeniesClient $deniesClient,
         DuplikiumClient $duplikiumClient,
-        AccountRepository $accountRepository
+        AccountRepository $accountRepository,
+        OrderRepository $orderRepository
     ): Response
     {
 
@@ -911,7 +972,7 @@ class AccountController extends AbstractController
         }
 
         try {
-            $this->refreshAccountStats($account, $deniesClient, $duplikiumClient, $accountRepository);
+            $this->refreshAccountStats($account, $deniesClient, $duplikiumClient, $accountRepository, $orderRepository);
             $this->addFlash('success', 'Account wurde erfolgreich aktualisiert.');
         } catch (\Exception $e) {
             $this->addFlash('danger', 'Account-Aktualisierung fehlgeschlagen: ' . $e->getMessage());
@@ -932,7 +993,8 @@ class AccountController extends AbstractController
         Account $account,
         DeniesClient $deniesClient,
         DuplikiumClient $duplikiumClient,
-        AccountRepository $accountRepository
+        AccountRepository $accountRepository,
+        OrderRepository $orderRepository
     ): void {
         $now = new \DateTime();
 
@@ -980,6 +1042,69 @@ class AccountController extends AbstractController
                     $account->setError('');
                     $account->setIsActive(true);
                 }
+
+                // --- Position Synchronization for Denies ---
+                $deniesAccountId = $deniesClient->getAccountIdByLogin($account->getLogin());
+                if ($deniesAccountId) {
+                    $apiPositions = $deniesClient->getOpenPositions($deniesAccountId);
+                    $localOpenOrders = $orderRepository->findBy(['account' => $account, 'state' => 1]);
+
+                    $apiTickets = [];
+                    $entityManager = $accountRepository->getManager();
+
+                    foreach ($apiPositions as $apiPos) {
+                        $ticket = (int)($apiPos->order_ticket ?? $apiPos->ticket ?? $apiPos->id ?? 0);
+                        if (!$ticket) continue;
+                        $apiTickets[] = $ticket;
+
+                        // Sync local order data
+                        $localOrder = $orderRepository->findOneBy(['ticket' => $ticket, 'account' => $account]);
+                        if (!$localOrder) {
+                            $localOrder = new Order();
+                            $localOrder->setTicket($ticket);
+                            $localOrder->setAccount($account);
+                            $localOrder->setLogin($account->getLogin());
+                            $localOrder->setState(1); // Open
+                        }
+
+                        // Update/Set properties including Open Time
+                        if (isset($apiPos->order_open_at)) {
+                            $localOrder->setOpenTime(new \DateTime($apiPos->order_open_at));
+                        }
+                        if (isset($apiPos->order_symbol)) {
+                            $localOrder->setSymbol($apiPos->order_symbol);
+                        }
+                        if (isset($apiPos->order_lot)) {
+                            $localOrder->setVolume((float)$apiPos->order_lot);
+                        }
+                        if (isset($apiPos->order_price)) {
+                            $localOrder->setOpenPrice((float)$apiPos->order_price);
+                            $localOrder->setPrice((float)$apiPos->order_price);
+                        }
+                        if (isset($apiPos->order_type)) {
+                            // Map type: 'Buy' -> 1, 'Sell' -> 0 (based on show.html.twig mapping)
+                            $localOrder->setCmd($apiPos->order_type === 'Buy' ? 1 : 0);
+                        }
+                        if (isset($apiPos->order_profit)) {
+                            $localOrder->setProfit((float)$apiPos->order_profit);
+                        }
+
+                        $entityManager->persist($localOrder);
+                    }
+
+                    // Close local orders that are no longer on the server
+                    foreach ($localOpenOrders as $localOrder) {
+                        if (!in_array($localOrder->getTicket(), $apiTickets)) {
+                            $localOrder->setState(2); // Closed
+                            $localOrder->setCloseTime($now);
+                            $entityManager->persist($localOrder);
+                        }
+                    }
+
+                    $entityManager->flush();
+                }
+                // --- End Position Sync ---
+
             } catch (\Exception $e) {
                 // Account not found in Denies API → mark as DISCONNECTED
                 $account->setError('DISCONNECTED');

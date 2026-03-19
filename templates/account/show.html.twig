@@ -387,93 +387,93 @@ beginAtZero: true // Startet die y-Achse bei 0
 				</div>
 			</div>
 			{# <div class="col-lg-4 col-md-6 mt-0 mb-4">
-																																																																														                    <div class="card">
-																																																																														                        <div class="card-body">
-																																																																														                            <h6 class="mb-0 ">Drawdown</h6>
-																																																																														                            <p class="text-sm ">max. Drawdown liegt bei <strong class="text-danger">-{{ account.maxDrawdown|round(3) }}%</strong></p>
-																																																																														                            <div class="pe-2">
-																																																																														                                <div class="chart">
-																																																																														                                    <div style="width: 100%; margin: auto;">
-																																																																														                                        <canvas id="profitChart2" ></canvas>
-																																																																														                                    </div>
-																																																																														
-																																																																														                                    <script>
-																																																																														                                        // Daten für profitChart2 (Drawdown Prozentual relativ zur vorherigen Balance)
-																																																																														                                        const drawdownPercentData = dailyGrowth.map((entry, index, array) => {
-																																																																														                                            if (entry.drawdownProfit && index > 0 && array[index - 1].balance) {
-																																																																														                                                // Berechnung: Drawdown in Prozent relativ zur Balance des vorherigen Eintrags (negativ)
-																																																																														                                                const value = -(entry.drawdownProfit / array[index - 1].balance) * 100;
-																																																																														                                                const roundedValue = value.toFixed(3); // Gibt eine String-Repräsentation des gerundeten Werts zurück
-																																																																														                                                return roundedValue;
-																																																																														                                            }
-																																																																														                                            return 0; // Wenn keine Daten oder vorheriger Eintrag vorhanden sind, 0 setzen
-																																																																														                                        });
-																																																																														
-																																																																														                                        // Initialisierung des Drawdown-Prozent-Diagramms
-																																																																														                                        const ctx2 = document.getElementById('profitChart2').getContext('2d');
-																																																																														                                        const profitChart2 = new Chart(ctx2, {
-																																																																														                                            type: 'line',
-																																																																														                                            data: {
-																																																																														                                                labels: labels,
-																																																																														                                                datasets: [{
-																																																																														                                                    label: 'Drawdown (%)',
-																																																																														                                                    data: drawdownPercentData,
-																																																																														                                                    borderColor: 'rgba(255, 99, 132, 1)',
-																																																																														                                                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-																																																																														                                                    tension: 0.5,
-																																																																														                                                    fill: true,
-																																																																														                                                    pointRadius: 2,
-																																																																														                                                }]
-																																																																														                                            },
-																																																																														                                            options: {
-																																																																														                                                responsive: true,
-																																																																														                                                plugins: {
-																																																																														                                                    legend: {
-																																																																														                                                        position: 'top'
-																																																																														                                                    },
-																																																																														                                                    title: {
-																																																																														                                                        display: false,
-																																																																														                                                        text: 'Drawdown (%)'
-																																																																														                                                    }
-																																																																														                                                },
-																																																																														                                                scales: {
-																																																																														                                                    x: {
-																																																																														                                                        title: {
-																																																																														                                                            display: false,
-																																																																														                                                            text: 'Date'
-																																																																														                                                        },
-																																																																														                                                        grid: {
-																																																																														                                                            display: false // Vertikales Grid entfernen
-																																																																														                                                        },
-																																																																														                                                        ticks: {
-																																																																														                                                            display: false // Beschriftung auf der x-Achse entfernen
-																																																																														                                                        }
-																																																																														                                                    },
-																																																																														                                                    y: {
-																																																																														                                                        title: {
-																																																																														                                                            display: false,
-																																																																														                                                            text: 'Drawdown (%)'
-																																																																														                                                        },
-																																																																														                                                        ticks: {
-																																																																														                                                            callback: function(value) {
-																																																																														                                                                return value + '%'; // Prozent-Symbol anzeigen
-																																																																														                                                            }
-																																																																														                                                        }
-																																																																														                                                    }
-																																																																														                                                }
-																																																																														                                            }
-																																																																														                                        });
-																																																																														                                    </script>
-																																																																														                                </div>
-																																																																														                            </div>
-																																																																														                            <hr class="dark horizontal">
-																																																																														                            <div class="d-flex ">
-																																																																														                                <i class="material-symbols-rounded text-sm my-auto me-1">schedule</i>
-																																																																														                                <p class="mb-0 text-sm"> aktualisiert am {{ account.lastUpdate|date('d.m.Y H:i:s') }}</p>
-																																																																														                            </div>
-																																																																														                        </div>
-																																																																														                    </div>
-																																																																														                </div>#}
+																																																																																	                    <div class="card">
+																																																																																	                        <div class="card-body">
+																																																																																	                            <h6 class="mb-0 ">Drawdown</h6>
+																																																																																	                            <p class="text-sm ">max. Drawdown liegt bei <strong class="text-danger">-{{ account.maxDrawdown|round(3) }}%</strong></p>
+																																																																																	                            <div class="pe-2">
+																																																																																	                                <div class="chart">
+																																																																																	                                    <div style="width: 100%; margin: auto;">
+																																																																																	                                        <canvas id="profitChart2" ></canvas>
+																																																																																	                                    </div>
+																																																																																	
+																																																																																	                                    <script>
+																																																																																	                                        // Daten für profitChart2 (Drawdown Prozentual relativ zur vorherigen Balance)
+																																																																																	                                        const drawdownPercentData = dailyGrowth.map((entry, index, array) => {
+																																																																																	                                            if (entry.drawdownProfit && index > 0 && array[index - 1].balance) {
+																																																																																	                                                // Berechnung: Drawdown in Prozent relativ zur Balance des vorherigen Eintrags (negativ)
+																																																																																	                                                const value = -(entry.drawdownProfit / array[index - 1].balance) * 100;
+																																																																																	                                                const roundedValue = value.toFixed(3); // Gibt eine String-Repräsentation des gerundeten Werts zurück
+																																																																																	                                                return roundedValue;
+																																																																																	                                            }
+																																																																																	                                            return 0; // Wenn keine Daten oder vorheriger Eintrag vorhanden sind, 0 setzen
+																																																																																	                                        });
+																																																																																	
+																																																																																	                                        // Initialisierung des Drawdown-Prozent-Diagramms
+																																																																																	                                        const ctx2 = document.getElementById('profitChart2').getContext('2d');
+																																																																																	                                        const profitChart2 = new Chart(ctx2, {
+																																																																																	                                            type: 'line',
+																																																																																	                                            data: {
+																																																																																	                                                labels: labels,
+																																																																																	                                                datasets: [{
+																																																																																	                                                    label: 'Drawdown (%)',
+																																																																																	                                                    data: drawdownPercentData,
+																																																																																	                                                    borderColor: 'rgba(255, 99, 132, 1)',
+																																																																																	                                                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+																																																																																	                                                    tension: 0.5,
+																																																																																	                                                    fill: true,
+																																																																																	                                                    pointRadius: 2,
+																																																																																	                                                }]
+																																																																																	                                            },
+																																																																																	                                            options: {
+																																																																																	                                                responsive: true,
+																																																																																	                                                plugins: {
+																																																																																	                                                    legend: {
+																																																																																	                                                        position: 'top'
+																																																																																	                                                    },
+																																																																																	                                                    title: {
+																																																																																	                                                        display: false,
+																																																																																	                                                        text: 'Drawdown (%)'
+																																																																																	                                                    }
+																																																																																	                                                },
+																																																																																	                                                scales: {
+																																																																																	                                                    x: {
+																																																																																	                                                        title: {
+																																																																																	                                                            display: false,
+																																																																																	                                                            text: 'Date'
+																																																																																	                                                        },
+																																																																																	                                                        grid: {
+																																																																																	                                                            display: false // Vertikales Grid entfernen
+																																																																																	                                                        },
+																																																																																	                                                        ticks: {
+																																																																																	                                                            display: false // Beschriftung auf der x-Achse entfernen
+																																																																																	                                                        }
+																																																																																	                                                    },
+																																																																																	                                                    y: {
+																																																																																	                                                        title: {
+																																																																																	                                                            display: false,
+																																																																																	                                                            text: 'Drawdown (%)'
+																																																																																	                                                        },
+																																																																																	                                                        ticks: {
+																																																																																	                                                            callback: function(value) {
+																																																																																	                                                                return value + '%'; // Prozent-Symbol anzeigen
+																																																																																	                                                            }
+																																																																																	                                                        }
+																																																																																	                                                    }
+																																																																																	                                                }
+																																																																																	                                            }
+																																																																																	                                        });
+																																																																																	                                    </script>
+																																																																																	                                </div>
+																																																																																	                            </div>
+																																																																																	                            <hr class="dark horizontal">
+																																																																																	                            <div class="d-flex ">
+																																																																																	                                <i class="material-symbols-rounded text-sm my-auto me-1">schedule</i>
+																																																																																	                                <p class="mb-0 text-sm"> aktualisiert am {{ account.lastUpdate|date('d.m.Y H:i:s') }}</p>
+																																																																																	                            </div>
+																																																																																	                        </div>
+																																																																																	                    </div>
+																																																																																	                </div>#}
 			{% if account.host == 'metapi' %}
 				<div class="col-lg-6 mt-0 mb-3">
 					<div class="card">
@@ -837,7 +837,7 @@ scale: 2, // Erhöht die Auflösung
 useCORS: true // Für externe Ressourcen (falls vorhanden)
 }).then(canvas => {
 const link = document.createElement('a');
-link.download = 'trade_calendar_                          {{ account.name|replace({" ": "_"}) }}_' + new Date().toISOString().slice(0, 10) + '.png';
+link.download = 'trade_calendar_                           {{ account.name|replace({" ": "_"}) }}_' + new Date().toISOString().slice(0, 10) + '.png';
 link.href = canvas.toDataURL('image/png');
 link.click();
 
