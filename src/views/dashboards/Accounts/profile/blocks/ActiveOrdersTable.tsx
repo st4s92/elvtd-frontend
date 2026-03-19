@@ -140,11 +140,12 @@ const ActiveOrdersTable = ({
               <th className="px-4 py-3">Lot</th>
               <th className="px-4 py-3">Price</th>
               <th className="px-4 py-3">Profit</th>
+              <th className="px-4 py-3">Open Time</th>
             </tr>
           </thead>
 
           <tbody>
-            {orders.map((o: any) => (
+            {orders.filter((o: any) => (o.orderTicket ?? o.order_ticket ?? 0) > 0).map((o: any) => (
               <tr
                 key={o.id}
                 className="border-b border-white/10 hover:bg-white/5 transition"
@@ -181,6 +182,9 @@ const ActiveOrdersTable = ({
                   >
                     {o.orderProfit != null ? `$${Number(o.orderProfit).toFixed(2)}` : "-"}
                   </span>
+                </td>
+                <td className="px-4 py-3 text-xs text-gray-400">
+                  {o.orderOpenAt || o.order_open_at || o.createdAt ? new Date(o.orderOpenAt || o.order_open_at || o.createdAt).toLocaleString() : "-"}
                 </td>
               </tr>
             ))}

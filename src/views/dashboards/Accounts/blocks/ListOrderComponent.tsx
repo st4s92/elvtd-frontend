@@ -43,6 +43,7 @@ export default function ListOrderComponent({
             PerPage: PER_PAGE,
             Page: currentPage,
             AccountId: accountId,
+            IsClosed: false,
             Status: 600,
           },
         });
@@ -52,12 +53,13 @@ export default function ListOrderComponent({
 
         allOrders = [...allOrders, ...pageData];
 
-        if (allOrders.length >= total) break;
+        if (allOrders.length >= total || pageData.length === 0) break;
         currentPage++;
       }
 
-      setOrders(allOrders);
-      setPickedIds(allOrders.map((o) => o.id));
+      const filtered = allOrders.filter((o) => (o.orderTicket ?? 0) > 0);
+      setOrders(filtered);
+      setPickedIds(filtered.map((o) => o.id));
     } catch (err) {
       console.error("Failed fetching orders", err);
     }

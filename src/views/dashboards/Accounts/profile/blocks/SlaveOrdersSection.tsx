@@ -80,6 +80,7 @@ const SlaveOrdersSection = ({ masterAccountId }: { masterAccountId: number }) =>
                                     <th className="px-4 py-3">Lot</th>
                                     <th className="px-4 py-3">Price</th>
                                     <th className="px-4 py-3">Profit</th>
+                                    <th className="px-4 py-3">Open Time</th>
                                     <th className="px-4 py-3 text-right">Action</th>
                                 </tr>
                             </thead>
@@ -91,7 +92,7 @@ const SlaveOrdersSection = ({ masterAccountId }: { masterAccountId: number }) =>
                                         </td>
                                     </tr>
                                 ) : (
-                                    slave.orders.map((order: any) => {
+                                    slave.orders.filter((o: any) => (o.order_ticket ?? o.orderTicket ?? 0) > 0).map((order: any) => {
                                         // ActiveOrder model uses [JsonPropertyName] with snake_case
                                         const ticket = order.order_ticket ?? order.orderTicket ?? 0;
                                         const symbol = order.order_symbol ?? order.orderSymbol ?? "";
@@ -99,6 +100,7 @@ const SlaveOrdersSection = ({ masterAccountId }: { masterAccountId: number }) =>
                                         const lot = order.order_lot ?? order.orderLot ?? 0;
                                         const price = order.order_price ?? order.orderPrice ?? 0;
                                         const profit = order.order_profit ?? order.orderProfit ?? 0;
+                                        const openTime = order.order_open_at ?? order.orderOpenAt ?? order.created_at ?? "";
                                         return (
                                         <tr key={order.id} className="border-b border-white/10 hover:bg-white/5 transition">
                                             <td className="px-4 py-3">{ticket}</td>
@@ -115,6 +117,9 @@ const SlaveOrdersSection = ({ masterAccountId }: { masterAccountId: number }) =>
                                                 <span className={`font-bold ${Number(profit) >= 0 ? "text-emerald-400" : "text-red-400"}`}>
                                                     {Number(profit).toFixed(2)}
                                                 </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-xs text-gray-400">
+                                                {openTime ? new Date(openTime).toLocaleString() : "-"}
                                             </td>
                                             <td className="px-4 py-3 text-right">
                                                 <button

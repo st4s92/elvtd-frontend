@@ -6,8 +6,8 @@ import {
     TradeActivityChart,
     AccountRatioChart,
     SystemHealthSparkline,
-    RecentOrdersTable,
 } from 'src/components/dashboards/modern/TradingCharts';
+import ActivePositionsTable from 'src/components/dashboards/modern/ActivePositionsTable';
 
 const Moderndash = () => {
     return (
@@ -26,9 +26,11 @@ const Moderndash = () => {
                 </div>
             </div>
 
-            {/* Charts Row 2: Recent Orders Table (full width) */}
+
+
+            {/* Active Positions Table (Full Width) */}
             <div className="grid grid-cols-1 gap-6">
-                <RecentOrdersTable />
+                <ActivePositionsTable />
             </div>
         </div>
     );

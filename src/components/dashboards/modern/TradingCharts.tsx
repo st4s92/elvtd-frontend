@@ -38,7 +38,9 @@ const TradeActivityChart = () => {
                 const countsByDay = days.map((day) => {
                     const dayStr = day.toDateString();
                     return orders.filter((o) => {
-                        const ca = o.createdAt ? new Date(o.createdAt).toDateString() : null;
+                        const raw = o.created_at || o.createdAt || o.order_open_at || o.orderOpenAt;
+                        if (!raw) return false;
+                        const ca = new Date(raw).toDateString();
                         return ca === dayStr;
                     }).length;
                 });
