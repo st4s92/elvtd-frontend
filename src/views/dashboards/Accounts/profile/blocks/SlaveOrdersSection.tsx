@@ -85,15 +85,18 @@ const SlaveOrdersSection = ({ masterAccountId }: { masterAccountId: number }) =>
                                 </tr>
                             </thead>
                             <tbody>
-                                {slave.orders.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={7} className="px-4 py-8 text-center text-gray-500 italic">
-                                            No active orders on this slave
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    slave.orders.filter((o: any) => (o.order_ticket ?? o.orderTicket ?? 0) > 0).map((order: any) => {
-                                        // ActiveOrder model uses [JsonPropertyName] with snake_case
+                                {(() => {
+                                    const filteredOrders = slave.orders.filter((o: any) => (o.order_ticket ?? o.orderTicket ?? 0) > 0);
+                                    if (filteredOrders.length === 0) {
+                                        return (
+                                            <tr>
+                                                <td colSpan={8} className="px-4 py-8 text-center text-gray-500 italic">
+                                                    No active orders on this slave
+                                                </td>
+                                            </tr>
+                                        );
+                                    }
+                                    return filteredOrders.map((order: any) => {
                                         const ticket = order.order_ticket ?? order.orderTicket ?? 0;
                                         const symbol = order.order_symbol ?? order.orderSymbol ?? "";
                                         const type = order.order_type ?? order.orderType ?? "";
@@ -102,38 +105,38 @@ const SlaveOrdersSection = ({ masterAccountId }: { masterAccountId: number }) =>
                                         const profit = order.order_profit ?? order.orderProfit ?? 0;
                                         const openTime = order.order_open_at ?? order.orderOpenAt ?? order.created_at ?? "";
                                         return (
-                                        <tr key={order.id} className="border-b border-white/10 hover:bg-white/5 transition">
-                                            <td className="px-4 py-3">{ticket}</td>
-                                            <td className="px-4 py-3">{symbol}</td>
-                                            <td className="px-4 py-3">
-                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${type === "DEAL_TYPE_BUY" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
-                                                    }`}>
-                                                    {type?.replace("DEAL_TYPE_", "")}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-3 font-mono">{Number(lot).toFixed(2)}</td>
-                                            <td className="px-4 py-3 font-mono">{Number(price).toFixed(5)}</td>
-                                            <td className="px-4 py-3">
-                                                <span className={`font-bold ${Number(profit) >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-                                                    {Number(profit).toFixed(2)}
-                                                </span>
-                                            </td>
-                                            <td className="px-4 py-3 text-xs text-gray-400">
-                                                {openTime ? new Date(openTime).toLocaleString() : "-"}
-                                            </td>
-                                            <td className="px-4 py-3 text-right">
-                                                <button
-                                                    onClick={() => handleClosePosition(order.id)}
-                                                    className="text-red-500 hover:text-red-400 p-1 transition"
-                                                    title="Close Position"
-                                                >
-                                                    <Icon icon="solar:close-circle-bold" height={20} />
-                                                </button>
-                                            </td>
-                                        </tr>
+                                            <tr key={order.id} className="border-b border-white/10 hover:bg-white/5 transition">
+                                                <td className="px-4 py-3 font-mono text-xs font-bold">{ticket}</td>
+                                                <td className="px-4 py-3">{symbol}</td>
+                                                <td className="px-4 py-3">
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${type === "DEAL_TYPE_BUY" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
+                                                        }`}>
+                                                        {type?.replace("DEAL_TYPE_", "")}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3 font-mono">{Number(lot).toFixed(2)}</td>
+                                                <td className="px-4 py-3 font-mono text-gray-400">{Number(price).toFixed(5)}</td>
+                                                <td className="px-4 py-3">
+                                                    <span className={`font-bold ${Number(profit) >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                                                        {Number(profit) >= 0 ? '+' : ''}{Number(profit).toFixed(2)}
+                                                    </span>
+                                                </td>
+                                                <td className="px-4 py-3 text-[10px] text-gray-500 font-mono">
+                                                    {openTime ? new Date(openTime).toLocaleString() : "-"}
+                                                </td>
+                                                <td className="px-4 py-3 text-right">
+                                                    <button
+                                                        onClick={() => handleClosePosition(order.id)}
+                                                        className="text-red-500 hover:text-red-400 p-1 transition"
+                                                        title="Close Position"
+                                                    >
+                                                        <Icon icon="solar:close-circle-bold" height={20} />
+                                                    </button>
+                                                </td>
+                                            </tr>
                                         );
-                                    })
-                                )}
+                                    });
+                                })()}
                             </tbody>
                         </table>
                     </div>

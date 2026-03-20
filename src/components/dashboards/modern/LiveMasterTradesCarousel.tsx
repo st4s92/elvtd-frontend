@@ -155,9 +155,16 @@ const LiveMasterTradesCarousel = () => {
                     for (const o of orders) {
                         // A slave order is "copied" when it has a non-zero orderTicket
                         // Ticket = 0 means the copy failed or hasn't happened yet
-                        const copiedForThisOrder = slaveOrders.filter(
-                            (so: any) => (so.status === 200 || so.status === 600 || so.status === 700)
-                        ).length;
+                        // Count how many slaves have successfully copied this master order
+                        // Each slave object in slaveOrders has an 'orders' array
+                        const copiedForThisOrder = slaveOrders.filter((slave: any) => {
+                            return slave.orders?.some((so: any) => {
+                                const ticket = Number(so.order_ticket ?? so.orderTicket ?? 0);
+                                const masterTicket = Number(so.master_order?.order_ticket ?? so.masterOrderTicket ?? 0);
+                                // Match by master ticket and ensure slave has a real ticket
+                                return masterTicket === o.orderTicket && ticket > 0;
+                            });
+                        }).length;
 
                         all.push({
                             id: o.id,
