@@ -1,213 +1,657 @@
-
 <style>
-    /* Stil für die Sprechblase */
-    .chat-widget {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        width: 60px;
-        height: 60px;
-        background-color: #82c75c;
-        border-radius: 50%;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); /* Stärkerer Schatten */
-        z-index: 1000;
-        transition: all 0.3s ease-in-out;
-        font-size: 24px; /* Größeres Icon */
-    }
-    .chat-widget:hover {
-        background-color: #5a8d3e;
-        transform: scale(1.1); /* Leichte Vergrößerung beim Hover */
-    }
+	/* ══════════════════════════════════════════════
+       HELPDESK WIDGET — Glassmorphism + Animated
+       ══════════════════════════════════════════════ */
 
-    .chat-overlay {
-        display: none;
-        position: fixed;
-        bottom: 100px;
-        right: 20px;
-        width: 350px;
-        background-color: #d2e8c8;
-        border: 1px solid #e0e0e0;
-        border-radius: 10px;
-        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-        z-index: 1000;
-        padding: 25px;
-        max-height: 800px;
-        overflow-y: auto;
-    }
-    .chat-overlay.active {
-        display: block;
-    }
+	.chat-widget {
+		position: fixed;
+		bottom: 24px;
+		right: 24px;
+		width: 58px;
+		height: 58px;
+		background: linear-gradient(135deg, rgba(22,163,74,0.85), rgba(16,185,129,0.9));
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+		border: 1px solid rgba(255, 255, 255, 0.3);
+		border-radius: 50%;
+		color: white;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		box-shadow: 0 4px 24px rgba(22, 163, 74, 0.35), 0 0 0 0 rgba(22, 163, 74, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+		z-index: 1000;
+		transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+		font-size: 24px;
+		animation: widgetFloat 3s ease-in-out infinite;
+	}
+	.chat-widget::before,
+	.chat-widget::after {
+		content: '';
+		position: absolute;
+		border-radius: 50%;
+		border: 2px solid rgba(22, 163, 74, 0.3);
+		animation: pulseRing 3s ease-out infinite;
+		pointer-events: none;
+	}
+	.chat-widget::before {
+		inset: -8px;
+		animation-delay: 0s;
+	}
+	.chat-widget::after {
+		inset: -16px;
+		border-color: rgba(22, 163, 74, 0.15);
+		animation-delay: 1s;
+	}
+	@keyframes pulseRing {
+		0% {
+			transform: scale(0.9);
+			opacity: 1;
+		}
+		50% {
+			transform: scale(1.05);
+			opacity: 0.5;
+		}
+		100% {
+			transform: scale(0.9);
+			opacity: 1;
+		}
+	}
+	@keyframes widgetFloat {
+		0,
+		100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-4px);
+		}
+	}
+	.chat-widget:hover {
+		transform: scale(1.12) translateY(-2px);
+		box-shadow: 0 8px 32px rgba(22, 163, 74, 0.45), 0 0 20px rgba(22, 163, 74, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+		animation: none;
+	}
+	.chat-widget.is-open {
+		transform: rotate(45deg) scale(1.05);
+		background: linear-gradient(135deg, rgba(220,38,38,0.8), rgba(239,68,68,0.85));
+		box-shadow: 0 4px 24px rgba(220, 38, 38, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+		animation: none;
+	}
+	.chat-widget.is-open::before,
+	.chat-widget.is-open::after {
+		display: none;
+	}
+	.chat-widget .icon-help,
+	.chat-widget .icon-close {
+		position: absolute;
+		transition: opacity 0.3s, transform 0.3s;
+	}
+	.chat-widget .icon-close {
+		opacity: 0;
+		transform: rotate(-45deg);
+	}
+	.chat-widget.is-open .icon-help {
+		opacity: 0;
+		transform: rotate(45deg);
+	}
+	.chat-widget.is-open .icon-close {
+		opacity: 1;
+		transform: rotate(0deg);
+	}
 
-    .chat-headline {
-        padding: 25px 0;
-    }
+	/* ── Overlay Panel ── */
+	.chat-overlay {
+		position: fixed;
+		bottom: 96px;
+		right: 24px;
+		width: 370px;
+		max-height: 85vh;
+		overflow-y: auto;
+		z-index: 1000;
+		border-radius: 20px;
+		background: rgba(255, 255, 255, 0.82);
+		backdrop-filter: blur(24px) saturate(180%);
+		-webkit-backdrop-filter: blur(24px) saturate(180%);
+		border: 1px solid rgba(255, 255, 255, 0.5);
+		box-shadow: 0 24px 80px rgba(0, 0, 0, 0.12), 0 8px 32px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+		padding: 0;
 
-    /* Header des Overlays */
-    .chat-overlay-header {
-        background-color: #546545;
-        color: white;
-        padding: 10px;
-        border-radius: 8px 8px 0 0;
-        text-align: center;
-        font-weight: bold;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-    }
+		/* Hidden state */
+		opacity: 0;
+		visibility: hidden;
+		transform: translateY(20px) scale(0.95);
+		transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1);
+		pointer-events: none;
+	}
+	.chat-overlay.active {
+		opacity: 1;
+		visibility: visible;
+		transform: translateY(0) scale(1);
+		pointer-events: auto;
+	}
 
-    /* Inhalt des Overlays */
-    .chat-overlay-content {
-        padding: 10px 0;
-        background-color: #fff;
-        border-bottom-right-radius: 10px;
-        border-bottom-left-radius: 10px;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-    }
-    .chat-overlay-content a {
-        display: block;
-        padding: 10px;
-        color: #000;
-        text-decoration: none;
-        border-bottom: 1px solid #e0e0e0;
-        font-size: 14px;
-        font-weight: bold;
-    }
-    .chat-overlay-content a:hover {
-        background-color: #e9ecef;
-        border-radius: 5px;
-    }
-    .chat-overlay-content a:last-child {
-        border-bottom: none;
-    }
+	/* ── Header Section ── */
+	.chat-headline {
+		padding: 28px 24px 20px;
+		background: linear-gradient(135deg, rgba(22,163,74,0.08), rgba(16,185,129,0.05));
+		border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+		position: relative;
+		overflow: hidden;
+	}
+	.chat-headline::before {
+		content: '';
+		position: absolute;
+		top: -40px;
+		right: -40px;
+		width: 120px;
+		height: 120px;
+		background: radial-gradient(circle, rgba(22,163,74,0.1) 0%, transparent 70%);
+		pointer-events: none;
+	}
+	.chat-headline h3 {
+		font-size: 1.4rem;
+		font-weight: 800;
+		color: #0f172a;
+		margin: 0 0 6px;
+		letter-spacing: -0.02em;
+	}
+	.chat-headline p {
+		font-size: 0.85rem;
+		color: #64748b;
+		margin: 0;
+		line-height: 1.5;
+	}
 
-    /* Formular für neues Ticket */
-    .chat-overlay-form {
-        margin-top: 25px;
-        background-color: #fff;
-        padding: 25px 15px;
-        border-radius: 10px;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-    }
-    .chat-overlay-form p {
-        line-height: 1;
-    }
-    .chat-overlay-form img {
-        border-radius: 15px;
-        float: left;
-        margin-right: 10px;
-    }
-    .chat-overlay-form label {
-        display: none;
-        margin-bottom: 5px;
-        font-weight: 500;
-    }
-    .chat-overlay-form input[type="text"],
-    .chat-overlay-form textarea {
-        width: 100%;
-        padding: 8px;
-        margin-bottom: 10px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        box-sizing: border-box;
-    }
-    .chat-overlay-form button {
-        background-color: #546545;
-        color: white;
-        padding: 8px 15px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-    }
-    .chat-overlay-form button:hover {
-        background-color: #363b31;
-    }
+	/* ── Navigation Card ── */
+	.chat-overlay-header {
+		margin: 16px 16px 0;
+		background: linear-gradient(135deg, #16a34a, #15803d);
+		color: white;
+		padding: 12px 16px;
+		border-radius: 12px 12px 0 0;
+		text-align: center;
+		font-weight: 700;
+		font-size: 0.85rem;
+		letter-spacing: 0.02em;
+		text-transform: uppercase;
+		box-shadow: 0 2px 12px rgba(22, 163, 74, 0.25);
+	}
+	.chat-overlay-content {
+		margin: 0 16px;
+		background: rgba(255, 255, 255, 0.9);
+		border-radius: 0 0 12px 12px;
+		border: 1px solid rgba(0, 0, 0, 0.06);
+		border-top: none;
+		overflow: hidden;
+	}
+	.chat-overlay-content a {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 14px 16px;
+		color: #0f172a;
+		text-decoration: none;
+		font-size: 0.88rem;
+		font-weight: 600;
+		border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+		transition: all 0.2s;
+	}
+	.chat-overlay-content a:hover {
+		background: rgba(22, 163, 74, 0.06);
+		color: #16a34a;
+		padding-left: 20px;
+	}
+	.chat-overlay-content a:last-child {
+		border-bottom: none;
+	}
+
+	/* ── Ticket Form Card ── */
+	.chat-overlay-form {
+		margin: 16px;
+		background: rgba(255, 255, 255, 0.92);
+		backdrop-filter: blur(8px);
+		padding: 20px;
+		border-radius: 16px;
+		border: 1px solid rgba(0, 0, 0, 0.06);
+		box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+	}
+	.chat-overlay-form .form-header {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		margin-bottom: 16px;
+	}
+	.chat-overlay-form .form-header img {
+		border-radius: 12px;
+		width: 36px;
+		height: 36px;
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+	}
+	.chat-overlay-form .form-header-text {
+		display: flex;
+		flex-direction: column;
+	}
+	.chat-overlay-form .form-header-text strong {
+		font-size: 0.9rem;
+		font-weight: 700;
+		color: #0f172a;
+	}
+	.chat-overlay-form .form-header-text span {
+		font-size: 0.72rem;
+		color: #64748b;
+	}
+	.chat-overlay-form p {
+		line-height: 1;
+	}
+	.chat-overlay-form img {
+		border-radius: 12px;
+		float: left;
+		margin-right: 10px;
+	}
+	.chat-overlay-form label {
+		display: none;
+	}
+	.chat-overlay-form input[type="text"],
+	.chat-overlay-form textarea {
+		width: 100%;
+		padding: 12px 14px;
+		margin-bottom: 12px;
+		border: 1px solid rgba(0, 0, 0, 0.08);
+		border-radius: 12px;
+		box-sizing: border-box;
+		font-size: 0.88rem;
+		color: #0f172a;
+		background: rgba(248, 250, 252, 0.8);
+		transition: all 0.2s;
+		font-family: inherit;
+		resize: vertical;
+	}
+	.chat-overlay-form input[type="text"]:focus,
+	.chat-overlay-form textarea:focus {
+		outline: none;
+		border-color: rgba(22, 163, 74, 0.4);
+		box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+		background: #fff;
+	}
+	.chat-overlay-form textarea {
+		min-height: 100px;
+	}
+	.chat-overlay-form button {
+		width: 100%;
+		background: linear-gradient(135deg, #16a34a, #15803d);
+		color: white;
+		padding: 12px 20px;
+		border: none;
+		border-radius: 12px;
+		cursor: pointer;
+		font-weight: 700;
+		font-size: 0.88rem;
+		letter-spacing: 0.01em;
+		transition: all 0.3s;
+		box-shadow: 0 4px 16px rgba(22, 163, 74, 0.25);
+	}
+	.chat-overlay-form button:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 6px 24px rgba(22, 163, 74, 0.35);
+		background: linear-gradient(135deg, #15803d, #166534);
+	}
+	.chat-overlay-form button:active {
+		transform: translateY(0);
+	}
+
+	/* ── Scrollbar ── */
+	.chat-overlay::-webkit-scrollbar {
+		width: 4px;
+	}
+	.chat-overlay::-webkit-scrollbar-track {
+		background: transparent;
+	}
+	.chat-overlay::-webkit-scrollbar-thumb {
+		background: rgba(0, 0, 0, 0.1);
+		border-radius: 4px;
+	}
+
+	/* ── Teaser Bubble (idle peek) ── */
+	.chat-teaser {
+		position: fixed;
+		bottom: 92px;
+		right: 24px;
+		z-index: 999;
+		display: flex;
+		align-items: flex-end;
+		gap: 8px;
+		pointer-events: none;
+
+		opacity: 0;
+		transform: translateY(12px) scale(0.92);
+		transition: all 0.5s cubic-bezier(0.34,1.56,0.64,1);
+	}
+	.chat-teaser.visible {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+		pointer-events: auto;
+	}
+	.chat-teaser.hidden {
+		opacity: 0;
+		transform: translateY(12px) scale(0.92);
+		pointer-events: none;
+	}
+	.chat-teaser-card {
+		background: rgba(255, 255, 255, 0.88);
+		backdrop-filter: blur(20px) saturate(180%);
+		-webkit-backdrop-filter: blur(20px) saturate(180%);
+		border: 1px solid rgba(255, 255, 255, 0.5);
+		border-radius: 16px 16px 4px 16px;
+		padding: 14px 18px;
+		max-width: 260px;
+		box-shadow: 0 12px 40px rgba(0, 0, 0, 0.10), 0 4px 16px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+		cursor: pointer;
+		transition: all 0.2s;
+		position: relative;
+	}
+	.chat-teaser-card:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 16px 48px rgba(0, 0, 0, 0.12), 0 6px 20px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+	}
+	.chat-teaser-close {
+		position: absolute;
+		top: -6px;
+		right: -6px;
+		width: 20px;
+		height: 20px;
+		background: rgba(255, 255, 255, 0.95);
+		border: 1px solid rgba(0, 0, 0, 0.08);
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 11px;
+		color: #94a3b8;
+		cursor: pointer;
+		opacity: 0;
+		transition: opacity 0.2s, color 0.2s;
+		line-height: 1;
+		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+	}
+	.chat-teaser-card:hover .chat-teaser-close {
+		opacity: 1;
+	}
+	.chat-teaser-close:hover {
+		color: #ef4444;
+		background: #fff;
+	}
+	.chat-teaser-header {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		margin-bottom: 8px;
+	}
+	.chat-teaser-avatar {
+		width: 32px;
+		height: 32px;
+		border-radius: 50%;
+		background: linear-gradient(135deg, #16a34a, #10b981);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: white;
+		font-size: 14px;
+		font-weight: 800;
+		flex-shrink: 0;
+		box-shadow: 0 2px 8px rgba(22, 163, 74, 0.25);
+	}
+	.chat-teaser-meta {
+		display: flex;
+		flex-direction: column;
+	}
+	.chat-teaser-name {
+		font-size: 0.8rem;
+		font-weight: 700;
+		color: #0f172a;
+		line-height: 1.2;
+	}
+	.chat-teaser-role {
+		font-size: 0.65rem;
+		color: #94a3b8;
+		font-weight: 500;
+	}
+	.chat-teaser-msg {
+		font-size: 0.82rem;
+		color: #334155;
+		line-height: 1.45;
+		font-weight: 500;
+	}
+	.chat-teaser-msg .teaser-highlight {
+		color: #16a34a;
+		font-weight: 700;
+	}
+	/* Typing dots */
+	.chat-teaser-typing {
+		display: flex;
+		gap: 4px;
+		padding: 4px 0 2px;
+	}
+	.chat-teaser-typing span {
+		width: 6px;
+		height: 6px;
+		background: #94a3b8;
+		border-radius: 50%;
+		animation: typingDot 1.4s ease-in-out infinite;
+	}
+	.chat-teaser-typing span:nth-child(2) {
+		animation-delay: 0.2s;
+	}
+	.chat-teaser-typing span:nth-child(3) {
+		animation-delay: 0.4s;
+	}
+	@keyframes typingDot {
+		0,
+		60%,
+		100% {
+			transform: translateY(0);
+			opacity: 0.4;
+		}
+		30% {
+			transform: translateY(-4px);
+			opacity: 1;
+		}
+	}
+	/* Online indicator on avatar */
+	.chat-teaser-avatar::after {
+		content: '';
+		position: absolute;
+		bottom: 0;
+		right: 0;
+		width: 10px;
+		height: 10px;
+		background: #22c55e;
+		border: 2px solid white;
+		border-radius: 50%;
+		box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+	}
+	.chat-teaser-header {
+		position: relative;
+	}
+
+	/* ── Mobile ── */
+	@media(max-width: 480px) {
+		.chat-overlay {
+			right: 12px;
+			left: 12px;
+			width: auto;
+			bottom: 90px;
+		}
+		.chat-widget {
+			bottom: 16px;
+			right: 16px;
+		}
+	}
+
 </style>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const chatWidget = document.querySelector('.chat-widget');
-        const chatOverlay = document.querySelector('.chat-overlay');
-        const newTicketForm = document.querySelector('#new-ticket-form');
+	document.addEventListener('DOMContentLoaded', function () {
+const chatWidget = document.querySelector('.chat-widget');
+const chatOverlay = document.querySelector('.chat-overlay');
+const newTicketForm = document.querySelector('#new-ticket-form');
 
-        chatWidget.addEventListener('click', function() {
-            chatOverlay.classList.toggle('active');
-            // Regenerate CSRF token on open
-            const csrfTokenInput = document.querySelector('#new-ticket-form [name="_token"]');
-            if (csrfTokenInput) csrfTokenInput.value = '{{ csrf_token('ticket_create') }}';
-        });
+// Teaser bubble logic
+const chatTeaser = document.getElementById('chatTeaser');
+const chatTeaserCard = document.getElementById('chatTeaserCard');
+const chatTeaserClose = document.getElementById('chatTeaserClose');
+const chatTeaserMsg = document.getElementById('chatTeaserMsg');
+const chatTeaserTyping = document.getElementById('chatTeaserTyping');
+let teaserDismissed = sessionStorage.getItem('helpdesk_teaser_dismissed') === '1';
 
-        document.addEventListener('click', function(event) {
-            if (!chatWidget.contains(event.target) && !chatOverlay.contains(event.target)) {
-                chatOverlay.classList.remove('active');
-            }
-        });
+if (! teaserDismissed) { // Show teaser after 2s
+setTimeout(() => {
+chatTeaser.classList.add('visible');
+// After 1.5s typing, show real message
+setTimeout(() => {
+chatTeaserTyping.style.display = 'none';
+chatTeaserMsg.innerHTML = 'Hey <span class="teaser-highlight"> {{ app.user.username }}</span>! Brauchst du Hilfe? Wir sind f&uuml;r dich da.';
+}, 1800);
+}, 2500);
+}
 
-        if (newTicketForm) {
-            newTicketForm.addEventListener('submit', function(event) {
-                event.preventDefault();
-                const formData = new FormData(newTicketForm);
-                fetch('{{ path('app_helpdesk_new') }}', {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    },
-                    body: formData
-                })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok ' + response.status + ' ' + response.statusText);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        if (data.success) {
-                            alert('Dein Ticket wurde erfolgreich erstellt! Die Antwortzeit beträgt in der Regel ca. 24 Stunden.');
-                            newTicketForm.reset();
-                            chatOverlay.classList.remove('active');
-                            location.reload();
-                        } else {
-                            alert('Error creating ticket: ' + data.message);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Fetch error:', error);
-                        alert('Error: ' + error.message);
-                    });
-            });
-        }
-    });
+// Close teaser X button
+chatTeaserClose.addEventListener('click', function (e) {
+e.stopPropagation();
+chatTeaser.classList.remove('visible');
+chatTeaser.classList.add('hidden');
+sessionStorage.setItem('helpdesk_teaser_dismissed', '1');
+teaserDismissed = true;
+});
+
+// Click teaser card opens full overlay
+chatTeaserCard.addEventListener('click', function () {
+chatTeaser.classList.remove('visible');
+chatTeaser.classList.add('hidden');
+teaserDismissed = true;
+chatOverlay.classList.add('active');
+chatWidget.classList.add('is-open');
+});
+
+chatWidget.addEventListener('click', function () {
+chatOverlay.classList.toggle('active');
+chatWidget.classList.toggle('is-open');
+// Hide teaser when overlay opens
+if (chatOverlay.classList.contains('active')) {
+chatTeaser.classList.remove('visible');
+chatTeaser.classList.add('hidden');
+} else if (! teaserDismissed) {
+chatTeaser.classList.remove('hidden');
+chatTeaser.classList.add('visible');
+}
+// Regenerate CSRF token on open
+const csrfTokenInput = document.querySelector('#new-ticket-form [name="_token"]');
+if (csrfTokenInput) 
+csrfTokenInput.value = '{{ csrf_token('ticket_create') }}';
+
+
+});
+
+document.addEventListener('click', function (event) {
+if (! chatWidget.contains(event.target) && ! chatOverlay.contains(event.target) && ! chatTeaser.contains(event.target)) {
+chatOverlay.classList.remove('active');
+chatWidget.classList.remove('is-open');
+}
+});
+
+if (newTicketForm) {
+newTicketForm.addEventListener('submit', function (event) {
+event.preventDefault();
+const formData = new FormData(newTicketForm);
+const submitBtn = newTicketForm.querySelector('button[type="submit"]');
+submitBtn.textContent = 'Wird gesendet...';
+submitBtn.disabled = true;
+fetch('{{ path('app_helpdesk_new') }}', {
+method: 'POST',
+headers: {
+'X-Requested-With': 'XMLHttpRequest',
+'Accept': 'application/json'
+},
+body: formData
+}).then(response => {
+if (!response.ok) {
+throw new Error('Network response was not ok ' + response.status + ' ' + response.statusText);
+}
+return response.json();
+}).then(data => {
+submitBtn.textContent = 'Absenden';
+submitBtn.disabled = false;
+if (data.success) {
+alert('Dein Ticket wurde erfolgreich erstellt! Die Antwortzeit beträgt in der Regel ca. 24 Stunden.');
+newTicketForm.reset();
+chatOverlay.classList.remove('active');
+chatWidget.classList.remove('is-open');
+location.reload();
+} else {
+alert('Error creating ticket: ' + data.message);
+}
+}).catch(error => {
+submitBtn.textContent = 'Absenden';
+submitBtn.disabled = false;
+console.error('Fetch error:', error);
+alert('Error: ' + error.message);
+});
+});
+}
+});
 </script>
 
-<!-- Sprechblase -->
-<div class="chat-widget">
-    <i class="material-symbols-rounded text-white text-2xl">help</i>
+<!-- Teaser Bubble (idle peek) -->
+<div class="chat-teaser" id="chatTeaser">
+	<div class="chat-teaser-card" id="chatTeaserCard">
+		<div class="chat-teaser-close" id="chatTeaserClose">&times;</div>
+		<div class="chat-teaser-header">
+			<div class="chat-teaser-avatar">E</div>
+			<div class="chat-teaser-meta">
+				<span class="chat-teaser-name">Support-Team</span>
+				<span class="chat-teaser-role">Online</span>
+			</div>
+		</div>
+		<div class="chat-teaser-msg" id="chatTeaserMsg">
+			<div class="chat-teaser-typing" id="chatTeaserTyping">
+				<span></span>
+				<span></span>
+				<span></span>
+			</div>
+		</div>
+	</div>
 </div>
-<!-- Overlay mit Optionen und Formular -->
+<!-- Floating Action Button -->
+<div class="chat-widget">
+	<i class="material-symbols-rounded text-white text-2xl icon-help">help</i>
+	<i class="material-symbols-rounded text-white text-2xl icon-close">close</i>
+</div>
+<!-- Glass Overlay Panel -->
 <div class="chat-overlay">
-    <div class="chat-headline">
-        <h3>Willkommen! 👋</h3>
-        <p>Wir helfen dir gerne weiter und freuen uns auf deine Fragen und dein Feedback.</p>
-    </div>
-    <div class="chat-overlay-header">Helpdesk Support</div>
-    <div class="chat-overlay-content">
-        <a href="{{ path('app_helpdesk_faq') }}">Help Center</a>
-{#
-        <a href="{{ path('app_helpdesk_index') }}">Deine Tickets</a>
-#}
-    </div>
-    <div class="chat-overlay-form">
-        <p><img src="{{ asset('assets/img/elvtd_logo.png') }}" width="32"> <span style="font-weight: bold">Support-Team</span><br>
-            <span style="font-size: 12px">Antwortzeit beträgt ca. 24 Stunden</span></p>
-        <form id="new-ticket-form" action="{{ path('app_helpdesk_new') }}" method="POST">
-            <label for="ticket-title">Titel</label>
-            <input type="text" id="ticket-title" name="ticket[title]" placeholder="Betreff eingeben" required value="Neues Ticket von {{ app.user.username }}" style="display: none">
-            <input type="hidden" name="_token" value="{{ csrf_token('ticket_create') }}">
-            <label for="ticket-description">Beschreibung</label>
-            <textarea id="ticket-description" name="ticket[description]" placeholder="Beschreibe dein Problem" rows="6" required></textarea>
-            <button type="submit">Absenden</button>
-        </form>
-    </div>
+	<div class="chat-headline">
+		<h3>Willkommen!</h3>
+		<p>Wir helfen dir gerne weiter und freuen uns auf deine Fragen und dein Feedback.</p>
+	</div>
+	<div class="chat-overlay-header">Helpdesk Support</div>
+	<div class="chat-overlay-content">
+		<a href="{{ path('app_helpdesk_faq') }}">Help Center</a>
+		{#
+				        <a href="{{ path('app_helpdesk_index') }}">Deine Tickets</a>
+				#}
+	</div>
+	<div class="chat-overlay-form">
+		<div class="form-header">
+			<img src="{{ asset('assets/img/elvtd_logo.png') }}" width="36">
+			<div class="form-header-text">
+				<strong>Support-Team</strong>
+				<span>Antwortzeit betr&auml;gt ca. 24 Stunden</span>
+			</div>
+		</div>
+		<form id="new-ticket-form" action="{{ path('app_helpdesk_new') }}" method="POST">
+			<label for="ticket-title">Titel</label>
+			<input type="text" id="ticket-title" name="ticket[title]" placeholder="Betreff eingeben" required value="Neues Ticket von {{ app.user.username }}" style="display: none">
+			<input type="hidden" name="_token" value="{{ csrf_token('ticket_create') }}">
+			<label for="ticket-description">Beschreibung</label>
+			<textarea id="ticket-description" name="ticket[description]" placeholder="Beschreibe dein Problem" rows="5" required></textarea>
+			<button type="submit">Absenden</button>
+		</form>
+	</div>
 </div>

@@ -383,6 +383,74 @@
 		.dn .accent-top-r {
 			border-top: 2px solid var(--r);
 		}
+
+		/* ── Mobile Optimizations ── */
+		@media(max-width: 768px) {
+			.dn-wrap {
+				padding: 1rem 0 2rem;
+			}
+			.dn .val {
+				font-size: 1.4rem;
+			}
+			.dn .lbl {
+				font-size: 0.6rem;
+			}
+			.dn .card-d {
+				padding: 1rem !important;
+			}
+			.dn .sec-t {
+				font-size: 0.85rem;
+			}
+
+			/* Header adjustments */
+			.dn .header-content {
+				flex-direction: column;
+				align-items: flex-start !important;
+				gap: 1.5rem;
+			}
+			.dn .header-actions {
+				width: 100%;
+				display: grid !important;
+				grid-template-columns: 1fr 1fr;
+				gap: 0.5rem;
+			}
+			.dn .header-actions .btn,
+			.dn .header-actions form,
+			.dn .header-actions button {
+				width: 100%;
+				margin: 0 !important;
+			}
+			.dn .header-actions form {
+				grid-column: span 2;
+			}
+
+			/* Table responsiveness */
+			.dn .scroll-t {
+				margin: 0 -1rem;
+				padding: 0 1rem;
+				width: calc(100% + 2rem);
+				overflow-x: auto;
+				-webkit-overflow-scrolling: touch;
+			}
+			.dn .tt {
+				min-width: 600px;
+			}
+
+			/* Calendar */
+			.dn .cal-day {
+				min-height: 45px;
+				padding: 0.2rem;
+			}
+			.dn .cal-day .day-num {
+				font-size: 0.65rem;
+			}
+			.dn .cal-day .day-pnl {
+				font-size: 0.55rem;
+			}
+			.dn .cal-day .day-cnt {
+				display: none;
+			}
+		}
 	</style>
 
 	{% set api = apiData %}
@@ -431,7 +499,7 @@
 
 					{# ═══ HEADER ═══ #}
 					<div class="card-d p-4 mb-3 fu">
-						<div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+						<div class="d-flex justify-content-between align-items-start flex-wrap gap-3 header-content">
 							<div>
 								{% if is_granted('ROLE_ADMIN') and account.user %}
 									<span style="opacity:.3;font-size:.75rem;">{{ account.user.username }}
@@ -482,39 +550,41 @@
 									{{ apiUpdatedAt ? apiUpdatedAt|date('d.m.Y H:i:s') : (account.lastUpdate ? account.lastUpdate|date('d.m.Y H:i:s') : '-') }}
 								</div>
 							</div>
-							<div class="d-flex gap-2">
+							<div class="d-flex gap-2 header-actions">
 								<a href="{{ path('app_account_update', {'meta_id': account.login}) }}" class="btn btn-sm btn-dark mb-0">
-									<i class="fas fa-sync-alt me-1"></i>Aktualisieren</a>
+									<i class="fas fa-sync-alt me-1"></i>Update</a>
 								<a href="{{ path('app_account_edit', {'meta_id': account.metaId}) }}" class="btn btn-sm btn-outline-secondary mb-0">
-									<i class="fas fa-pen me-1"></i>Bearbeiten</a>
-								<form method="post" action="{{ path('app_account_delete', {'meta_id': account.metaId}) }}" style="display:inline;" onsubmit="return confirm('Account wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.');">
+									<i class="fas fa-pen me-1"></i>Edit</a>
+								<form method="post" action="{{ path('app_account_delete', {'meta_id': account.metaId}) }}" style="display:inline;" onsubmit="return confirm('Account wirklich löschen?');">
 									<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ account.metaId) }}">
 									<button class="btn btn-sm btn-outline-danger mb-0" type="submit">
-										<i class="fas fa-trash me-1"></i>Löschen</button>
+										<i class="fas fa-trash me-1"></i>Delete</button>
 								</form>
 							</div>
 						</div>
 					</div>
 
-					{# ═══ AGENT ═══ #}
 					{% if agent is not null and multiplier.multiplier > 0 %}
 						<div class="card-d p-3 mb-3 fu d1" style="border-left:3px solid var(--g);">
-							<div class="d-flex align-items-center gap-2" style="font-size:.82rem;">
-								<i class="fas fa-link tg"></i>
-								Verbunden mit
-								<strong>{{ agent.name }}</strong>
-								&middot; Multiplikator
-								<strong>{{ multiplier.multiplier }}</strong>
-								<div class="d-flex gap-2 ms-auto">
-									<a href="/agents" class="btn btn-sm btn-dark mb-0">Agents
+							<div class="d-flex flex-column flex-md-row align-items-md-center gap-2" style="font-size:.82rem;">
+								<div class="d-flex align-items-center gap-2">
+									<i class="fas fa-link tg"></i>
+									<span>Verbunden mit
+										<strong>{{ agent.name }}</strong>
+										&middot; Multiplikator
+										<strong>{{ multiplier.multiplier }}</strong>
+									</span>
+								</div>
+								<div class="d-flex gap-2 ms-md-auto mt-2 mt-md-0">
+									<a href="/agents" class="btn btn-sm btn-dark mb-0 flex-grow-1 flex-md-grow-0">Agents
 										<i class="fas fa-arrow-right ms-1"></i>
 									</a>
-									<form action="{{ path('app_agents_remove_subscriber') }}" method="post" class="d-inline" onsubmit="return confirm('Verbindung wirklich trennen?');">
+									<form action="{{ path('app_agents_remove_subscriber') }}" method="post" class="d-inline flex-grow-1 flex-md-grow-0" onsubmit="return confirm('Verbindung wirklich trennen?');">
 										<input type="hidden" name="subscriberId" value="{{ account.metaId }}">
 										<input type="hidden" name="strategyId" value="{{ agent.metaId }}">
 										<input type="hidden" name="redirectTo" value="{{ path('app_account_show', {meta_id: account.metaId}) }}">
-										<button type="submit" class="btn btn-sm btn-outline-danger mb-0">
-											<i class="fas fa-unlink me-1"></i>Verbindung trennen
+										<button type="submit" class="btn btn-sm btn-outline-danger mb-0 w-100">
+											<i class="fas fa-unlink me-1"></i>Trennen
 										</button>
 									</form>
 								</div>
@@ -522,10 +592,12 @@
 						</div>
 					{% else %}
 						<div class="card-d p-3 mb-3 fu d1" style="border-left:3px solid var(--r);">
-							<div class="d-flex align-items-center gap-2" style="font-size:.82rem;">
-								<i class="fas fa-unlink tr"></i>
-								Nicht mit einem Agent verbunden
-								<button type="button" class="btn btn-sm btn-dark mb-0 ms-auto" data-bs-toggle="modal" data-bs-target="#connectAgentModal">
+							<div class="d-flex flex-column flex-md-row align-items-md-center gap-2" style="font-size:.82rem;">
+								<div class="d-flex align-items-center gap-2">
+									<i class="fas fa-unlink tr"></i>
+									<span>Nicht mit einem Agent verbunden</span>
+								</div>
+								<button type="button" class="btn btn-sm btn-dark mb-0 ms-md-auto mt-2 mt-md-0" data-bs-toggle="modal" data-bs-target="#connectAgentModal">
 									<i class="fas fa-link me-1"></i>Verbinden
 								</button>
 							</div>

@@ -7,88 +7,86 @@
 
 {% block body %}
 	<div class="wrapper">
-		<div class="container mt-5">
-			<div class="container my-4 mx-0 p-4 card">
-				<h3>
-					{% if is_granted('ROLE_ADMIN') %}
-						{{ account.user.username }}
-						{% if account.user.firstname|length > 1 %}
-							-
-							{{ account.user.firstname }}
-							{{ account.user.lastname }}
+		<div class="container mt-4">
+			<div class="card p-4 border-radius-2xl shadow-sm">
+				<div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+					<div>
+						<h3 class="mb-1 fw-800">
+							{% if is_granted('ROLE_ADMIN') %}
+								<span class="text-sm opacity-5">{{ account.user.username }}
+									|
+								</span>
+							{% endif %}
+							{{ account.name }}
+							<span class="opacity-5">#{{ account.login }}</span>
+						</h3>
+						<div class="d-flex flex-wrap gap-2 mb-2">
+							<span class="badge badge-sm bg-gradient-success text-uppercase">{{ account.platform }}</span>
+							{{ account.type == 1 ? '<span class="badge badge-sm bg-gradient-success">Agent</span>' : (account.type == 2 ? '<span class="badge badge-sm bg-gradient-primary">Leader</span>' : '<span class="badge badge-sm bg-gradient-info">Subscriber</span>') }}
+							{{ account.isActive ? '<span class="badge badge-sm bg-gradient-success">Online</span>' : '<span class="badge badge-sm bg-gradient-danger">Pausiert</span>' }}
+							{% if is_granted('ROLE_ADMIN') %}
+								<span class="badge badge-sm bg-light text-dark">{{ account.host }}</span>
+							{% endif %}
+						</div>
+						<p class="mb-0 text-sm text-secondary">
+							<i class="fas fa-server me-1"></i>
+							{{ account.tradeServer }}
+							<span class="mx-2">|</span>
+							<i class="fas fa-clock me-1"></i>
+							{{ account.lastUpdate|date('d.m.Y H:i:s') }}
+						</p>
+					</div>
+					<div class="d-flex gap-2 w-100-mobile">
+						{% set update_id = account.host == 'denies' ? account.login : account.metaId %}
+						<a href="{{ path('app_account_update', {'meta_id': update_id}) }}" class="btn btn-dark mb-0 flex-grow-1">
+							<i class="fas fa-sync-alt me-1"></i>Update
+						</a>
+						{% if is_granted('ROLE_ADMIN') %}
+							<a href="{{ path('app_account_transfer_denies', {'meta_id': account.metaId}) }}" class="btn btn-outline-dark mb-0" title="Auf Denies übertragen">
+								<i class="fas fa-exchange-alt"></i>
+							</a>
 						{% endif %}
-						|
-					{% endif %}
-
-					{{ account.name }}
-					#{{ account.login }}
-					<span class="text-xs badge badge-sm bg-gradient-success text-uppercase mx-1">{{ account.platform }}</span>
-					{{ account.type == 1 ? '<span class="text-xs badge badge-sm bg-gradient-success ">Agent</span>' : (account.type == 2 ? '<span class="text-xs badge badge-sm bg-gradient-primary mx-1">Leader</span>' : '<span class="text-xs badge badge-sm bg-gradient-info mx-1">Subscriber</span>') }}
-					{{ account.isActive ? '<span class="text-xs badge badge-sm bg-gradient-success mx-1">Online</span>' : '<span class="text-xs badge badge-sm bg-gradient-danger mx-1">Pausiert</span>' }}
-					{% if is_granted('ROLE_ADMIN') %}
-						<span class="text-xs text-dark">{{ account.host }}</span>
-						<a href="{{ path('app_account_transfer_denies', {'meta_id': account.metaId}) }}" class="btn btn-link text-dark px-3 mb-0 float-sm-end" data-bs-toggle="tooltip" data-bs-placement="bottom" aria-label="Auf Denies übertragen" data-bs-original-title="Auf Denies übertragen">
-							<i class="fa-classic fa-solid fa-exchange"></i>
-						</a>
-					{% endif %}
-					{% if account.host == 'denies' %}
-						<a href="{{ path('app_account_update', {'meta_id': account.login}) }}" class="ms-auto btn bg-gradient-dark mb-0 float-end" data-bs-toggle="tooltip" data-bs-placement="bottom" aria-label="Account aktualisieren" data-bs-original-title="Account aktualisieren">
-							Account aktualisieren
-							<i class="fa-classic fa-solid fa-refresh ms-1"></i>
-						</a>
-					{% else %}
-						<a href="{{ path('app_account_update', {'meta_id': account.metaId}) }}" class="ms-auto btn bg-gradient-dark mb-0 float-end" data-bs-toggle="tooltip" data-bs-placement="bottom" aria-label="Account aktualisieren" data-bs-original-title="Account aktualisieren">
-							Account aktualisieren
-							<i class="fa-classic fa-solid fa-refresh ms-1"></i>
-						</a>
-					{% endif %}
-				</h3>
-				<p class="mb-0 font-weight-normal text-sm">
-					{{ account.tradeServer }}
-					<i class="material-symbols-rounded text-xs my-auto mx-1">schedule</i>aktualisiert am
-					{{ account.lastUpdate|date('d.m.Y H:i:s') }}
-				</p>
+					</div>
+				</div>
 			</div>
 
 			{% if account.error|length < 1 %}
-				{% if agent|length > 0 and multiplier.multiplier > 0 %}
-					<div class="container my-4 mx-0 p-0">
-						<div class="row">
-							<div class="col-12 mb-1">
-								<div class="p-4 ps-3 badge-info border-radius-2xl">
-									Dieser Account ist mit dem Agent
-									<strong>{{ agent.name }}</strong>
-									und einem Multiplikator
-									<strong>{{ multiplier.multiplier }}</strong>
-									verbunden.
-									<a href="/agents" class="ms-auto btn bg-gradient-dark mb-0 float-end">Zu den Agents
-										<i class="fas fa-arrow-right ms-1" aria-hidden="true"></i>
-									</a>
+				{% if agent is not null and multiplier.multiplier > 0 %}
+					<div class="col-12 mb-3">
+						<div class="card p-3 shadow-sm border-radius-2xl" style="border-left:4px solid #4CAF50;">
+							<div class="d-flex flex-column flex-md-row align-items-md-center gap-2">
+								<div class="d-flex align-items-center gap-2">
+									<i class="fas fa-link text-success"></i>
+									<span class="text-sm">Verbunden mit
+										<strong>{{ agent.name }}</strong>
+										&middot; Multiplikator
+										<strong>{{ multiplier.multiplier }}</strong>
+									</span>
 								</div>
+								<a href="/agents" class="btn btn-dark btn-sm mb-0 ms-md-auto mt-2 mt-md-0">
+									Zu den Agents
+									<i class="fas fa-arrow-right ms-1"></i>
+								</a>
 							</div>
 						</div>
 					</div>
 				{% else %}
-					<div class="container my-4 mx-0 p-0">
-						<div class="row">
-							<div class="col-12 mb-1">
-								<div class="p-4 ps-3 badge-danger border-radius-2xl">
-									{% if agent|length > 0 and multiplier.multiplier > 0 %}
-										Dieser Account ist mit keinem Agent verbunden. Du musst diesen Account mit einem Agent verbinden um die Automatisierung zu nutzen.
-										<a href="/agents" class="ms-auto btn bg-gradient-dark mb-0 float-end">Zu den Agents
-											<i class="fas fa-arrow-right ms-1" aria-hidden="true"></i>
-										</a>
-									{% else %}
-										Dieser Account ist mit keinem Agent verbunden. Bitte den Agent verbinden um die Automatisierung zu nutzen.
-										<a href="/agents" class="ms-auto btn bg-gradient-dark mb-0 float-end">Zu den Agents
-											<i class="fas fa-arrow-right ms-1" aria-hidden="true"></i>
-										</a>
-									{% endif %}
+					<div class="col-12 mb-3">
+						<div class="card p-3 shadow-sm border-radius-2xl" style="border-left:4px solid #f44336;">
+							<div class="d-flex flex-column flex-md-row align-items-md-center gap-2">
+								<div class="d-flex align-items-center gap-2">
+									<i class="fas fa-unlink text-danger"></i>
+									<span class="text-sm">Account ist mit keinem Agent verbunden.</span>
 								</div>
+								<a href="/agents" class="btn btn-dark btn-sm mb-0 ms-md-auto mt-2 mt-md-0">
+									Zu den Agents
+									<i class="fas fa-arrow-right ms-1"></i>
+								</a>
 							</div>
 						</div>
 					</div>
 				{% endif %}
+
 			{% endif %}
 
 			{% if account.host != 'metapi' %}
@@ -127,139 +125,34 @@
 			{% endif %}
 		{% endif %}
 
-		<div class="container my-4 mx-0 p-0">
-			<div class="row">
-				<div class="col-6 mb-4">
-					<div class="card">
-						<div class="card-header p-2 ps-3">
-							<h6 class="text-sm mb-0 text-capitalize pt-2">Balance</h6>
-							<h4 class="mb-0">{{ account.balance|number_format(2, ',', '.') }}</h4>
-							{% if account.host != 'metapi' %}
-								<span class="text-sm">
-									<i class="material-symbols-rounded text-xs my-auto mx-1">schedule</i>
-									Aktualisierung alle 15 Minuten</span>
-							{% endif %}
-						</div>
-						{% if account.host == 'metapi' %}
-							<hr class="dark horizontal my-0">
-							<div class="card-footer p-2 ps-3">
-								{% set totalYesterdayProfit = 0 %}
-								{% set totalYesterdayGain = 0 %}
-
-								{% set yesterday = "now"|date_modify("-1 day")|date("Y-m-d") %}
-
-								{% for growth in account.dailyGrowth %}
-									{% if growth.date == yesterday %}
-										{% set totalYesterdayProfit = totalYesterdayProfit + (growth.profit ?? 0) %}
-										{% set totalYesterdayGain = totalYesterdayGain + (growth.gain ?? 0) %}
-									{% endif %}
-								{% endfor %}
-								<p class="mb-0 text-sm">
-									<span class="{% if totalYesterdayProfit >= 0 %}text-success{% else %}text-danger{% endif %} font-weight-bolder">
-										{% if totalYesterdayProfit > 0 %}+
-										{% endif %}
-										{{ totalYesterdayProfit|number_format(2, ',', '.') }}
-									</span>
-									am Vortag
-								</p>
-							</div>
-						{% endif %}
-					</div>
+		<div class="row g-3">
+			<div class="col-12 col-md-6 col-lg-3 mb-3">
+				<div class="card h-100 p-3 shadow-sm border-0">
+					<h6 class="text-xs text-uppercase font-weight-bold text-muted mb-2">Balance</h6>
+					<h3 class="mb-0 fw-800">{{ account.balance|number_format(2, ',', '.') }}
+						€</h3>
 				</div>
-				<div class="col-6 mb-4">
-					<div class="card">
-						<div class="card-header p-2 ps-3">
-							<h6 class="text-sm mb-0 text-capitalize pt-2">Equity</h6>
-							<h4 class="mb-0">{{ account.equity|number_format(2, ',', '.') }}</h4>
-							{% if account.host != 'metapi' %}
-								<span class="text-sm">
-									<i class="material-symbols-rounded text-xs my-auto mx-1">schedule</i>
-									Aktualisierung alle 15 Minuten</span>
-							{% endif %}
-						</div>
-						{% if account.host == 'metapi' %}
-							<hr class="dark horizontal my-0">
-							<div class="card-footer p-2 ps-3">
-								{% set totalYesterdayProfit = 0 %}
-								{% set totalYesterdayGain = 0 %}
-
-								{% set yesterday = "now"|date_modify("-1 day")|date("Y-m-d") %}
-
-								{% for growth in account.dailyGrowth %}
-									{% if growth.date == yesterday %}
-										{% set totalYesterdayProfit = totalYesterdayProfit + (growth.profit ?? 0) %}
-										{% set totalYesterdayGain = totalYesterdayGain + (growth.gain ?? 0) %}
-									{% endif %}
-								{% endfor %}
-								<p class="mb-0 text-sm">
-									<span class="{% if totalYesterdayProfit >= 0 %}text-success{% else %}text-danger{% endif %} font-weight-bolder">
-										{% if totalYesterdayProfit > 0 %}+
-										{% endif %}
-										{{ totalYesterdayProfit|number_format(2, ',', '.') }}
-									</span>
-									am Vortag
-								</p>
-							</div>
-						{% endif %}
-					</div>
+			</div>
+			<div class="col-12 col-md-6 col-lg-3 mb-3">
+				<div class="card h-100 p-3 shadow-sm border-0">
+					<h6 class="text-xs text-uppercase font-weight-bold text-muted mb-2">Equity</h6>
+					<h3 class="mb-0 fw-800">{{ account.equity|number_format(2, ',', '.') }}
+						€</h3>
 				</div>
-				<div class="col-6">
-					<div class="card">
-						<div class="card-header p-2 ps-3">
-							<h6 class="text-sm mb-0 text-capitalize pt-2">Offener Profit</h6>
-							<h4 class="mb-0">
-								{{ (account.equity - account.balance)|number_format(2, ',', '.') }}
-
-								{% set equity = account.equity|default(0) %}
-								{% set balance = account.balance|default(1) %}
-								{% set openProfit = equity - balance %}
-								{% set openProfitPercent = balance > 0 ? ((openProfit / balance) * 100) : 0 %}
-
-								{% if openProfitPercent > 0 %}
-									<span class="badge badge-success my-auto">
-										<i class="material-symbols-rounded text-xs">arrow_upward</i>
-										<span class="text-lg">{{ openProfitPercent|number_format(2, ',', '.') }}%</span>
-									</span>
-								{% elseif openProfitPercent|round(0) == 0 %}
-									<span class="badge badge-secondary">
-										<i class="material-symbols-rounded text-xs">swap_horiz</i>
-										<span class="text-lg">{{ openProfitPercent|number_format(2, ',', '.') }}%</span>
-									</span>
-								{% else %}
-									<span class="badge badge-danger">
-										<i class="material-symbols-rounded text-xs">arrow_downward</i>
-										<span class="text-lg">{{ openProfitPercent|number_format(2, ',', '.') }}%</span>
-									</span>
-								{% endif %}
-							</h4>
-							{% if account.host != 'metapi' %}
-								<span class="text-sm">
-									<i class="material-symbols-rounded text-xs my-auto mx-1">schedule</i>
-									Aktualisierung alle 15 Minuten</span>
-							{% endif %}
-						</div>
-						<hr class="dark horizontal my-0">
-						<div
-							class="card-footer p-2 ps-3">{#                            <p class="mb-0 text-sm"><span class="text-success font-weight-bolder">+55% </span>than last week</p>#}
-						</div>
-					</div>
+			</div>
+			<div class="col-12 col-md-6 col-lg-3 mb-3">
+				<div class="card h-100 p-3 shadow-sm border-0">
+					<h6 class="text-xs text-uppercase font-weight-bold text-muted mb-2">Offener P&L</h6>
+					<h3 class="mb-0 fw-800 {{ (account.equity - account.balance) >= 0 ? 'text-success' : 'text-danger' }}">
+						{{ (account.equity - account.balance)|number_format(2, ',', '.') }}
+						€
+					</h3>
 				</div>
-				<div class="col-6">
-					<div class="card">
-						<div class="card-header p-2 ps-3">
-							<h6 class="text-sm mb-0 text-capitalize pt-2">Offene Positionen</h6>
-							<h4 class="mb-0">{{ openPositions|length }}</h4>
-							{% if account.host != 'metapi' %}
-								<span class="text-sm">
-									<i class="material-symbols-rounded text-xs my-auto mx-1">schedule</i>
-									Aktualisierung alle 15 Minuten</span>
-							{% endif %}
-						</div>
-						<hr class="dark horizontal my-0">
-						<div
-							class="card-footer p-2 ps-3">{#                            <p class="mb-0 text-sm"><span class="text-success font-weight-bolder">+55% </span>than last week</p>#}
-						</div>
-					</div>
+			</div>
+			<div class="col-12 col-md-6 col-lg-3 mb-3">
+				<div class="card h-100 p-3 shadow-sm border-0">
+					<h6 class="text-xs text-uppercase font-weight-bold text-muted mb-2">Positionen</h6>
+					<h3 class="mb-0 fw-800">{{ openPositions|length }}</h3>
 				</div>
 			</div>
 		</div>
@@ -387,93 +280,93 @@ beginAtZero: true // Startet die y-Achse bei 0
 				</div>
 			</div>
 			{# <div class="col-lg-4 col-md-6 mt-0 mb-4">
-																																																																																	                    <div class="card">
-																																																																																	                        <div class="card-body">
-																																																																																	                            <h6 class="mb-0 ">Drawdown</h6>
-																																																																																	                            <p class="text-sm ">max. Drawdown liegt bei <strong class="text-danger">-{{ account.maxDrawdown|round(3) }}%</strong></p>
-																																																																																	                            <div class="pe-2">
-																																																																																	                                <div class="chart">
-																																																																																	                                    <div style="width: 100%; margin: auto;">
-																																																																																	                                        <canvas id="profitChart2" ></canvas>
-																																																																																	                                    </div>
-																																																																																	
-																																																																																	                                    <script>
-																																																																																	                                        // Daten für profitChart2 (Drawdown Prozentual relativ zur vorherigen Balance)
-																																																																																	                                        const drawdownPercentData = dailyGrowth.map((entry, index, array) => {
-																																																																																	                                            if (entry.drawdownProfit && index > 0 && array[index - 1].balance) {
-																																																																																	                                                // Berechnung: Drawdown in Prozent relativ zur Balance des vorherigen Eintrags (negativ)
-																																																																																	                                                const value = -(entry.drawdownProfit / array[index - 1].balance) * 100;
-																																																																																	                                                const roundedValue = value.toFixed(3); // Gibt eine String-Repräsentation des gerundeten Werts zurück
-																																																																																	                                                return roundedValue;
-																																																																																	                                            }
-																																																																																	                                            return 0; // Wenn keine Daten oder vorheriger Eintrag vorhanden sind, 0 setzen
-																																																																																	                                        });
-																																																																																	
-																																																																																	                                        // Initialisierung des Drawdown-Prozent-Diagramms
-																																																																																	                                        const ctx2 = document.getElementById('profitChart2').getContext('2d');
-																																																																																	                                        const profitChart2 = new Chart(ctx2, {
-																																																																																	                                            type: 'line',
-																																																																																	                                            data: {
-																																																																																	                                                labels: labels,
-																																																																																	                                                datasets: [{
-																																																																																	                                                    label: 'Drawdown (%)',
-																																																																																	                                                    data: drawdownPercentData,
-																																																																																	                                                    borderColor: 'rgba(255, 99, 132, 1)',
-																																																																																	                                                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-																																																																																	                                                    tension: 0.5,
-																																																																																	                                                    fill: true,
-																																																																																	                                                    pointRadius: 2,
-																																																																																	                                                }]
-																																																																																	                                            },
-																																																																																	                                            options: {
-																																																																																	                                                responsive: true,
-																																																																																	                                                plugins: {
-																																																																																	                                                    legend: {
-																																																																																	                                                        position: 'top'
-																																																																																	                                                    },
-																																																																																	                                                    title: {
-																																																																																	                                                        display: false,
-																																																																																	                                                        text: 'Drawdown (%)'
-																																																																																	                                                    }
-																																																																																	                                                },
-																																																																																	                                                scales: {
-																																																																																	                                                    x: {
-																																																																																	                                                        title: {
-																																																																																	                                                            display: false,
-																																																																																	                                                            text: 'Date'
-																																																																																	                                                        },
-																																																																																	                                                        grid: {
-																																																																																	                                                            display: false // Vertikales Grid entfernen
-																																																																																	                                                        },
-																																																																																	                                                        ticks: {
-																																																																																	                                                            display: false // Beschriftung auf der x-Achse entfernen
-																																																																																	                                                        }
-																																																																																	                                                    },
-																																																																																	                                                    y: {
-																																																																																	                                                        title: {
-																																																																																	                                                            display: false,
-																																																																																	                                                            text: 'Drawdown (%)'
-																																																																																	                                                        },
-																																																																																	                                                        ticks: {
-																																																																																	                                                            callback: function(value) {
-																																																																																	                                                                return value + '%'; // Prozent-Symbol anzeigen
-																																																																																	                                                            }
-																																																																																	                                                        }
-																																																																																	                                                    }
-																																																																																	                                                }
-																																																																																	                                            }
-																																																																																	                                        });
-																																																																																	                                    </script>
-																																																																																	                                </div>
-																																																																																	                            </div>
-																																																																																	                            <hr class="dark horizontal">
-																																																																																	                            <div class="d-flex ">
-																																																																																	                                <i class="material-symbols-rounded text-sm my-auto me-1">schedule</i>
-																																																																																	                                <p class="mb-0 text-sm"> aktualisiert am {{ account.lastUpdate|date('d.m.Y H:i:s') }}</p>
-																																																																																	                            </div>
-																																																																																	                        </div>
-																																																																																	                    </div>
-																																																																																	                </div>#}
+																																																																																													                    <div class="card">
+																																																																																													                        <div class="card-body">
+																																																																																													                            <h6 class="mb-0 ">Drawdown</h6>
+																																																																																													                            <p class="text-sm ">max. Drawdown liegt bei <strong class="text-danger">-{{ account.maxDrawdown|round(3) }}%</strong></p>
+																																																																																													                            <div class="pe-2">
+																																																																																													                                <div class="chart">
+																																																																																													                                    <div style="width: 100%; margin: auto;">
+																																																																																													                                        <canvas id="profitChart2" ></canvas>
+																																																																																													                                    </div>
+																																																																																													
+																																																																																													                                    <script>
+																																																																																													                                        // Daten für profitChart2 (Drawdown Prozentual relativ zur vorherigen Balance)
+																																																																																													                                        const drawdownPercentData = dailyGrowth.map((entry, index, array) => {
+																																																																																													                                            if (entry.drawdownProfit && index > 0 && array[index - 1].balance) {
+																																																																																													                                                // Berechnung: Drawdown in Prozent relativ zur Balance des vorherigen Eintrags (negativ)
+																																																																																													                                                const value = -(entry.drawdownProfit / array[index - 1].balance) * 100;
+																																																																																													                                                const roundedValue = value.toFixed(3); // Gibt eine String-Repräsentation des gerundeten Werts zurück
+																																																																																													                                                return roundedValue;
+																																																																																													                                            }
+																																																																																													                                            return 0; // Wenn keine Daten oder vorheriger Eintrag vorhanden sind, 0 setzen
+																																																																																													                                        });
+																																																																																													
+																																																																																													                                        // Initialisierung des Drawdown-Prozent-Diagramms
+																																																																																													                                        const ctx2 = document.getElementById('profitChart2').getContext('2d');
+																																																																																													                                        const profitChart2 = new Chart(ctx2, {
+																																																																																													                                            type: 'line',
+																																																																																													                                            data: {
+																																																																																													                                                labels: labels,
+																																																																																													                                                datasets: [{
+																																																																																													                                                    label: 'Drawdown (%)',
+																																																																																													                                                    data: drawdownPercentData,
+																																																																																													                                                    borderColor: 'rgba(255, 99, 132, 1)',
+																																																																																													                                                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+																																																																																													                                                    tension: 0.5,
+																																																																																													                                                    fill: true,
+																																																																																													                                                    pointRadius: 2,
+																																																																																													                                                }]
+																																																																																													                                            },
+																																																																																													                                            options: {
+																																																																																													                                                responsive: true,
+																																																																																													                                                plugins: {
+																																																																																													                                                    legend: {
+																																																																																													                                                        position: 'top'
+																																																																																													                                                    },
+																																																																																													                                                    title: {
+																																																																																													                                                        display: false,
+																																																																																													                                                        text: 'Drawdown (%)'
+																																																																																													                                                    }
+																																																																																													                                                },
+																																																																																													                                                scales: {
+																																																																																													                                                    x: {
+																																																																																													                                                        title: {
+																																																																																													                                                            display: false,
+																																																																																													                                                            text: 'Date'
+																																																																																													                                                        },
+																																																																																													                                                        grid: {
+																																																																																													                                                            display: false // Vertikales Grid entfernen
+																																																																																													                                                        },
+																																																																																													                                                        ticks: {
+																																																																																													                                                            display: false // Beschriftung auf der x-Achse entfernen
+																																																																																													                                                        }
+																																																																																													                                                    },
+																																																																																													                                                    y: {
+																																																																																													                                                        title: {
+																																																																																													                                                            display: false,
+																																																																																													                                                            text: 'Drawdown (%)'
+																																																																																													                                                        },
+																																																																																													                                                        ticks: {
+																																																																																													                                                            callback: function(value) {
+																																																																																													                                                                return value + '%'; // Prozent-Symbol anzeigen
+																																																																																													                                                            }
+																																																																																													                                                        }
+																																																																																													                                                    }
+																																																																																													                                                }
+																																																																																													                                            }
+																																																																																													                                        });
+																																																																																													                                    </script>
+																																																																																													                                </div>
+																																																																																													                            </div>
+																																																																																													                            <hr class="dark horizontal">
+																																																																																													                            <div class="d-flex ">
+																																																																																													                                <i class="material-symbols-rounded text-sm my-auto me-1">schedule</i>
+																																																																																													                                <p class="mb-0 text-sm"> aktualisiert am {{ account.lastUpdate|date('d.m.Y H:i:s') }}</p>
+																																																																																													                            </div>
+																																																																																													                        </div>
+																																																																																													                    </div>
+																																																																																													                </div>#}
 			{% if account.host == 'metapi' %}
 				<div class="col-lg-6 mt-0 mb-3">
 					<div class="card">
@@ -837,7 +730,7 @@ scale: 2, // Erhöht die Auflösung
 useCORS: true // Für externe Ressourcen (falls vorhanden)
 }).then(canvas => {
 const link = document.createElement('a');
-link.download = 'trade_calendar_                           {{ account.name|replace({" ": "_"}) }}_' + new Date().toISOString().slice(0, 10) + '.png';
+link.download = 'trade_calendar_                               {{ account.name|replace({" ": "_"}) }}_' + new Date().toISOString().slice(0, 10) + '.png';
 link.href = canvas.toDataURL('image/png');
 link.click();
 

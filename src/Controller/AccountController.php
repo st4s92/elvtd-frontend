@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Account;
+use App\Entity\Order;
 use App\Form\AccountType;
 use App\Repository\AccountAgentSubscriptionRepository;
 use App\Repository\AccountRepository;
@@ -13,6 +14,7 @@ use App\Service\DuplikiumClient;
 use App\Service\DeniesClient;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
@@ -40,102 +42,167 @@ class AccountController extends AbstractController
         $this->redirectUri = "https://app.elvtdfinance.com/auth/ctrader/callback";
     }
 
-    /**
-     * @Route("/admin_account", name="app_admin_account_index", methods={"GET"})
-     */
-    public function admin_account(AccountRepository $accountRepository, OrderRepository $orderRepository, UserRepository $userRepository): Response
-    {
+    #[Route('/admin_account', name: 'app_admin_account_index', methods: ['GET'])]
+    public function admin_account(
+        AccountRepository $accountRepository,
+        UserRepository $userRepository
+    ): Response {
         if (!$this->isGranted('ROLE_ADMIN')) {
-            $this->redirectToRoute('app_account_index', [], Response::HTTP_SEE_OTHER);
+            return $this->redirectToRoute('app_account_index', [], Response::HTTP_SEE_OTHER);
         }
 
-        // Alle Accounts des aktuellen Nutzers finden
-        $accounts = $accountRepository->findAll();
-        $users = $userRepository->findAll();
-
-        // Hole alle offenen Positionen
-        $allOrders = [];
-        $openPositions = array_filter($allOrders, fn($order) => $order->getState() === 1);
-
-        $account = new Account();
-        $form = $this->createForm(AccountType::class, $account);
-
-        // Berechne die Anzahl der aktiven Benutzer
-        $now = new DateTime();
-        $thirtyMinutesAgo = (clone $now)->modify('-30 minutes');
-        $twentyFourHoursAgo = (clone $now)->modify('-24 hours');
-
-        $activeLast30Min = 0;
-        $activeLast24h = 0;
-
-        foreach ($users as $user) {
-            $lastLogin = $user->getLastLogin();
-            if ($lastLogin instanceof DateTime && $lastLogin >= $thirtyMinutesAgo) {
-                $activeLast30Min++;
-            }
-            if ($lastLogin instanceof DateTime && $lastLogin >= $twentyFourHoursAgo) {
-                $activeLast24h++;
-            }
-        }
-
-        return $this->render('account/index.html.twig', [
-            'accounts' => $accounts,
-            'users' => $users,
-            'openPositions' => $openPositions,
-            'form' => $form->createView(),
+        return $this->render('account/index_admin.html.twig', [
+            'accountCount' => count($accountRepository->findAll()),
+            'userCount' => count($userRepository->findAll()),
+            'form' => $this->createForm(AccountType::class, new Account())->createView(),
             'admin_view' => true,
-            'activeLast30Min' => $activeLast30Min,
-            'activeLast24h' => $activeLast24h,
+            'errorOnly' => false,
+        ]);
+    }
+
+    #[Route('/admin_account_error', name: 'app_admin_account_error', methods: ['GET'])]
+    public function admin_account_error(
+        AccountRepository $accountRepository,
+        UserRepository $userRepository
+    ): Response {
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $this->redirectToRoute('app_account_index', [], Response::HTTP_SEE_OTHER);
+        }
+
+        return $this->render('account/index_admin.html.twig', [
+            'accountCount' => count($accountRepository->findAll()),
+            'userCount' => count($userRepository->findAll()),
+            'form' => $this->createForm(AccountType::class, new Account())->createView(),
+            'admin_view' => true,
+            'errorOnly' => true,
         ]);
     }
 
     /**
-     * @Route("/admin_account_error", name="app_admin_account_error", methods={"GET"})
+     * @Route("/admin_account/api/data", name="app_admin_account_api_data", methods={"GET"})
      */
-    public function admin_account_error(AccountRepository $accountRepository, OrderRepository $orderRepository, UserRepository $userRepository): Response
-    {
+    public function adminApiData(
+        AccountRepository $accountRepository,
+        UserRepository $userRepository,
+        EntityManagerInterface $entityManager,
+        DeniesClient $deniesClient,
+        \Symfony\Component\Security\Csrf\CsrfTokenManagerInterface $csrfTokenManager,
+        Request $request
+    ): JsonResponse {
         if (!$this->isGranted('ROLE_ADMIN')) {
-            $this->redirectToRoute('app_account_index', [], Response::HTTP_SEE_OTHER);
+            return new JsonResponse(['error' => 'forbidden'], 403);
         }
 
-        // Alle Accounts des aktuellen Nutzers finden
-        $accounts = $accountRepository->createQueryBuilder('a')
-            ->where("a.error != ''")
-            ->getQuery()
-            ->getResult();        
+        $errorOnly = $request->query->getBoolean('errorOnly', false);
+
+        if ($errorOnly) {
+            $accounts = $accountRepository->createQueryBuilder('a')
+                ->where("a.error != ''")
+                ->getQuery()
+                ->getResult();
+        } else {
+            $accounts = $accountRepository->findAll();
+        }
+
         $users = $userRepository->findAll();
+        $now = new \DateTime();
 
-        // Hole alle offenen Positionen
-        $allOrders = [];
-        $openPositions = array_filter($allOrders, fn($order) => $order->getState() === 1);
+        // Lightweight status-only refresh for denies accounts (no position/order sync)
+        foreach ($accounts as $account) {
+            if ($account->getHost() === 'denies') {
+                $lastUpdate = $account->getLastUpdate();
+                if (!$lastUpdate || ($now->getTimestamp() - $lastUpdate->getTimestamp()) > 60) {
+                    try {
+                        $response = $deniesClient->getAccount($account);
+                        if ($response->code == 200) {
+                            $accountData = $response->data[0] ?? $response->data->data[0] ?? null;
+                            if ($accountData) {
+                                $account->setEquity((float)($accountData->equity ?? 0));
+                                $account->setBalance((float)($accountData->balance ?? 0));
 
-        $account = new Account();
-        $form = $this->createForm(AccountType::class, $account);
+                                $apiDateStr = $accountData->updated_at ?? $accountData->updatedAt ?? null;
+                                if ($apiDateStr) {
+                                    if (!str_contains($apiDateStr, 'Z') && !str_contains($apiDateStr, '+')) {
+                                        $apiDateStr .= 'Z';
+                                    }
+                                    $apiUpdatedAt = new \DateTime($apiDateStr);
+                                    $account->setLastUpdate($apiUpdatedAt);
+                                    $nowUTC = new \DateTime('now', new \DateTimeZone('UTC'));
+                                    $diff = $nowUTC->getTimestamp() - $apiUpdatedAt->getTimestamp();
+                                    if ($diff > 300) {
+                                        $account->setError('STÖRUNG');
+                                        $account->setIsActive(false);
+                                    } else {
+                                        $account->setError('');
+                                        $account->setIsActive(true);
+                                    }
+                                }
+                                $accountRepository->add($account, false);
+                            }
+                        }
+                    } catch (\Exception $e) { }
+                }
+            }
+        }
+        try { $entityManager->flush(); } catch (\Exception $e) { }
 
-        // Berechne die Anzahl der aktiven Benutzer
-        $now = new DateTime();
+        $totalEquity = $totalBalance = $totalProfit = $totalDeposits = $totalWithdrawals = 0;
+        $accountsData = [];
+
+        foreach ($accounts as $account) {
+            $totalEquity += $account->getEquity() ?? 0;
+            $totalBalance += $account->getBalance() ?? 0;
+            $totalProfit += $account->getProfit() ?? 0;
+            $totalDeposits += $account->getDeposits() ?? 0;
+            $totalWithdrawals += $account->getWithdrawals() ?? 0;
+
+            $user = $account->getUser();
+            $accountsData[] = [
+                'name' => $account->getName(),
+                'login' => $account->getLogin(),
+                'broker' => $account->getBroker(),
+                'platform' => $account->getPlatform(),
+                'host' => $account->getHost(),
+                'metaId' => $account->getMetaId(),
+                'equity' => $account->getEquity() ?? 0,
+                'balance' => $account->getBalance() ?? 0,
+                'profit' => $account->getProfit() ?? 0,
+                'gain' => $account->getGain() ?? 0,
+                'deposits' => $account->getDeposits() ?? 0,
+                'withdrawals' => $account->getWithdrawals() ?? 0,
+                'isActive' => $account->getIsActive(),
+                'error' => $account->getError() ?? '',
+                'lastUpdate' => $account->getLastUpdate() ? $account->getLastUpdate()->format('d.m.Y H:i:s') : '',
+                'username' => $user ? $user->getUsername() : '',
+                'userFullname' => $user ? trim(($user->getFirstname() ?? '') . ' ' . ($user->getLastname() ?? '')) : '',
+                'showUrl' => $account->getMetaId() ? $this->generateUrl('app_account_show', ['meta_id' => $account->getMetaId()]) : null,
+                'editUrl' => $account->getMetaId() ? $this->generateUrl('app_account_edit', ['meta_id' => $account->getMetaId()]) : null,
+                'deleteUrl' => $account->getMetaId() ? $this->generateUrl('app_account_delete', ['meta_id' => $account->getMetaId()]) : null,
+                'deleteToken' => $account->getMetaId() ? $csrfTokenManager->getToken('delete' . $account->getMetaId())->getValue() : null,
+                'flattenUrl' => ($account->getHost() === 'metapi' && $account->getMetaId()) ? $this->generateUrl('app_metapi_close_all', ['meta_id' => $account->getMetaId()]) : null,
+            ];
+        }
+
+        // Active users
         $thirtyMinutesAgo = (clone $now)->modify('-30 minutes');
         $twentyFourHoursAgo = (clone $now)->modify('-24 hours');
-
-        $activeLast30Min = 0;
-        $activeLast24h = 0;
-
+        $activeLast30Min = $activeLast24h = 0;
         foreach ($users as $user) {
             $lastLogin = $user->getLastLogin();
-            if ($lastLogin instanceof DateTime && $lastLogin >= $thirtyMinutesAgo) {
-                $activeLast30Min++;
-            }
-            if ($lastLogin instanceof DateTime && $lastLogin >= $twentyFourHoursAgo) {
-                $activeLast24h++;
-            }
+            if ($lastLogin instanceof \DateTime && $lastLogin >= $thirtyMinutesAgo) $activeLast30Min++;
+            if ($lastLogin instanceof \DateTime && $lastLogin >= $twentyFourHoursAgo) $activeLast24h++;
         }
 
-        return $this->render('account/index.html.twig', [
-            'accounts' => $accounts,
-            'users' => $users,
-            'openPositions' => $openPositions,
-            'form' => $form->createView(),
-            'admin_view' => true,
+        return new JsonResponse([
+            'accounts' => $accountsData,
+
+            'totalEquity' => $totalEquity,
+            'totalBalance' => $totalBalance,
+            'totalProfit' => $totalProfit,
+            'totalDeposits' => $totalDeposits,
+            'totalWithdrawals' => $totalWithdrawals,
+            'accountCount' => count($accounts),
+            'userCount' => count($users),
             'activeLast30Min' => $activeLast30Min,
             'activeLast24h' => $activeLast24h,
         ]);
@@ -146,96 +213,147 @@ class AccountController extends AbstractController
      */
     public function index(
         AccountRepository $accountRepository,
-        OrderRepository $orderRepository,
-        EntityManagerInterface $entityManager,
-        DeniesClient $deniesClient,
-        DuplikiumClient $duplikiumClient
+        EntityManagerInterface $entityManager
     ): Response
     {
-        // Last Login aktualisieren
         $user = $this->getUser();
-        $user->setLastLogin(new DateTime());
-        $entityManager = $this->getDoctrine()->getManager();
+        $user->setLastLogin(new \DateTime());
         $entityManager->persist($user);
         $entityManager->flush();
 
-        // Hole alle Accounts des aktuellen Benutzers
+        // Load page instantly without refreshing accounts — data loads async via API
         $accounts = $accountRepository->findBy(['user' => $this->getUser()]);
 
-        // Automatische Aktualisierung, wenn das letzte Update länger als 1 Minute her ist
+        return $this->render('account/index.html.twig', [
+            'accountCount' => count($accounts),
+            'form' => $this->createForm(AccountType::class, new Account())->createView(),
+            'maxAccounts' => $user->getMaxAccounts(),
+        ]);
+    }
+
+    /**
+     * @Route("/account/api/data", name="app_account_api_data", methods={"GET"})
+     */
+    public function apiData(
+        AccountRepository $accountRepository,
+        OrderRepository $orderRepository,
+        EntityManagerInterface $entityManager,
+        DeniesClient $deniesClient,
+        DuplikiumClient $duplikiumClient,
+        \Symfony\Component\Security\Csrf\CsrfTokenManagerInterface $csrfTokenManager
+    ): JsonResponse
+    {
+        $user = $this->getUser();
+        $accounts = $accountRepository->findBy(['user' => $user]);
+
+        // Refresh accounts (the heavy part)
         $now = new \DateTime();
         foreach ($accounts as $account) {
             $lastUpdate = $account->getLastUpdate();
-            if (!$lastUpdate || ($now->getTimestamp() - $lastUpdate->getTimestamp()) > 60) {
+            if (!$lastUpdate || ($now->getTimestamp() - $lastUpdate->getTimestamp()) > 60 || $account->getError() !== '') {
                 try {
-                    $this->refreshAccountStats($account, $deniesClient, $duplikiumClient, $accountRepository, $orderRepository);
+                    $this->refreshAccountStats($account, $deniesClient, $duplikiumClient, $accountRepository, $orderRepository, $entityManager);
                 } catch (\Exception $e) {
-                    // Fehler beim automatischen Update ignorieren, um die Anzeige nicht zu blockieren
                 }
             }
         }
 
-        // Hole alle offenen Positionen
-        $allOrders = $orderRepository->findBy(['account' => $accounts]);
-        $openPositions = array_filter($allOrders, fn($order) => $order->getState() === 1);
+        try {
+            $entityManager->flush();
+        } catch (\Exception $e) {
+        }
 
-        // Berechne dailyGrowth für jeden Account
+        // Build daily growth for denies/duplikium accounts
+        $allOrders = $orderRepository->findByUser($user);
+
+        $totalEquity = 0;
+        $totalBalance = 0;
+        $totalProfit = 0;
+        $totalDeposits = 0;
+        $totalWithdrawals = 0;
+
+        $accountsData = [];
+
         foreach ($accounts as $account) {
-            if ($account->getHost() == 'duplikium') {
-                $dailyGrowth = [];
-                $closedPositions = array_filter($allOrders, fn($order) => $order->getAccount() === $account && !in_array($order->getState(), [0, 1]));
+            $totalEquity += $account->getEquity() ?? 0;
+            $totalBalance += $account->getBalance() ?? 0;
+            $totalProfit += $account->getProfit() ?? 0;
+            $totalDeposits += $account->getDeposits() ?? 0;
+            $totalWithdrawals += $account->getWithdrawals() ?? 0;
 
-                // Initialisiere dailyGrowth aus geschlossenen Trades
+            $dailyGrowth = [];
+            if ($account->getHost() === 'duplikium' || $account->getHost() === 'denies') {
                 $dailyGrowthMap = [];
+                $accountId = $account->getId();
+                $closedPositions = array_filter($allOrders, fn($order) => $order->getAccount()->getId() === $accountId && !in_array($order->getState(), [0, 1]));
+
                 foreach ($closedPositions as $order) {
                     $closeDate = $order->getCloseTime();
-                    if (!$closeDate) {
-                        continue; // Überspringe Trades ohne Schließungsdatum
-                    }
-
-                    // Gruppiere nach Datum (YYYY-MM-DD)
+                    if (!$closeDate) continue;
                     $dateKey = $closeDate->format('Y-m-d');
-
                     if (!isset($dailyGrowthMap[$dateKey])) {
-                        $dailyGrowthMap[$dateKey] = [
-                            'date' => $dateKey,
-                            'profit' => 0,
-                            'gains' => 0, // Prozentuale Gewinne (werden später berechnet)
-                            'balance' => 0, // Wird später berechnet
-                            'lots' => 0, // Anzahl der Lots (falls verfügbar)
-                        ];
+                        $dailyGrowthMap[$dateKey] = ['date' => $dateKey, 'profit' => 0, 'gains' => 0, 'balance' => 0, 'lots' => 0];
                     }
-
-                    // Summiere Profit und Lots
                     $dailyGrowthMap[$dateKey]['profit'] += $order->getProfit() ?? 0;
                     $dailyGrowthMap[$dateKey]['lots'] += $order->getVolume() ?? 0;
                 }
 
-                // Konvertiere das Map in ein Array und berechne balance und gains
                 $dailyGrowth = array_values($dailyGrowthMap);
-                $runningBalance = $account->getBalance() ?? 0; // Startwert: aktueller Kontostand
-
-                // Gehe rückwärts durch die Tage, um den Balance-Verlauf zu berechnen
+                $runningBalance = $account->getBalance() ?? 0;
                 for ($i = count($dailyGrowth) - 1; $i >= 0; $i--) {
                     $dailyGrowth[$i]['balance'] = $runningBalance;
                     $dailyGrowth[$i]['gains'] = $runningBalance != 0 ? ($dailyGrowth[$i]['profit'] / $runningBalance) * 100 : 0;
-                    $runningBalance -= $dailyGrowth[$i]['profit']; // Ziehe den Profit ab, um den vorherigen Balance-Wert zu erhalten
+                    $runningBalance -= $dailyGrowth[$i]['profit'];
                 }
+                usort($dailyGrowth, fn($a, $b) => strtotime($a['date']) - strtotime($b['date']));
+            } else {
+                $dailyGrowth = $account->getDailyGrowth() ?? [];
+            }
 
-                // Sortiere nach Datum aufsteigend
-                usort($dailyGrowth, function($a, $b) {
-                    return strtotime($a['date']) - strtotime($b['date']);
-                });
+            $accountsData[] = [
+                'name' => $account->getName(),
+                'login' => $account->getLogin(),
+                'broker' => $account->getBroker(),
+                'platform' => $account->getPlatform(),
+                'host' => $account->getHost(),
+                'metaId' => $account->getMetaId(),
+                'equity' => $account->getEquity() ?? 0,
+                'balance' => $account->getBalance() ?? 0,
+                'profit' => $account->getProfit() ?? 0,
+                'gain' => $account->getGain() ?? 0,
+                'deposits' => $account->getDeposits() ?? 0,
+                'withdrawals' => $account->getWithdrawals() ?? 0,
+                'isActive' => $account->getIsActive(),
+                'error' => $account->getError() ?? '',
+                'dailyGrowth' => $dailyGrowth,
+                'showUrl' => $this->generateUrl('app_account_show', ['meta_id' => $account->getHost() === 'denies' ? $account->getLogin() : $account->getMetaId()]),
+                'editUrl' => $this->generateUrl('app_account_edit', ['meta_id' => $account->getMetaId()]),
+                'deleteUrl' => $this->generateUrl('app_account_delete', ['meta_id' => $account->getMetaId()]),
+                'deleteToken' => $csrfTokenManager->getToken('delete' . $account->getMetaId())->getValue(),
+                'reauthUrl' => $account->getPlatform() === 'ctrader' ? $this->generateUrl('app_auth_ctrader_reauth', ['meta_id' => $account->getMetaId()]) : null,
+                'agents' => $account->getAgents()->map(fn($a) => ['id' => $a->getId(), 'name' => $a->getName()])->toArray(),
+            ];
+        }
 
-                // Setze die berechneten dailyGrowth-Daten am Account-Objekt
-                $account->setDailyGrowth($dailyGrowth); // Wir nehmen an, dass es eine Methode setDailyGrowth gibt
+        // Yesterday profit
+        $yesterday = (new \DateTime('-1 day'))->format('Y-m-d');
+        $totalYesterdayProfit = 0;
+        foreach ($accountsData as $acc) {
+            foreach ($acc['dailyGrowth'] as $g) {
+                if ($g['date'] === $yesterday) {
+                    $totalYesterdayProfit += $g['profit'] ?? 0;
+                }
             }
         }
 
-        return $this->render('account/index.html.twig', [
-            'accounts' => $accounts,
-            'openPositions' => $openPositions,
-            'form' => $this->createForm(AccountType::class, new Account())->createView(),
+        return new JsonResponse([
+            'accounts' => $accountsData,
+            'totalEquity' => $totalEquity,
+            'totalBalance' => $totalBalance,
+            'totalProfit' => $totalProfit,
+            'totalDeposits' => $totalDeposits,
+            'totalWithdrawals' => $totalWithdrawals,
+            'totalYesterdayProfit' => $totalYesterdayProfit,
         ]);
     }
 
@@ -335,6 +453,9 @@ class AccountController extends AbstractController
         }
 
         // Speichere die Token-Daten im Account-Objekt
+        $account->setHost('denies');
+        $account->setMetaId($account->getLogin());
+        $account->setCtraderAccessToken($tokenData['access_token']);
         $account->setCtraderAccessToken($tokenData['access_token']);
         $account->setCtraderRefreshToken($tokenData['refresh_token']);
         $account->setCtraderTokenExpiresAt((new \DateTime())->modify('+'.$tokenData['expires_in'].' seconds'));
@@ -358,10 +479,8 @@ class AccountController extends AbstractController
         $account->setHost('denies');
         $response = $deniesClient->addAccount($account);
 
-        if (isset($response->data->accountNumber) && strlen($response->data->accountNumber) > 1) {
+        if (isset($tokenData['access_token']) && strlen($tokenData['access_token']) > 1) {
             $this->addFlash('success', 'cTrader Account ' . $response->data->accountNumber . ' wurde erfolgreich verbunden.');
-
-            $account->setMetaId($response->data->accountNumber);
         } else {
             if (isset($response->error) && strlen($response->error) > 1) {
                 $this->addFlash('danger', strip_tags($response->error));
@@ -439,7 +558,9 @@ class AccountController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             // Setze den User des Accounts auf den aktuell eingeloggenen User
             $account->setUser($this->getUser());
+            $account->setHost('denies');
             $account->setType(3);
+            $account->setMetaId($account->getLogin());
 
             if ($account->getPlatform() == "ctrader") {
                 try {
@@ -460,7 +581,7 @@ class AccountController extends AbstractController
                 $account->setPassword($encryptedPassword); // Verschlüsseltes Passwort setzen
             }
 
-            if($account->getPlatform() == 'ctrader' || $this->isGranted('ROLE_ADMIN')) {
+            if($account->getPlatform() == 'ctrader') {
                 $account->setHost('denies');
                 $response = $deniesClient->addAccount($account);
             }
@@ -469,17 +590,12 @@ class AccountController extends AbstractController
                 $response = $duplikiumClient->addAccount($account);
             }
 
-            if($account->getHost() == 'denies' && isset($response->data->accountNumber) && strlen($response->data->accountNumber) > 1) {
-                $this->addFlash('success', 'Acount '. $response->data->accountNumber .' wurde erfolgreich verbunden.');
-                $account->setMetaId($response->data->accountNumber);
-
-                $account->setHost('denies');
-
-                // Account in die Datenbank speichern
+            if($account->getHost() == 'denies') {
+                $this->addFlash('success', 'Acount '. $account->getLogin() .' wurde erfolgreich verbunden.');
                 $accountRepository->add($account, true);    
             }
-            elseif($account->getHost() == 'duplikium' && isset($response->account->account_id) && strlen($response->account->account_id) > 1) {
-                $this->addFlash('success', 'Acount '. $response->account->account_id .' wurde erfolgreich verbunden.');
+            elseif($account->getHost() == 'duplikium') {
+                $this->addFlash('success', 'Acount '. $account->getLogin() .' wurde erfolgreich verbunden.');
 
                 $account->setHost('duplikium');
                 $account->setMetaId($response->account->account_id);
@@ -513,12 +629,24 @@ class AccountController extends AbstractController
     /**
      * @Route("/account/{meta_id}", name="app_account_show", methods={"GET"})
      */
-    public function show(Account $account, OrderRepository $orderRepository, AccountAgentSubscriptionRepository $accountAgentSubscriptionRepository, AgentRepository $agentRepository, MetaApiClient $metaApiClient, DuplikiumClient $duplikiumClient, DeniesClient $deniesClient, AccountRepository $accountRepository): Response
-    {
-        // Prüfen, ob der Account dem aktuellen Benutzer gehört
-        if (!$account || $account->getUser() !== $this->getUser() && !$this->isGranted('ROLE_ADMIN')) {
-            // Weiterleiten auf die Account-Übersicht
-            $this->session->getFlashBag()->add('danger', 'Account-Validierung fehlgeschlagen. Account existiert nicht oder gehört einem anderen User.');
+    public function show(
+        string $meta_id,
+        AccountRepository $accountRepository,
+        DeniesClient $deniesClient,
+        DuplikiumClient $duplikiumClient,
+        OrderRepository $orderRepository,
+        EntityManagerInterface $entityManager,
+        AccountAgentSubscriptionRepository $accountAgentSubscriptionRepository,
+        AgentRepository $agentRepository,
+        MetaApiClient $metaApiClient
+    ): Response {
+        $account = $accountRepository->findOneBy(['meta_id' => $meta_id]);
+        if (!$account) {
+            $account = $accountRepository->findOneBy(['login' => $meta_id]);
+        }
+
+        if (!$account || ($account->getUser() !== $this->getUser() && !$this->isGranted('ROLE_ADMIN'))) {
+            $this->addFlash('danger', 'Account-Validierung fehlgeschlagen.');
             return $this->redirectToRoute('app_account_index');
         }
 
@@ -527,7 +655,13 @@ class AccountController extends AbstractController
         $lastUpdate = $account->getLastUpdate();
         if (!$lastUpdate || ($now->getTimestamp() - $lastUpdate->getTimestamp()) > 60) {
             try {
-                $this->refreshAccountStats($account, $deniesClient, $duplikiumClient, $accountRepository, $orderRepository);
+                $this->refreshAccountStats($account, $deniesClient, $duplikiumClient, $accountRepository, $orderRepository, $entityManager);
+                
+                try {
+                    $entityManager->flush();
+                } catch (\Exception $e) {
+                    error_log("Show Account Flush Failed: " . $e->getMessage());
+                }
             } catch (\Exception $e) {
                 // Fehler beim automatischen Update ignorieren, um die Anzeige nicht zu blockieren
             }
@@ -942,37 +1076,32 @@ class AccountController extends AbstractController
      * @Route("/account/{meta_id}/update", name="app_account_update", methods={"GET", "POST"})
      */
     public function update(
-        Request $request,
-        Account $account,
+        string $meta_id,
+        AccountRepository $accountRepository,
         DeniesClient $deniesClient,
         DuplikiumClient $duplikiumClient,
-        AccountRepository $accountRepository,
-        OrderRepository $orderRepository
-    ): Response
-    {
+        OrderRepository $orderRepository,
+        EntityManagerInterface $entityManager
+    ): Response {
+        $account = $accountRepository->findOneBy(['meta_id' => $meta_id]);
+        if (!$account) {
+            $account = $accountRepository->findOneBy(['login' => $meta_id]);
+        }
 
-        // Prüfen, ob der Account dem aktuellen Benutzer gehört
-        if (!$account || $account->getUser() !== $this->getUser() && !$this->isGranted('ROLE_ADMIN')) {
-            // Weiterleiten auf die Account-Übersicht
-            $this->session->getFlashBag()->add('danger', 'Account-Validierung fehlgeschlagen. Account existiert nicht oder gehört einem anderen User.');
+        if (!$account || ($account->getUser() !== $this->getUser() && !$this->isGranted('ROLE_ADMIN'))) {
+            $this->addFlash('danger', 'Account nicht gefunden.');
             return $this->redirectToRoute('app_account_index');
         }
 
-        // Rate-Limit: max. 1 Update pro Minute
-        $now = new \DateTime();
-        $lastUpdate = $account->getLastUpdate();
-
-        if ($lastUpdate instanceof \DateTimeInterface) {
-            $diff = $now->getTimestamp() - $lastUpdate->getTimestamp();
-            if ($diff < 60) { // Weniger als 60 Sekunden her
-                $secondsLeft = 60 - $diff;
-                $this->addFlash('warning', "Bitte warte noch $secondsLeft Sekunden, bevor du erneut aktualisierst.");
-                return $this->redirectToRoute('app_account_show', ['meta_id' => $account->getMetaId()]);
-            }
-        }
-
         try {
-            $this->refreshAccountStats($account, $deniesClient, $duplikiumClient, $accountRepository, $orderRepository);
+            $this->refreshAccountStats($account, $deniesClient, $duplikiumClient, $accountRepository, $orderRepository, $entityManager);
+            
+            try {
+                $entityManager->flush();
+            } catch (\Exception $e) {
+                error_log("Update Account Flush Failed: " . $e->getMessage());
+            }
+
             $this->addFlash('success', 'Account wurde erfolgreich aktualisiert.');
         } catch (\Exception $e) {
             $this->addFlash('danger', 'Account-Aktualisierung fehlgeschlagen: ' . $e->getMessage());
@@ -994,7 +1123,8 @@ class AccountController extends AbstractController
         DeniesClient $deniesClient,
         DuplikiumClient $duplikiumClient,
         AccountRepository $accountRepository,
-        OrderRepository $orderRepository
+        OrderRepository $orderRepository,
+        EntityManagerInterface $entityManager
     ): void {
         $now = new \DateTime();
 
@@ -1019,28 +1149,24 @@ class AccountController extends AbstractController
                 $account->setEquity((float)($accountData->equity ?? 0));
                 $account->setBalance((float)($accountData->balance ?? 0));
                 
-                // Check for server errors
-                $serverStatus = $accountData->server_status ?? $accountData->serverStatus ?? 'Success';
-                $serverMessage = $accountData->server_status_message ?? $accountData->serverStatusMessage ?? '';
                 $apiDateStr = $accountData->updated_at ?? $accountData->updatedAt ?? null;
-                $apiUpdatedAt = $apiDateStr ? new \DateTime($apiDateStr) : null;
-                $isOld = false;
-                if ($apiUpdatedAt) {
-                    $diffSeconds = $now->getTimestamp() - $apiUpdatedAt->getTimestamp();
-                    $isOld = ($diffSeconds > 300);
-                }
+                if ($apiDateStr) {
+                    if (!str_contains($apiDateStr, 'Z') && !str_contains($apiDateStr, '+')) {
+                        $apiDateStr .= 'Z';
+                    }
+                    $apiUpdatedAt = new \DateTime($apiDateStr);
+                    $account->setLastUpdate($apiUpdatedAt);
 
-                if ($serverStatus !== 'Success' && $serverStatus !== 'None') {
-                    $errorMessage = $serverMessage ?: $serverStatus;
-                    $errorMessage = str_replace('MT5_PYTHON_START_FAILED: ', '', $errorMessage);
-                    $account->setError($errorMessage);
-                    $account->setIsActive(false);
-                } elseif ($isOld) {
-                    $account->setError('DISCONNECTED');
-                    $account->setIsActive(false);
-                } else {
-                    $account->setError('');
-                    $account->setIsActive(true);
+                    $nowUTC = new \DateTime('now', new \DateTimeZone('UTC'));
+                    $diff = $nowUTC->getTimestamp() - $apiUpdatedAt->getTimestamp();
+
+                    if ($diff > 300) { // 5 minutes
+                        $account->setError('STÖRUNG');
+                        $account->setIsActive(false);
+                    } else {
+                        $account->setError('');
+                        $account->setIsActive(true);
+                    }
                 }
 
                 // --- Position Synchronization for Denies ---
@@ -1050,7 +1176,6 @@ class AccountController extends AbstractController
                     $localOpenOrders = $orderRepository->findBy(['account' => $account, 'state' => 1]);
 
                     $apiTickets = [];
-                    $entityManager = $accountRepository->getManager();
 
                     foreach ($apiPositions as $apiPos) {
                         $ticket = (int)($apiPos->order_ticket ?? $apiPos->ticket ?? $apiPos->id ?? 0);
@@ -1088,7 +1213,6 @@ class AccountController extends AbstractController
                         if (isset($apiPos->order_profit)) {
                             $localOrder->setProfit((float)$apiPos->order_profit);
                         }
-
                         $entityManager->persist($localOrder);
                     }
 
@@ -1100,19 +1224,49 @@ class AccountController extends AbstractController
                             $entityManager->persist($localOrder);
                         }
                     }
+                    // Final flush is handled by the caller
+                    // --- Step 2: Sync Closed Orders (History) for Chart ---
+                    $closedOrders = $deniesClient->getClosedOrders($deniesAccountId);
+                    error_log("Denies History Sync [{$account->getLogin()}]: Found " . count($closedOrders) . " closed orders.");
+                    
+                    foreach ($closedOrders as $apiOrder) {
+                        $ticket = (int)($apiOrder->order_ticket ?? $apiOrder->ticket ?? $apiOrder->id ?? 0);
+                        if (!$ticket) continue;
 
-                    $entityManager->flush();
+                        $localOrder = $orderRepository->findOneBy(['ticket' => $ticket, 'account' => $account]);
+                        if (!$localOrder) {
+                            $localOrder = new Order();
+                            $localOrder->setTicket($ticket);
+                            $localOrder->setAccount($account);
+                            $localOrder->setLogin($account->getLogin());
+                            // error_log("  -> New closed order created: $ticket");
+                        }
+
+                        $localOrder->setState(2); // Always closed in this loop
+                        
+                        if (isset($apiOrder->order_open_at)) $localOrder->setOpenTime(new \DateTime($apiOrder->order_open_at));
+                        if (isset($apiOrder->order_close_at)) $localOrder->setCloseTime(new \DateTime($apiOrder->order_close_at));
+                        if (isset($apiOrder->order_symbol)) $localOrder->setSymbol($apiOrder->order_symbol);
+                        if (isset($apiOrder->order_lot)) $localOrder->setVolume((float)$apiOrder->order_lot);
+                        if (isset($apiOrder->order_price)) $localOrder->setOpenPrice((float)$apiOrder->order_price);
+                        if (isset($apiOrder->order_close_price)) $localOrder->setClosePrice((float)$apiOrder->order_close_price);
+                        if (isset($apiOrder->order_type)) $localOrder->setCmd($apiOrder->order_type === 'Buy' ? 1 : 0);
+                        if (isset($apiOrder->order_profit)) $localOrder->setProfit((float)$apiOrder->order_profit);
+
+                        $entityManager->persist($localOrder);
+                    }
+                    // --- End History Sync ---
                 }
                 // --- End Position Sync ---
 
             } catch (\Exception $e) {
-                // Account not found in Denies API → mark as DISCONNECTED
-                $account->setError('DISCONNECTED');
-                $account->setIsActive(false);
+                // Log and expose specific error for debugging
+                $msg = $e->getMessage();
+                error_log("Denies Refresh Failed [{$account->getLogin()}]: " . $msg);
+                $account->setError('err: ' . substr($msg, 0, 40));
             }
             $account->setLastUpdate($now);
-
-            $accountRepository->add($account, true);
+            $accountRepository->add($account, false);
         } else {
             $response = $duplikiumClient->getAccount($account->getMetaId());
 
@@ -1127,7 +1281,7 @@ class AccountController extends AbstractController
             $account->setIsActive($response->accounts[0]->status == 1 ? 1 : 0);
             $account->setLastUpdate($now);
 
-            $accountRepository->add($account, true);
+            $accountRepository->add($account, false);
         }
     }
 }

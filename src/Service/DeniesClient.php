@@ -133,7 +133,7 @@ class DeniesClient
     public function getClosedOrders(int $accountId): array
     {
         try {
-            $response = $this->request('GET', "orders/paginated?PerPage=9999&Page=1&AccountId=" . $accountId . "&Status=700");
+            $response = $this->request('GET', "orders/paginated?PerPage=9999&Page=1&AccountId=" . $accountId . "&IsClosed=true");
             return $response->data->data ?? [];
         } catch (\Exception $e) {
             return [];

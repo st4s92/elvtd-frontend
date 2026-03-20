@@ -1,404 +1,1644 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Agents{% endblock %}
+{% block title %}Agents
+{% endblock %}
 
 {% block body %}
-    <div class="container mt-5">
-        <div class="row">
-            <div class="col-md-12 text-center">
-                <h3 class="mb-4">Agents – Die nächste Generation des algorithmischen Tradings</h3>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-md-12">
-                <div id="contentContainer" class="position-relative overflow-hidden" style="max-height: 300px; transition: max-height 0.75s ease-out; overflow: hidden">
-                    <div class="content">
-                        <p class="lead">
-                            Unsere <strong>Agents</strong> repräsentieren die Spitze des algorithmischen Tradings. Diese hochentwickelten Algorithmen analysieren kontinuierlich die Märkte in Echtzeit, treffen präzise Entscheidungen und platzieren automatisch Handelsaufträge über unsere direkte Integration mit MetaTrader. Dabei kombinieren sie die Stärken modernster Künstlicher Intelligenz mit bewährten Trading-Strategien, um optimale Ergebnisse zu erzielen.
-                        </p>
-                        <div class="row mt-4">
-                            <div class="col-md-6">
-                                <h4>Was machen unsere Agents einzigartig?</h4>
-                                <ul>
-                                    <li><strong>Echtzeit-Marktanalysen:</strong> Die Agents scannen die Märkte rund um die Uhr und erkennen Chancen, bevor sie der breiten Masse auffallen. Sie basieren auf KI-gesteuerten Analysen, die historische Daten, Markttrends und aktuelle Preisbewegungen berücksichtigen.</li>
-                                    <li><strong>Automatisierte Orderausführung:</strong> Mit einer nahtlosen MetaTrader-Anbindung werden Orders direkt und ohne Verzögerung ausgeführt. So profitieren Sie von schnelleren Reaktionszeiten und präziseren Einstiegs- und Ausstiegspunkten.</li>
-                                    <li><strong>Verschiedene Anlagestrategien:</strong> Jeder Agent ist speziell auf bestimmte Anforderungen ausgerichtet – von aggressiven Scalping-Strategien für kurzfristige Gewinne bis hin zu langfristigen Portfolio-Management-Lösungen für nachhaltige Investitionen.</li>
-                                    <li><strong>Risikomanagement integriert:</strong> Dank intelligenter Risiko-Kontrollmechanismen überwachen unsere Agents kontinuierlich die Marktbedingungen und passen Positionen automatisch an, um Verluste zu minimieren und Gewinne zu sichern.</li>
-                                    <li><strong>Evidenzbasierte Entscheidungen:</strong> Angetrieben durch umfangreiche Datenbanken und maschinelles Lernen, treffen unsere Agents Entscheidungen auf Grundlage von Milliarden von historischen Datenpunkten und aktuellen Marktinformationen.</li>
-                                </ul>
-                            </div>
-                            <div class="col-md-6">
-                                <h4>Vorteile der Nutzung von Agents</h4>
-                                <ul>
-                                    <li><strong>Effizienz:</strong> Kein manueller Eingriff notwendig – Agents arbeiten unermüdlich und ohne emotionale Einflüsse.</li>
-                                    <li><strong>Schnelligkeit:</strong> Schnelle Analysen und Reaktionen auf Marktsituationen durch KI-gestützte Technologien.</li>
-                                    <li><strong>Transparenz:</strong> Alle Entscheidungen und Transaktionen sind nachvollziehbar und werden dokumentiert.</li>
-                                    <li><strong>Skalierbarkeit:</strong> Ob kleines Konto oder großes Portfolio – unsere Agents können flexibel auf Ihre Bedürfnisse skaliert werden.</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="text-center mt-3">
-                    <button id="toggleButton" class="btn btn-outline-dark-blue">Weiterlesen</button>
-                </div>
-            </div>
-        </div>
-    </div>
+	<style>
+	/* ══════════════════════════════════════════════════════
+   AGENTS PAGE — Premium Animated Design
+   ══════════════════════════════════════════════════════ */:root
+	{
+		--ag-bg: #f8fafc;
+		--ag-card: #ffffff;
+		--ag-dark: #0f172a;
+		--ag-dim: #64748b;
+		--ag-green: #16a34a;
+		--ag-cyan: #06b6d4;
+		--ag-border: rgba(0, 0, 0, 0.06);
+		--ag-glass: rgba(255, 255, 255, 0.85);
+	}
+	body {
+		background: radial-gradient(at 0% 0%, rgba(22,163,74,0.06) 0px, transparent 50%), radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.06) 0px, transparent 50%), var(--ag-bg);
+		background-attachment: fixed;
+	}
 
-    <script>
-        document.getElementById('toggleButton').addEventListener('click', function() {
-            const contentContainer = document.getElementById('contentContainer');
-            if (contentContainer.style.maxHeight === '300px') {
-                contentContainer.style.maxHeight = contentContainer.scrollHeight + 'px'; // Expand to full height
-                this.textContent = 'Weniger anzeigen';
-            } else {
-                contentContainer.style.maxHeight = '300px'; // Collapse back to 400px
-                this.textContent = 'Weiterlesen';
-            }
-        });
-    </script>
+	.agents-wrap {
+		padding: 2rem 0 5rem;
+	}
+	.agents-container {
+		max-width: 1280px;
+		margin: 0 auto;
+		padding: 0 1.5rem;
+	}
 
-    <div class="container mt-5 p-0">
-        <div class="row px-2 overflow-hidden">
-            <h3 class="float-start mb-5">Verfügbare Agents</h3>
-            <!--<div id="agentCarousel" class="carousel slide" data-bs-ride="carousel">
-                <div class="text-end">
-                    <button class="carousel-control-prev mb-6" type="button" data-bs-target="#agentCarousel" data-bs-slide="prev">
-                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                        <span class="text-black"><i class="material-symbols-rounded opacity-9">arrow_back_ios</i></span>
-                    </button>
-                    <button class="carousel-control-next mb-6" type="button" data-bs-target="#agentCarousel" data-bs-slide="next">
-                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                        <span class="text-black"><i class="material-symbols-rounded opacity-9">arrow_forward_ios</i></span>
-                    </button>
-                </div>
+	/* ══════════════════════════════════════════════════════
+	   LOADING OVERLAY — AI Neural Network
+	   ══════════════════════════════════════════════════════ */
+	#agentsLoadingOverlay {
+		position: fixed;
+		inset: 0;
+		z-index: 9999;
+		background: #f8fafc;
+		overflow: hidden;
+	}
+	#agentsLoadingOverlay.fade-out {
+		animation: agOverlayFade 0.8s ease forwards;
+	}
+	@keyframes agOverlayFade {
+		to {
+			opacity: 0;
+			pointer-events: none;
+		}
+	}
+	#agentsCanvas {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+	}
+	.ag-node-network {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -55%);
+		width: 420px;
+		height: 420px;
+		z-index: 1;
+	}
+	.ag-node-center {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: 72px;
+		height: 72px;
+		background: rgba(255, 255, 255, 0.95);
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 0 40px rgba(22, 163, 74, 0.3), 0 0 80px rgba(22, 163, 74, 0.1), 0 4px 20px rgba(0, 0, 0, 0.08);
+		font-size: 1.6rem;
+		color: #16a34a;
+		z-index: 3;
+		animation: agNodePulse 2s ease-in-out infinite;
+	}
+	@keyframes agNodePulse {
+		0,
+		100% {
+			box-shadow: 0 0 40px rgba(22, 163, 74, 0.3), 0 0 80px rgba(22, 163, 74, 0.1), 0 4px 20px rgba(0, 0, 0, 0.08);
+		}
+		50% {
+			box-shadow: 0 0 60px rgba(22, 163, 74, 0.4), 0 0 120px rgba(22, 163, 74, 0.15), 0 4px 20px rgba(0, 0, 0, 0.08);
+		}
+	}
+	.ag-orbit-node {
+		position: absolute;
+		width: 52px;
+		height: 52px;
+		background: rgba(255, 255, 255, 0.92);
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 0 24px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.05);
+		font-size: 1.1rem;
+		z-index: 3;
+		opacity: 0;
+		animation: agOrbitAppear 0.6s ease forwards;
+	}
+	.ag-orbit-node:nth-child(3) {
+		top: -16px;
+		left: 50%;
+		transform: translateX(-50%);
+		animation-delay: 0.15s;
+	}
+	.ag-orbit-node:nth-child(4) {
+		bottom: -16px;
+		left: 50%;
+		transform: translateX(-50%);
+		animation-delay: 0.3s;
+	}
+	.ag-orbit-node:nth-child(5) {
+		left: -16px;
+		top: 50%;
+		transform: translateY(-50%);
+		animation-delay: 0.45s;
+	}
+	.ag-orbit-node:nth-child(6) {
+		right: -16px;
+		top: 50%;
+		transform: translateY(-50%);
+		animation-delay: 0.6s;
+	}
+	.ag-orbit-node:nth-child(7) {
+		top: 12%;
+		left: 12%;
+		animation-delay: 0.75s;
+	}
+	.ag-orbit-node:nth-child(8) {
+		top: 12%;
+		right: 12%;
+		animation-delay: 0.9s;
+	}
+	@keyframes agOrbitAppear {
+		from {
+			opacity: 0;
+			scale: 0.4;
+		}
+		to {
+			opacity: 1;
+			scale: 1;
+		}
+	}
+	.ag-beam-lines {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		z-index: 2;
+	}
+	.ag-beam-line {
+		stroke: url('#agBeamGrad');
+		stroke-width: 1.5;
+		opacity: 0.5;
+	}
+	.ag-beam-particle {
+		fill: #16a34a; filter: drop-shadow(0 0 6px rgba(22,163,74,0.7));
+	}
+	.ag-load-ui {
+		position: absolute;
+		bottom: 10%;
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 2;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.75rem;
+	}
+	.ag-load-title {
+		font-size: 1.3rem;
+		font-weight: 800;
+		color: var(--ag-dark);
+		letter-spacing: -0.02em;
+	}
+	.ag-load-sub {
+		font-size: 0.82rem;
+		color: var(--ag-dim);
+		font-weight: 500;
+		transition: opacity 0.3s;
+	}
+	.ag-load-bar {
+		width: 300px;
+		height: 4px;
+		background: rgba(0, 0, 0, 0.06);
+		border-radius: 4px;
+		overflow: hidden;
+		margin-top: 0.5rem;
+	}
+	.ag-load-fill {
+		height: 100%;
+		width: 0;
+		background: linear-gradient(90deg, #16a34a, #22c55e, #06b6d4);
+		border-radius: 4px;
+		transition: width 0.5s ease;
+		box-shadow: 0 0 12px rgba(22, 163, 74, 0.4);
+	}
+	.ag-load-pct {
+		font-size: 0.72rem;
+		font-weight: 700;
+		color: var(--ag-dim);
+		font-family: 'JetBrains Mono', monospace;
+	}
 
-                <div class="carousel-inner" style="overflow: visible"> -->
-            <div class="row">
-                {% for account in accounts %}
-                    {% set agent = agents|filter(a => a.fromAccountId == account.id)|first %}
-                    <div class="col-12 col-lg-6"{# class="carousel-item {{ loop.first ? 'active' : '' }}" #}>
-                        <div class="mb-5">
-                            <div class="card px-4" data-animation="true">
-                                <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
-                                    <div class="bg-transparent shadow-xl">
-                                        <div class="overflow-hidden position-relative border-radius-xl">
-                                            <span class="mask bg-gradient-dark opacity-10"></span>
-                                            <div class="card-body position-relative z-index-1 p-3">
+	/* ── Hero Section ── */
+	.agents-hero {
+		position: relative;
+		border-radius: 28px;
+		overflow: hidden;
+		margin-bottom: 3rem;
+		background: linear-gradient(135deg, #f0ede6 0%, #e8e4db 50%, #ece9e1 100%);
+		padding: 3.5rem 3rem;
+	}
+	.agents-hero-canvas {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		pointer-events: none;
+	}
+	.agents-hero-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		padding: 6px 16px;
+		border-radius: 100px;
+		font-size: 0.7rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		background: rgba(22, 163, 74, 0.1);
+		color: #16a34a;
+		border: 1px solid rgba(22, 163, 74, 0.15);
+		margin-bottom: 1rem;
+		position: relative;
+		z-index: 1;
+	}
+	.agents-hero-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 3rem;
+		align-items: center;
+		position: relative;
+		z-index: 1;
+	}
+	@media(max-width: 768px) {
+		.agents-hero-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+	.agents-hero h1 {
+		font-size: 2.4rem;
+		font-weight: 800;
+		color: #1a1a1a;
+		letter-spacing: -0.04em;
+		margin: 0 0 1rem;
+		line-height: 1.2;
+	}
+	.agents-hero h1 span {
+		color: #1a1a1a;
+		-webkit-text-fill-color: initial;
+	}
+	.agents-hero-desc {
+		font-size: 0.95rem;
+		color: #6b7280;
+		line-height: 1.7;
+	}
+	.agents-hero-features {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+		gap: 1rem;
+		margin-top: 2rem;
+		position: relative;
+		z-index: 1;
+	}
+	.agents-hero-feat {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 12px 16px;
+		border-radius: 14px;
+		background: rgba(255, 255, 255, 0.5);
+		border: 1px solid rgba(0, 0, 0, 0.06);
+		transition: all 0.3s;
+		backdrop-filter: blur(8px);
+	}
+	.agents-hero-feat:hover {
+		background: rgba(255, 255, 255, 0.7);
+		border-color: rgba(22, 163, 74, 0.25);
+		transform: translateY(-2px);
+		box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+	}
+	.agents-hero-feat-icon {
+		width: 36px;
+		height: 36px;
+		border-radius: 10px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 0.85rem;
+		flex-shrink: 0;
+	}
+	.feat-green {
+		background: rgba(22, 163, 74, 0.12);
+		color: #16a34a;
+	}
+	.feat-cyan {
+		background: rgba(6, 182, 212, 0.12);
+		color: #0891b2;
+	}
+	.feat-purple {
+		background: rgba(139, 92, 246, 0.12);
+		color: #7c3aed;
+	}
+	.feat-amber {
+		background: rgba(245, 158, 11, 0.12);
+		color: #d97706;
+	}
+	.agents-hero-feat span {
+		font-size: 0.82rem;
+		font-weight: 600;
+		color: #374151;
+	}
 
-                                                <div class="d-flex">
-                                                    {% set digitSum = account.login|split('')|map(n => n)|reduce((carry, n) => carry + n, 0) %}
-                                                    <div class="text-white text-xs opacity-8 mb-0">
-                                                        <span>Rendite</span>
-                                                        <h6 class="mb-3" style="color: rgba(75, 192, 192, 1)">~ {{ agent.apy|round(2) }}% / Jahr</h6>
-                                                    </div>
-                                                    <i class="material-symbols-rounded text-3xl text-white my-0" style="margin-left: auto;">network_intel_node</i>
-                                                </div>
+	/* Expand/collapse */
+	.hero-expand-content {
+		max-height: 0;
+		overflow: hidden;
+		transition: max-height 0.6s ease;
+	}
+	.hero-expand-content.expanded {
+		max-height: 600px;
+	}
+	.hero-toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 8px 20px;
+		border-radius: 10px;
+		font-size: 0.8rem;
+		font-weight: 700;
+		background: rgba(255, 255, 255, 0.5);
+		border: 1px solid rgba(0, 0, 0, 0.08);
+		color: #6b7280;
+		cursor: pointer;
+		transition: all 0.3s;
+		margin-top: 1.5rem;
+		position: relative;
+		z-index: 1;
+	}
+	.hero-toggle:hover {
+		background: rgba(22, 163, 74, 0.1);
+		color: #16a34a;
+		border-color: rgba(22, 163, 74, 0.3);
+	}
 
-                                                <div class="agentChart">
-                                                    <div class="pb-5" style="width: 100%; height: 100%; margin: auto;">
-                                                        <canvas class="agentChart" id="profitChart_{{ agent.id}}" width="100%" height="100%" style="min-width: 100%; min-height: 150px; max-width: 100%; max-height: 150px; margin: 0 auto;"></canvas>
-                                                    </div>
+	/* ── Section Headers ── */
+	.section-header {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		margin-bottom: 2rem;
+	}
+	.section-header h2 {
+		font-size: 1.6rem;
+		font-weight: 800;
+		color: var(--ag-dark);
+		letter-spacing: -0.03em;
+		margin: 0;
+	}
+	.section-header .section-count {
+		font-size: 0.72rem;
+		font-weight: 700;
+		background: rgba(22, 163, 74, 0.1);
+		color: var(--ag-green);
+		padding: 4px 12px;
+		border-radius: 100px;
+	}
 
-                                                    <script>
-                                                        const dailyGrowth{{ account.id}} = {{ agent.backtestingJson|json_encode|raw }};
-                                                        const labels{{ account.id}} = dailyGrowth{{ account.id}}.map(entry => entry.date); // x-Achse: "date"
-                                                        const data{{ account.id}} = dailyGrowth{{ account.id}}.map(entry => entry.totalGains || 0); // y-Achse: "balance"
+	/* ── Agent Cards Grid ── */
+	.agents-grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 1.5rem;
+		margin-bottom: 3rem;
+	}
 
-                                                        // Initialisierung des Charts
-                                                        const ctx{{ account.id}} = document.getElementById('profitChart_{{ agent.id}}').getContext('2d');
-                                                        const profitChart_{{ account.id}} = new Chart(ctx{{ account.id}}, {
-                                                            type: 'line',
-                                                            data: {
-                                                                labels: labels{{ account.id}},
-                                                                datasets: [{
-                                                                    label: 'Balance',
-                                                                    data: data{{ account.id}},
-                                                                    borderColor: 'rgba(75, 192, 192, 1)',
-                                                                    backgroundColor: 'rgba(75, 192, 192, 0.1)',
-                                                                    tension: 0.3,
-                                                                    fill: true,
-                                                                    pointRadius: 2,
-                                                                }]
-                                                            },
-                                                            options: {
-                                                                responsive: true,
-                                                                plugins: {
-                                                                    legend: {
-                                                                        position: 'top',
-                                                                        display: false
-                                                                    },
-                                                                    title: {
-                                                                        display: false,
-                                                                        text: 'Wachstum'
-                                                                    },
-                                                                    tooltip: {
-                                                                        enabled: false
-                                                                    }
-                                                                },
-                                                                scales: {
-                                                                    x: {
-                                                                        border: {
-                                                                            display: false
-                                                                        },
-                                                                        title: {
-                                                                            display: false,
-                                                                            text: 'Datum',
-                                                                            color: 'rgba(75, 192, 192, 0.0)'
-                                                                        },
-                                                                        grid: {
-                                                                            display: false,
-                                                                            color: 'rgba(75, 192, 192, 0.0)'
-                                                                        },
-                                                                        ticks: {
-                                                                            display: false,
-                                                                            color: 'rgba(75, 192, 192, 0.0)'
-                                                                        }
-                                                                    },
-                                                                    y: {
-                                                                        border: {
-                                                                            display: false
-                                                                        },
-                                                                        title: {
-                                                                            display: false,
-                                                                            text: 'Balance',
-                                                                            color: 'rgba(75, 192, 192, 0.0)'
-                                                                        },
-                                                                        grid: {
-                                                                            display: false,
-                                                                            color: 'rgba(75, 192, 192, 0.0)'
-                                                                        },
-                                                                        ticks: {
-                                                                            display: false,
-                                                                            color: 'rgba(75, 192, 192, 0.0)'
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        });
-                                                    </script>
-                                                </div>
+	/* ── Agent Card ── */
+	.agent-card {
+		position: relative;
+		border-radius: 24px;
+		overflow: hidden;
+		transition: all 0.5s cubic-bezier(0.175,0.885,0.32,1.275);
+	}
+	.agent-card:hover {
+		transform: translateY(-6px);
+	}
+	.agent-card::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: 24px;
+		padding: 2px;
+		background: linear-gradient(135deg, rgba(22,163,74,0.3), rgba(6,182,212,0.2), rgba(22,163,74,0.3));
+		background-size: 200% 200%;
+		animation: agBorderShift 5s ease infinite;
+		-webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+		mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+		-webkit-mask-composite: xor;
+		mask-composite: exclude;
+		pointer-events: none;
+		z-index: 1;
+	}
+	@keyframes agBorderShift {
+		0,
+		100% {
+			background-position: 0 50%;
+		}
+		50% {
+			background-position: 100% 50%;
+		}
+	}
+	.agent-card:hover {
+		box-shadow: 0 20px 60px rgba(22, 163, 74, 0.12), 0 0 40px rgba(22, 163, 74, 0.06);
+	}
 
-                                                <div class="container-fluid">
-                                                    <div class="row">
-                                                        <div class="col-6 col-md-2">
-                                                            <p class="text-white text-xs opacity-8 mb-0" style="font-size: 0.55rem !important;">Profit pro Monat</p>
-                                                            <h6 class="text-white text-sm mb-3">~{{ (agent.apy/12)|round(2) }}%</h6>
-                                                        </div>
-                                                        <div class="col-4 col-md-2">
-                                                            <p class="text-white text-xs opacity-8 mb-0" style="font-size: 0.55rem !important;">Trefferquote</p>
-                                                            <h6 class="text-white text-sm mb-3">{{ agent.winrate|round(2) }}%</h6>
-                                                        </div>
-                                                        <div class="col-6 col-md-2">
-                                                            <p class="text-white text-xs opacity-8 mb-0" style="font-size: 0.55rem !important;">Profitfaktor</p>
-                                                            <h6 class="text-white text-sm mb-3">{{ agent.profitFactor|round(2) }}</h6>
-                                                        </div>
-                                                        <div class="col-6 col-md-2">
-                                                            <p class="text-white text-xs opacity-8 mb-0" style="font-size: 0.55rem !important;">Risikofaktor</p>
-                                                            <h6 class="text-white text-sm mb-3">{{ agent.riskFactor }}</h6>
-                                                        </div>
-                                                        <div class="col-6 col-md-2">
-                                                            <p class="text-white text-xs opacity-8 mb-0" style="font-size: 0.55rem !important;">Backtesting</p>
-                                                            <h6 class="text-white text-sm mb-3">{{ agent.backtesting|round(2) }} {{ agent.backtesting|round(2) < 2 ? 'Jahr' : 'Jahre' }}</h6>
-                                                        </div>
-                                                        <div class="col-6 col-md-2">
-                                                            <p class="text-white text-xs opacity-8 mb-0" style="font-size: 0.55rem !important;">max. Drawdown</p>
-                                                            <h6 class="text-white text-sm mb-3">{{ agent.maxDrawdown|round(2) }}%</h6>
-                                                        </div>
-                                                    </div>
-                                                    <div class="ms-auto d-flex align-items-start justify-content-start">
-                                                        <span class="btn btn-outline-white py-1 px-3 text-xs text-white mt-2 mx-0">{{ agent.strategy }}</span>
-                                                        <span class="btn btn-outline-white py-1 px-3 text-xs text-white mt-2 mx-2">{{ agent.risk }}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="colored-shadow" style="background-image: url(&quot;https://demos.creative-tim.com/test/material-dashboard-pro/assets/img/products/product-1-min.jpg&quot;);"></div>
-                                </div>
-                                <div class="card-body text-center">
-                                    <div class="d-flex mt-n6 mx-auto">
-                                        {% if user_accounts|length > 0 %}
-                                        <a class="btn btn-link text-primary ms-auto border-0" data-bs-toggle="modal" data-bs-target="#subscribeModal{{ account.id }}">
-                                            <i class="material-symbols-rounded text-lg" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Kopieren">cloud_sync</i>
-                                        </a>
-                                        <button class="btn btn-link text-primary me-auto border-0" data-bs-toggle="modal" data-bs-target="#subscribeModal{{ account.id }}">
-                                            <i class="material-symbols-rounded text-lg" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Ansehen">query_stats</i>
-                                        </button>
-                                        {% endif %}
-                                    </div>
-                                    <h5 class="font-weight-normal mt-3">
-                                        <a href="javascript:;">{{ agent ? agent.name : 'bald verfügbar' }}</a>
-                                    </h5>
-                                    {#<p class="mb-0">
-                                         {{ agent ? agent.description : '' }}
-                                    </p>#}
-                                </div>
-                                <hr class="dark horizontal my-0">
-                                <div class="card-footer d-flex">
-                                    {% set digitSum = account.login|split('')|map(n => n)|reduce((carry, n) => carry + n, 0) %}
-                                    {% if user_accounts|length > 0 %}
-                                    <p class="font-weight-normal my-auto"></p>
-                                    <i class="material-symbols-rounded position-relative ms-auto text-lg me-1 my-auto"></i>
-                                    <p class="text-sm my-auto">
-                                        {% if agent.linkAccount %}<a href="{{ path('app_agents_show', {'meta_id': agent.linkAccount}) }}" class="btn btn-outline-dark"><i class="material-symbols-rounded text-lg" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Ansehen">query_stats</i>Statistik ansehen</a>{% endif %}
-                                        <button type="submit" data-bs-toggle="modal" data-bs-target="#subscribeModal{{ account.id }}" id="toggleButton" class="btn {{ agent ? 'btn-dark' : 'disabled' }}"><i class="material-symbols-rounded opacity-9">cloud_sync</i> Abonnieren</button>
-                                    </p>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+	.agent-card-inner {
+		background: linear-gradient(160deg, #1a2332 0%, #0d1520 40%, #111b27 100%);
+		border-radius: 24px;
+		overflow: hidden;
+	}
 
-                    <div class="modal fade" id="subscribeModal{{ account.id }}" tabindex="-1" role="dialog" aria-labelledby="subscribeModal{{ account.id }}" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title font-weight-normal"><i class="material-symbols-rounded opacity-9">cloud_sync</i> {{ agent ? agent.name : 'Kein Agent gefunden' }} abonnieren</h5>
-                                    <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close">
-                                        <span aria-hidden="true">&times;</span>
-                                    </button>
-                                </div>
-                                <form action="{{ path('app_agents_update_subscriber') }}" method="post">
-                                    <div class="modal-body">
-                                        <div class="py-2">
-                                            <p>
-                                                <strong>Risikohinweis:</strong>  <br>
-                                                Die Nutzung dieser automatisierten Handelsplattform erfolgt auf eigenes Risiko. Aufgrund von Marktvolatilität, wirtschaftlichen sowie politischen Unwägbarkeiten kann es zu erheblichen Verlusten bis hin zum vollständigen Verlust des eingesetzten Kapitals kommen.
-                                                <br>
-                                                Mit der Teilnahme an der Automatisierung erkennen Sie diese Risiken ausdrücklich an und erklären sich mit deren Bedingungen einverstanden. Es besteht keine Gewinnzusage. Historische Performance stellt keinen verlässlichen Indikator für zukünftige Entwicklungen dar. Bitte handeln Sie stets mit der gebotenen Sorgfalt und Verantwortung.
-                                                <br>
-                                            </p>
-                                        </div>
-                                        <label for="subscriberId" class="ms-0">Dein Account</label>
-                                        <select class="form-control" id="subscriberId" name="subscriberId">
-                                            {% set activeAccounts = 0 %}
-                                            {% for user_account in user_accounts %}
-                                                {% if user_account.metaId|length > 1 %}
-                                                    {% set activeAccounts = 1 %}
-                                                {% endif %}
-                                                <option value="{{ user_account.metaId ? user_account.metaId : '' }}" {{ user_account.metaId ? '' : 'disabled' }} {{ user_account.type == 3 ? '' : 'disabled' }}>{{ user_account.name }} - {{ user_account.login }}  {{ user_account.metaId ? '' : ' - noch nicht synchronisiert' }}</option>
-                                            {% endfor %}
-                                        </select>
-                                        <input type="hidden" name="strategyId" value="{{ agent ? agent.metaId : '' }}">
-                                        <label for="multiplier" class="mt-3">Risiko Multiplier</label>
-                                        <select class="form-control" id="multiplier" name="multiplier">
-                                            <option value="1">1</option>
-                                            {#<option value="2">2</option>
-                                            <option value="3">3</option>
-                                            <option value="4">4</option>
-                                            <option value="5">5</option>#}
-                                        </select>
-                                    </div>
-                                    <div class="modal-footer">
-                                        <button type="button" class="btn bg-danger-soft" data-bs-dismiss="modal">Abbrechen</button>
-                                        {% if activeAccounts > 0 %}
-                                        <button type="submit" id="toggleButton" class="btn {{ agent ? 'btn-dark' : 'disabled' }}"><i class="material-symbols-rounded opacity-9">cloud_sync</i> Abonnieren</button>
-                                        {% else %}
-                                            <p>Du hast noch keinen aktiven Account. Das könnte daran liegen, dass dein hinterlegter Account noch nicht mit Metatrader synchronisiert wurde.</p>
-                                        {% endif %}
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-            {#    </div>
-            </div> --!>#}
-        </div>
-    </div>
+	/* Chart / Neural Network area */
+	.agent-chart-area {
+		position: relative;
+		padding: 1.5rem 1.5rem 0.5rem;
+	}
+	.agent-chart-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-start;
+		margin-bottom: 0.75rem;
+		position: relative;
+		z-index: 2;
+	}
+	.agent-apy {
+		display: flex;
+		flex-direction: column;
+	}
+	.agent-apy-label {
+		font-size: 0.7rem;
+		color: #64748b;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+	.agent-apy-val {
+		font-size: 1.4rem;
+		font-weight: 800;
+		background: linear-gradient(135deg, #4ade80, #22d3ee);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+	}
+	.agent-icon {
+		width: 44px;
+		height: 44px;
+		border-radius: 14px;
+		background: rgba(22, 163, 74, 0.12);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: #4ade80;
+		font-size: 1.3rem;
+	}
+	.agent-neural-wrap {
+		position: relative;
+		width: 100%;
+		height: 260px;
+		overflow: hidden;
+		border-radius: 16px;
+	}
+	.agent-neural-canvas {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+	}
 
-    <div class="container">
-        <div class="row">
-            <div class="col-md-12 text-start">
-                <h3 class="mt-4">Abonnierte Agents</h3>
-            </div>
-        </div>
-    </div>
+	/* Stats row */
+	.agent-stats {
+		display: grid;
+		grid-template-columns: repeat(6, 1fr);
+		gap: 4px;
+		padding: 1rem 1.5rem;
+		border-top: 1px solid rgba(255, 255, 255, 0.05);
+	}
+	@media(max-width: 640px) {
+		.agent-stats {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+	.agent-stat {
+		text-align: center;
+		padding: 8px 4px;
+		border-radius: 10px;
+		transition: background 0.2s;
+	}
+	.agent-stat:hover {
+		background: rgba(255, 255, 255, 0.04);
+	}
+	.agent-stat-label {
+		font-size: 0.58rem;
+		color: #64748b;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		margin-bottom: 4px;
+	}
+	.agent-stat-val {
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: #e2e8f0;
+	}
 
-    <div class="container p-0 card table-responsive">
-        <table class="table align-items-center mb-0">
-            <thead>
-            <tr>
-                <th>Typ</th>
-                <th>Account Name</th>
-                <th>Agent Name</th>
-                <th>Multiplier</th>
-                <th>Status</th>
-                <th>Aktion</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for connection in account_agent_connections %}
-                <tr>
-                    <td>
-                        {{ connection.account.type == 1 ? '<span class="badge badge-sm bg-gradient-success">Agent</span>' :
-                        (connection.account.type == 2 ? '<span class="badge badge-sm bg-gradient-primary">Leader</span>' :
-                        '<span class="badge badge-sm bg-gradient-info">Subscriber</span>')|raw }}
-                        {% if is_granted('ROLE_ADMIN') %}
-                            {% if account.host == 'metapi' %}
-                                <br><a href="https://app.metaapi.cloud/trade-copier/subscribers/{{ connection.account.metaId }}" target="_blank"><small>{{ connection.account.host }}</small></a>
-                            {% else %}
-                                <br><small>{{ connection.account.metaId }}</small>
-                            {% endif %}
-                        {% endif %}
-                    </td>
-                    <td>{{ connection.account.name }}<br><small class="text-uppercase">{{ connection.account.login }} - {{ connection.account.platform }}</small></td>
-                    <td>{{ connection.agent.name }}<br><small class="text-uppercase">{{ connection.name }}</small></td>
-                    <td>
-                        {{ connection.multiplier }}
-                        <button type="submit" data-bs-toggle="modal" data-bs-target="#multiplierModal{{ connection.account.id }}" id="toggleButton" class="btn p-0 mb-1 px-2"><i class="fa-classic fa-solid fa-pen"></i></button>
-                        <!-- Modal -->
-                        <div class="modal fade" id="multiplierModal{{ connection.account.id }}" tabindex="-1" role="dialog" aria-labelledby="multiplierModal{{ connection.account.id }}" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered" role="document">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title font-weight-normal"><i class="material-symbols-rounded opacity-9">cloud_sync</i>{{ connection.account.name }} - {{ connection.agent.name }}</h5>
-                                        <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close">
-                                            <span aria-hidden="true">&times;</span>
-                                        </button>
-                                    </div>
-                                    <form action="{{ path('app_agents_update_subscriber') }}" method="post">
-                                        <div class="modal-body">
-                                            <label for="subscriberId" class="ms-0">Account</label>
-                                            <select class="form-control" id="subscriberId" name="subscriberId">
-                                                <option value="{{ connection.account.metaId ? connection.account.metaId : '' }}" {{ connection.account.metaId ? '' : 'disabled' }} {{ connection.account.type == 3 ? '' : 'disabled' }}>{{ connection.account.name }} - {{ connection.account.login }}</option>
-                                            </select>
-                                            <input type="hidden" name="strategyId" value="{{ connection.agent ? connection.agent.metaId : '' }}">
-                                            <label for="multiplier" class="mt-3">Risiko Multiplier</label>
-                                            <select class="form-control" id="multiplier" name="multiplier">
-                                                <option value="1">1</option>
-{#                                                <option value="2">2</option>
-                                                <option value="3">3</option>
-                                                <option value="4">4</option>
-                                                <option value="5">5</option>#}
-                                            </select>
-                                        </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn bg-danger-soft" data-bs-dismiss="modal">Abbrechen</button>
-                                            <button type="submit" id="toggleButton" class="btn {{ connection.agent ? 'btn-dark' : 'disabled' }}"><i class="material-symbols-rounded opacity-9">cloud_sync</i> Speichern</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </td>
-                    <td>
-                        {{ connection.account.isActive ? '<span class="badge badge-sm bg-gradient-success">Abonniert</span>' :
-                        '<span class="badge badge-sm bg-gradient-secondary">Pausiert</span>'|raw }}
-                    </td>
-                    <td>
-                        <form action="{{ path('app_agents_remove_subscriber') }}" method="post">
-                            <input type="hidden" name="subscriberId" value="{{ connection.account.metaId }}">
-                            <input type="hidden" name="strategyId" value="{{ connection.agent.metaId }}">
-                            <button type="submit" id="toggleButton" class="btn btn-sm btn-outline-dark text-dark px-3 mb-0">Trennen</button>
-                        </form>
-                    </td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-    </div>
-{% endblock %}
+	/* Tags */
+	.agent-tags {
+		display: flex;
+		gap: 8px;
+		padding: 0 1.5rem 1rem;
+		flex-wrap: wrap;
+	}
+	.agent-tag {
+		font-size: 0.68rem;
+		font-weight: 600;
+		padding: 5px 12px;
+		border-radius: 8px;
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		color: #94a3b8;
+		background: rgba(255, 255, 255, 0.03);
+	}
+
+	/* Footer */
+	.agent-footer {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 1rem 1.5rem 1.25rem;
+		border-top: 1px solid rgba(255, 255, 255, 0.05);
+	}
+	.agent-name {
+		font-size: 1.05rem;
+		font-weight: 700;
+		color: #f1f5f9;
+	}
+	.agent-actions {
+		display: flex;
+		gap: 8px;
+	}
+	.agent-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 9px 18px;
+		border-radius: 12px;
+		font-size: 0.8rem;
+		font-weight: 700;
+		border: none;
+		cursor: pointer;
+		transition: all 0.3s;
+		text-decoration: none;
+	}
+	.agent-btn-stats {
+		background: rgba(255, 255, 255, 0.06);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		color: #cbd5e1;
+	}
+	.agent-btn-stats:hover {
+		background: rgba(255, 255, 255, 0.1);
+		color: #fff;
+		transform: translateY(-1px);
+	}
+	.agent-btn-subscribe {
+		background: linear-gradient(135deg, #16a34a, #0ea5e9);
+		color: #fff;
+		box-shadow: 0 4px 16px rgba(22, 163, 74, 0.3);
+	}
+	.agent-btn-subscribe:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 6px 24px rgba(22, 163, 74, 0.4);
+		color: #fff;
+	}
+
+	/* ── Subscribed Agents Table ── */
+	.sub-table-wrap {
+		background: var(--ag-glass);
+		backdrop-filter: blur(16px);
+		border: 1px solid rgba(255, 255, 255, 0.5);
+		border-radius: 20px;
+		overflow: hidden;
+		box-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
+	}
+	.sub-table {
+		width: 100%;
+		border-collapse: collapse;
+	}
+	.sub-table th {
+		background: rgba(0, 0, 0, 0.02);
+		padding: 1rem 1.25rem;
+		font-size: 0.72rem;
+		font-weight: 700;
+		color: var(--ag-dim);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		border-bottom: 1px solid var(--ag-border);
+		text-align: left;
+	}
+	.sub-table td {
+		padding: 1rem 1.25rem;
+		border-bottom: 1px solid var(--ag-border);
+		vertical-align: middle;
+		font-size: 0.88rem;
+		color: var(--ag-dark);
+	}
+	.sub-table tr:last-child td {
+		border-bottom: none;
+	}
+	.sub-table tr:hover {
+		background: rgba(22, 163, 74, 0.02);
+	}
+
+	.sub-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		padding: 4px 10px;
+		border-radius: 8px;
+		font-size: 0.68rem;
+		font-weight: 700;
+	}
+	.sub-badge-active {
+		background: rgba(22, 163, 74, 0.1);
+		color: var(--ag-green);
+	}
+	.sub-badge-paused {
+		background: rgba(100, 116, 139, 0.1);
+		color: var(--ag-dim);
+	}
+	.sub-badge-agent {
+		background: rgba(22, 163, 74, 0.1);
+		color: var(--ag-green);
+	}
+	.sub-badge-leader {
+		background: rgba(99, 102, 241, 0.1);
+		color: #6366f1;
+	}
+	.sub-badge-subscriber {
+		background: rgba(6, 182, 212, 0.1);
+		color: var(--ag-cyan);
+	}
+
+	.sub-btn {
+		padding: 6px 14px;
+		border-radius: 8px;
+		font-size: 0.75rem;
+		font-weight: 700;
+		border: 1px solid var(--ag-border);
+		background: transparent;
+		color: var(--ag-dim);
+		cursor: pointer;
+		transition: all 0.2s;
+		text-decoration: none;
+	}
+	.sub-btn:hover {
+		background: rgba(220, 38, 38, 0.06);
+		color: #dc2626;
+		border-color: rgba(220, 38, 38, 0.2);
+	}
+	.sub-btn-edit {
+		border: none;
+		background: none;
+		padding: 4px 8px;
+		color: var(--ag-dim);
+		cursor: pointer;
+	}
+	.sub-btn-edit:hover {
+		color: var(--ag-green);
+	}
+
+	/* ── Animations ── */
+	@keyframes fadeInUp {
+		from {
+			opacity: 0;
+			transform: translateY(20px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+	.animate-in {
+		animation: fadeInUp 0.6s ease forwards;
+	}
+	.animate-in-1 {
+		animation-delay: 0.1s;
+		opacity: 0;
+	}
+	.animate-in-2 {
+		animation-delay: 0.2s;
+		opacity: 0;
+	}
+	.animate-in-3 {
+		animation-delay: 0.3s;
+		opacity: 0;
+	}
+</style>
+
+{# ══════════════════════════════════════
+   LOADING OVERLAY — AI Neural Network
+   ══════════════════════════════════════ #}
+<div id="agentsLoadingOverlay">
+	<canvas id="agentsCanvas"></canvas>
+	<div class="ag-node-network">
+		<svg class="ag-beam-lines" viewbox="0 0 420 420">
+			<defs>
+				<linearGradient id="agBeamGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+					<stop offset="0%" stop-color="#16a34a" stop-opacity="0"/>
+					<stop offset="50%" stop-color="#16a34a" stop-opacity="1"/>
+					<stop offset="100%" stop-color="#06b6d4" stop-opacity="0"/>
+				</linearGradient>
+			</defs>
+			<line class="ag-beam-line" x1="210" y1="210" x2="210" y2="10"/>
+			<circle class="ag-beam-particle" r="4"><animateMotion dur="2s" repeatcount="indefinite" path="M210,210 L210,10"/></circle>
+			<line class="ag-beam-line" x1="210" y1="210" x2="210" y2="410"/>
+			<circle class="ag-beam-particle" r="4"><animateMotion dur="2.3s" repeatcount="indefinite" path="M210,210 L210,410"/></circle>
+			<line class="ag-beam-line" x1="210" y1="210" x2="10" y2="210"/>
+			<circle class="ag-beam-particle" r="4"><animateMotion dur="2.1s" repeatcount="indefinite" path="M210,210 L10,210"/></circle>
+			<line class="ag-beam-line" x1="210" y1="210" x2="410" y2="210"/>
+			<circle class="ag-beam-particle" r="4"><animateMotion dur="1.9s" repeatcount="indefinite" path="M210,210 L410,210"/></circle>
+			<line class="ag-beam-line" x1="210" y1="210" x2="60" y2="60"/>
+			<circle class="ag-beam-particle" r="3"><animateMotion dur="2.5s" repeatcount="indefinite" path="M210,210 L60,60"/></circle>
+			<line class="ag-beam-line" x1="210" y1="210" x2="360" y2="60"/>
+			<circle class="ag-beam-particle" r="3"><animateMotion dur="2.7s" repeatcount="indefinite" path="M210,210 L360,60"/></circle>
+			<line class="ag-beam-line" x1="10" y1="210" x2="210" y2="10" style="opacity:0.25"/>
+			<line class="ag-beam-line" x1="410" y1="210" x2="210" y2="10" style="opacity:0.25"/>
+			<line class="ag-beam-line" x1="60" y1="60" x2="360" y2="60" style="opacity:0.2"/>
+		</svg>
+		<div class="ag-node-center">
+			<i class="fas fa-brain"></i>
+		</div>
+		<div class="ag-orbit-node" style="color:#16a34a;">
+			<i class="fas fa-chart-line"></i>
+		</div>
+		<div class="ag-orbit-node" style="color:#0891b2;">
+			<i class="fas fa-robot"></i>
+		</div>
+		<div class="ag-orbit-node" style="color:#d97706;">
+			<i class="fas fa-bolt"></i>
+		</div>
+		<div class="ag-orbit-node" style="color:#7c3aed;">
+			<i class="fas fa-shield-alt"></i>
+		</div>
+		<div class="ag-orbit-node" style="color:#16a34a;">
+			<i class="fas fa-network-wired"></i>
+		</div>
+		<div class="ag-orbit-node" style="color:#0891b2;">
+			<i class="fas fa-sync-alt"></i>
+		</div>
+	</div>
+	<div class="ag-load-ui">
+		<div class="ag-load-title">Agents werden geladen</div>
+		<div class="ag-load-sub" id="agLoadSub">Neuronales Netzwerk initialisieren...</div>
+		<div class="ag-load-bar">
+			<div class="ag-load-fill" id="agLoadFill"></div>
+		</div>
+		<div class="ag-load-pct" id="agLoadPct">0%</div>
+	</div>
+</div>
+
+<div class="agents-wrap">
+	<div
+		class="agents-container">
+
+		{# ══════════════════════════════════════
+									   HERO SECTION
+									   ══════════════════════════════════════ #}
+		<div class="agents-hero animate-in">
+			<canvas class="agents-hero-canvas" id="heroParticleCanvas"></canvas>
+			<span class="agents-hero-badge">
+				<i class="fas fa-microchip"></i>
+				Next-Gen Trading</span>
+
+			<div class="agents-hero-grid">
+				<div>
+					<h1>Agents &mdash; Die n&auml;chste Generation des
+						<span>algorithmischen Tradings</span>
+					</h1>
+					<p class="agents-hero-desc">
+						Unsere Agents repr&auml;sentieren die Spitze des algorithmischen Tradings. Hochentwickelte Algorithmen analysieren die M&auml;rkte in Echtzeit, treffen pr&auml;zise Entscheidungen und platzieren automatisch Handelsauftr&auml;ge.
+					</p>
+				</div>
+				<div style="display:flex; align-items:center; justify-content:center;">
+					<div style="width:100%; max-width:280px; padding:2rem 1.5rem; background:rgba(255,255,255,0.6); backdrop-filter:blur(12px); border-radius:20px; border:1px solid rgba(0,0,0,0.06); text-align:center;">
+						<div style="width:56px;height:56px;margin:0 auto 1rem;border-radius:16px;background:rgba(22,163,74,0.1);display:flex;align-items:center;justify-content:center;">
+							<i class="fas fa-robot" style="font-size:1.4rem;color:#16a34a;"></i>
+						</div>
+						<div style="font-size:2rem;font-weight:800;color:#1a1a1a;">{{ accounts|length }}</div>
+						<div style="font-size:0.78rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em;">Aktive Agents</div>
+						<div style="margin-top:1rem;display:flex;justify-content:center;gap:0.5rem;">
+							<span style="font-size:0.68rem;padding:4px 10px;border-radius:8px;background:rgba(22,163,74,0.08);color:#16a34a;font-weight:600;">KI-gesteuert</span>
+							<span style="font-size:0.68rem;padding:4px 10px;border-radius:8px;background:rgba(6,182,212,0.08);color:#0891b2;font-weight:600;">24/7 aktiv</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="agents-hero-features">
+				<div class="agents-hero-feat">
+					<div class="agents-hero-feat-icon feat-green">
+						<i class="fas fa-bolt"></i>
+					</div>
+					<span>Echtzeit-Marktanalysen</span>
+				</div>
+				<div class="agents-hero-feat">
+					<div class="agents-hero-feat-icon feat-cyan">
+						<i class="fas fa-robot"></i>
+					</div>
+					<span>Automatisierte Ausf&uuml;hrung</span>
+				</div>
+				<div class="agents-hero-feat">
+					<div class="agents-hero-feat-icon feat-purple">
+						<i class="fas fa-shield-alt"></i>
+					</div>
+					<span>Integriertes Risikomanagement</span>
+				</div>
+				<div class="agents-hero-feat">
+					<div class="agents-hero-feat-icon feat-amber">
+						<i class="fas fa-chart-line"></i>
+					</div>
+					<span>Evidenzbasierte Strategien</span>
+				</div>
+			</div>
+
+			<div id="heroExpandContent" class="hero-expand-content">
+				<div style="padding-top: 1.5rem;">
+					<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+						<div>
+							<h4 style="color: #1a1a1a; font-weight: 700; font-size: 1rem; margin-bottom: 0.75rem;">Was macht unsere Agents einzigartig?</h4>
+							<ul style="padding-left: 1.2rem; color: #6b7280; font-size: 0.85rem; line-height: 1.8;">
+								<li>KI-gesteuerte Analysen mit historischen &amp; Echtzeit-Daten</li>
+								<li>Nahtlose MetaTrader-Anbindung ohne Verz&ouml;gerung</li>
+								<li>Von Scalping bis langfristigem Portfolio-Management</li>
+								<li>Intelligente Risiko-Kontrollmechanismen</li>
+							</ul>
+						</div>
+						<div>
+							<h4 style="color: #1a1a1a; font-weight: 700; font-size: 1rem; margin-bottom: 0.75rem;">Vorteile der Nutzung</h4>
+							<ul style="padding-left: 1.2rem; color: #6b7280; font-size: 0.85rem; line-height: 1.8;">
+								<li>
+									<strong style="color:#374151;">Effizienz:</strong>
+									Kein manueller Eingriff n&ouml;tig</li>
+								<li>
+									<strong style="color:#374151;">Schnelligkeit:</strong>
+									KI-gest&uuml;tzte Reaktionen</li>
+								<li>
+									<strong style="color:#374151;">Transparenz:</strong>
+									Alle Entscheidungen dokumentiert</li>
+								<li>
+									<strong style="color:#374151;">Skalierbarkeit:</strong>
+									Flexibel f&uuml;r jede Kontogr&ouml;&szlig;e</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<button class="hero-toggle" id="heroToggleBtn">
+				<i class="fas fa-chevron-down" id="heroToggleIcon" style="font-size:0.65rem; transition: transform 0.3s;"></i>
+				<span id="heroToggleText">Mehr erfahren</span>
+			</button>
+		</div>
+
+		{# ══════════════════════════════════════
+											   AVAILABLE AGENTS
+											   ══════════════════════════════════════ #}
+		<div class="section-header animate-in animate-in-1">
+			<h2>Verf&uuml;gbare Agents</h2>
+			<span class="section-count">{{ accounts|length }}
+				Agents</span>
+		</div>
+
+		<div class="agents-grid">
+			{% for account in accounts %}
+				{% set agent = agents|filter(a => a.fromAccountId == account.id)|first %}
+				<div class="agent-card animate-in animate-in-2">
+					<div class="agent-card-inner">
+						<div class="agent-chart-area">
+							<div class="agent-chart-header">
+								<div class="agent-apy">
+									<span class="agent-apy-label">Rendite</span>
+									<span class="agent-apy-val">~
+										{{ agent.apy|round(2) }}% / Jahr</span>
+								</div>
+								<div class="agent-icon">
+									<i class="material-symbols-rounded">network_intel_node</i>
+								</div>
+							</div>
+							<div class="agent-neural-wrap">
+								<canvas class="agent-neural-canvas" data-agent-id="{{ account.id }}"></canvas>
+							</div>
+						</div>
+
+						<div class="agent-stats">
+							<div class="agent-stat">
+								<div class="agent-stat-label">Monat</div>
+								<div class="agent-stat-val">~{{ (agent.apy/12)|round(2) }}%</div>
+							</div>
+							<div class="agent-stat">
+								<div class="agent-stat-label">Trefferquote</div>
+								<div class="agent-stat-val">{{ agent.winrate|round(2) }}%</div>
+							</div>
+							<div class="agent-stat">
+								<div class="agent-stat-label">Profitfaktor</div>
+								<div class="agent-stat-val">{{ agent.profitFactor|round(2) }}</div>
+							</div>
+							<div class="agent-stat">
+								<div class="agent-stat-label">Risiko</div>
+								<div class="agent-stat-val">{{ agent.riskFactor }}</div>
+							</div>
+							<div class="agent-stat">
+								<div class="agent-stat-label">Backtesting</div>
+								<div class="agent-stat-val">{{ agent.backtesting|round(2) }}
+									{{ agent.backtesting|round(2) < 2 ? 'J' : 'J' }}</div>
+							</div>
+							<div class="agent-stat">
+								<div class="agent-stat-label">Max DD</div>
+								<div class="agent-stat-val" style="color:#f87171;">{{ agent.maxDrawdown|round(2) }}%</div>
+							</div>
+						</div>
+
+						<div class="agent-tags">
+							<span class="agent-tag">{{ agent.strategy }}</span>
+							<span class="agent-tag">{{ agent.risk }}</span>
+						</div>
+
+						<div class="agent-footer">
+							<span class="agent-name">{{ agent ? agent.name : 'bald verf&uuml;gbar' }}</span>
+							<div class="agent-actions">
+								{% if agent.linkAccount %}
+									<a href="{{ path('app_agents_show', {'meta_id': agent.linkAccount}) }}" class="agent-btn agent-btn-stats">
+										<i class="fas fa-chart-bar" style="font-size:0.75rem;"></i>
+										Statistik
+									</a>
+								{% endif %}
+								{% if user_accounts|length > 0 %}
+									<button class="agent-btn agent-btn-subscribe" data-bs-toggle="modal" data-bs-target="#subscribeModal{{ account.id }}">
+										<i class="fas fa-plug" style="font-size:0.75rem;"></i>
+										Abonnieren
+									</button>
+								{% endif %}
+							</div>
+						</div>
+					</div>
+				</div>
+
+				{# Subscribe Modal (preserved) #}
+				<div class="modal fade" id="subscribeModal{{ account.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+					<div class="modal-dialog modal-dialog-centered" role="document">
+						<div class="modal-content" style="border-radius: 20px; border: none;">
+							<div class="modal-header border-0 pb-0">
+								<h5 class="fw-bold">
+									<i class="fas fa-plug me-2"></i>
+									{{ agent ? agent.name : 'Kein Agent gefunden' }}
+									abonnieren</h5>
+								<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+							</div>
+							<form action="{{ path('app_agents_update_subscriber') }}" method="post">
+								<div class="modal-body">
+									<div class="py-2">
+										<p style="font-size: 0.82rem; color: #64748b; line-height: 1.6;">
+											<strong style="color:#0f172a;">Risikohinweis:</strong><br>
+											Die Nutzung erfolgt auf eigenes Risiko. Es kann zu erheblichen Verlusten bis hin zum Totalverlust kommen. Historische Performance ist kein Indikator f&uuml;r zuk&uuml;nftige Entwicklungen.
+										</p>
+									</div>
+									<label for="subscriberId" class="form-label fw-bold" style="font-size:0.82rem;">Dein Account</label>
+									<select class="form-control rounded-pill" id="subscriberId" name="subscriberId">
+										{% set activeAccounts = 0 %}
+										{% for user_account in user_accounts %}
+											{% if user_account.metaId|length > 1 %}
+												{% set activeAccounts = 1 %}
+											{% endif %}
+											<option value="{{ user_account.metaId ? user_account.metaId : '' }}" {{ user_account.metaId ? '' : 'disabled' }} {{ user_account.type == 3 ? '' : 'disabled' }}>{{ user_account.name }}
+												-
+												{{ user_account.login }}
+												{{ user_account.metaId ? '' : ' - noch nicht synchronisiert' }}</option>
+										{% endfor %}
+									</select>
+									<input type="hidden" name="strategyId" value="{{ agent ? agent.metaId : '' }}">
+									<label for="multiplier" class="form-label fw-bold mt-3" style="font-size:0.82rem;">Risiko Multiplier</label>
+									<select class="form-control rounded-pill" id="multiplier" name="multiplier">
+										<option value="1">1</option>
+									</select>
+								</div>
+								<div class="modal-footer border-0 pt-0">
+									<button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Abbrechen</button>
+									{% if activeAccounts > 0 %}
+										<button type="submit" class="btn btn-dark rounded-pill fw-bold">
+											<i class="fas fa-plug me-1"></i>
+											Abonnieren</button>
+									{% else %}
+										<p style="font-size:0.82rem; color:#64748b;">Du hast noch keinen aktiven Account.</p>
+									{% endif %}
+								</div>
+							</form>
+						</div>
+					</div>
+				</div>
+			{% endfor %}
+		</div>
+
+		{# ══════════════════════════════════════
+											   SUBSCRIBED AGENTS TABLE
+											   ══════════════════════════════════════ #}
+		<div class="section-header animate-in animate-in-3">
+			<h2>Abonnierte Agents</h2>
+			<span class="section-count">{{ account_agent_connections|length }}</span>
+		</div>
+
+		<div class="sub-table-wrap animate-in animate-in-3">
+			<table class="sub-table">
+				<thead>
+					<tr>
+						<th>Typ</th>
+						<th>Account</th>
+						<th>Agent</th>
+						<th>Multiplier</th>
+						<th>Status</th>
+						<th>Aktion</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for connection in account_agent_connections %}
+						<tr>
+							<td>
+								{% if connection.account.type == 1 %}
+									<span class="sub-badge sub-badge-agent">
+										<i class="fas fa-robot" style="font-size:0.55rem;"></i>
+										Agent</span>
+								{% elseif connection.account.type == 2 %}
+									<span class="sub-badge sub-badge-leader">
+										<i class="fas fa-crown" style="font-size:0.55rem;"></i>
+										Leader</span>
+								{% else %}
+									<span class="sub-badge sub-badge-subscriber">
+										<i class="fas fa-plug" style="font-size:0.55rem;"></i>
+										Subscriber</span>
+								{% endif %}
+								{% if is_granted('ROLE_ADMIN') %}
+									{% if account.host == 'metapi' %}
+										<br><a href="https://app.metaapi.cloud/trade-copier/subscribers/{{ connection.account.metaId }}" target="_blank" style="font-size:0.65rem; color: var(--ag-dim);">{{ connection.account.host }}</a>
+									{% else %}
+										<br><span style="font-size:0.65rem; color: var(--ag-dim);">{{ connection.account.metaId }}</span>
+									{% endif %}
+								{% endif %}
+							</td>
+							<td>
+								<strong>{{ connection.account.name }}</strong><br>
+								<span style="font-size:0.72rem; color:var(--ag-dim); text-transform:uppercase;">{{ connection.account.login }}
+									&bull;
+									{{ connection.account.platform }}</span>
+							</td>
+							<td>
+								<strong>{{ connection.agent.name }}</strong><br>
+								<span style="font-size:0.72rem; color:var(--ag-dim);">{{ connection.name }}</span>
+							</td>
+							<td>
+								{{ connection.multiplier }}
+								<button type="button" class="sub-btn-edit" data-bs-toggle="modal" data-bs-target="#multiplierModal{{ connection.account.id }}">
+									<i class="fas fa-pen" style="font-size:0.7rem;"></i>
+								</button>
+
+								<div class="modal fade" id="multiplierModal{{ connection.account.id }}" tabindex="-1" role="dialog" aria-hidden="true">
+									<div class="modal-dialog modal-dialog-centered" role="document">
+										<div class="modal-content" style="border-radius: 20px; border: none;">
+											<div class="modal-header border-0 pb-0">
+												<h5 class="fw-bold">
+													<i class="fas fa-sliders-h me-2"></i>
+													{{ connection.account.name }}
+													-
+													{{ connection.agent.name }}</h5>
+												<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+											</div>
+											<form action="{{ path('app_agents_update_subscriber') }}" method="post">
+												<div class="modal-body">
+													<label for="subscriberId" class="form-label fw-bold" style="font-size:0.82rem;">Account</label>
+													<select class="form-control rounded-pill" id="subscriberId" name="subscriberId">
+														<option value="{{ connection.account.metaId ? connection.account.metaId : '' }}" {{ connection.account.metaId ? '' : 'disabled' }} {{ connection.account.type == 3 ? '' : 'disabled' }}>{{ connection.account.name }}
+															-
+															{{ connection.account.login }}</option>
+													</select>
+													<input type="hidden" name="strategyId" value="{{ connection.agent ? connection.agent.metaId : '' }}">
+													<label for="multiplier" class="form-label fw-bold mt-3" style="font-size:0.82rem;">Risiko Multiplier</label>
+													<select class="form-control rounded-pill" id="multiplier" name="multiplier">
+														<option value="1">1</option>
+													</select>
+												</div>
+												<div class="modal-footer border-0 pt-0">
+													<button type="button" class="btn btn-light rounded-pill" data-bs-dismiss="modal">Abbrechen</button>
+													<button type="submit" class="btn btn-dark rounded-pill fw-bold">
+														<i class="fas fa-save me-1"></i>
+														Speichern</button>
+												</div>
+											</form>
+										</div>
+									</div>
+								</div>
+							</td>
+							<td>
+								{% if connection.account.isActive %}
+									<span class="sub-badge sub-badge-active">
+										<span style="width:6px;height:6px;background:#16a34a;border-radius:50%;display:inline-block;box-shadow:0 0 6px rgba(22,163,74,0.5);"></span>
+										Abonniert</span>
+								{% else %}
+									<span class="sub-badge sub-badge-paused">
+										<span style="width:6px;height:6px;background:#94a3b8;border-radius:50%;display:inline-block;"></span>
+										Pausiert</span>
+								{% endif %}
+							</td>
+							<td>
+								<form action="{{ path('app_agents_remove_subscriber') }}" method="post" style="display:inline;">
+									<input type="hidden" name="subscriberId" value="{{ connection.account.metaId }}">
+									<input type="hidden" name="strategyId" value="{{ connection.agent.metaId }}">
+									<button type="submit" class="sub-btn">Trennen</button>
+								</form>
+							</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+
+	</div>
+</div>
+
+<script>
+	// ═══════════════════════════════════════════════════════
+// LOADING OVERLAY — 1200 Particle Canvas
+// ═══════════════════════════════════════════════════════
+(function () {
+const canvas = document.getElementById('agentsCanvas');
+const ctx = canvas.getContext('2d');
+let W,
+H,
+particles = [],
+gridLines = [],
+animId;
+const PC = 1200,
+GC = 20;
+
+function resize() {
+W = canvas.width = window.innerWidth;
+H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+for (let i = 0; i < PC; i++) {
+const s = Math.random() * 3.5 + 0.5,
+sp = Math.random() * 0.8 + 0.1,
+a = Math.random() * Math.PI * 2;
+particles.push({
+x: Math.random() * W,
+y: Math.random() * H,
+size: s,
+baseSize: s,
+vx: Math.cos(a) * sp,
+vy: Math.sin(a) * sp,
+opacity: Math.random() * 0.6 + 0.1,
+pulse: Math.random() * Math.PI * 2,
+pulseSpeed: Math.random() * 0.03 + 0.01,
+hue: Math.random() > 0.6 ? 160 : 142
+});
+}
+for (let i = 0; i < GC; i++) 
+gridLines.push({
+isH: i < GC / 2,
+pos: Math.random() * (i < GC / 2 ? H : W),
+opacity: Math.random() * 0.04 + 0.01
+});
+
+
+function drawLoading() {
+ctx.clearRect(0, 0, W, H);
+ctx.lineWidth = 0.5;
+gridLines.forEach(g => {
+ctx.strokeStyle = `rgba(22,163,74,${
+g.opacity
+})`;
+ctx.beginPath();
+if (g.isH) {
+ctx.moveTo(0, g.pos);
+ctx.lineTo(W, g.pos);
+} else {
+ctx.moveTo(g.pos, 0);
+ctx.lineTo(g.pos, H);
+} ctx.stroke();
+});
+const cx = W / 2,
+cy = H / 2 - H * 0.05;
+particles.forEach(p => {
+p.pulse += p.pulseSpeed;
+p.size = p.baseSize + Math.sin(p.pulse) * 0.8;
+p.x += p.vx;
+p.y += p.vy;
+const dx = cx - p.x,
+dy = cy - p.y,
+dist = Math.sqrt(dx * dx + dy * dy);
+if (dist > 50) {
+p.vx += dx / dist * 0.003;
+p.vy += dy / dist * 0.003;
+}
+const spd = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
+if (spd > 1.5) {
+p.vx *= 0.98;
+p.vy *= 0.98;
+}
+if (p.x<-10)p.x=W+10;if(p.x>W + 10) 
+p.x = -10;
+
+if (p.y<-10)p.y=H+10;if(p.y>H + 10) 
+p.y = -10;
+
+const alpha = p.opacity * (1 - Math.min(dist / (Math.max(W, H) * 0.5), 1) * 0.5);
+ctx.beginPath();
+ctx.arc(p.x, p.y, Math.max(p.size, 0.3), 0, Math.PI * 2);
+ctx.fillStyle = `hsla(${
+p.hue
+},80%,50%,${alpha})`;
+ctx.fill();
+if (p.baseSize > 2.5) {
+ctx.beginPath();
+ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
+ctx.fillStyle = `hsla(${
+p.hue
+},80%,50%,${
+alpha * 0.15
+})`;
+ctx.fill();
+}
+});
+for (let i = 0; i < particles.length; i++) {
+const a = particles[i];
+const ad = Math.sqrt((a.x - cx) ** 2 + (a.y - cy) ** 2);
+if (ad > 250) 
+continue;
+
+for (let j = i + 1; j < particles.length; j++) {
+const b = particles[j];
+const d = Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+if (d < 60) {
+ctx.strokeStyle = `rgba(22,163,74,${
+0.15 * (1 - d / 60)
+})`;
+ctx.lineWidth = 0.5;
+ctx.beginPath();
+ctx.moveTo(a.x, a.y);
+ctx.lineTo(b.x, b.y);
+ctx.stroke();
+}
+}
+}
+animId = requestAnimationFrame(drawLoading);
+}
+drawLoading();
+
+const fill = document.getElementById('agLoadFill'),
+pct = document.getElementById('agLoadPct'),
+sub = document.getElementById('agLoadSub');
+const steps = [
+{
+p: 15,
+t: 'Marktdaten synchronisieren...'
+},
+{
+p: 35,
+t: 'Agenten-Netzwerk verbinden...'
+},
+{
+p: 55,
+t: 'Neuronale Pfade kalibrieren...'
+},
+{
+p: 75,
+t: 'Handelsstrategien laden...'
+}, {
+p: 90,
+t: 'Risikoprofile analysieren...'
+}, {
+p: 100,
+t: 'Bereit!'
+}
+];
+let si = 0;
+function nextStep() {
+if (si >= steps.length) {
+setTimeout(() => {
+const o = document.getElementById('agentsLoadingOverlay');
+o.classList.add('fade-out');
+setTimeout(() => {
+o.style.display = 'none';
+cancelAnimationFrame(animId);
+}, 800);
+}, 400);
+return;
+}
+const s = steps[si];
+fill.style.width = s.p + '%';
+pct.textContent = s.p + '%';
+sub.textContent = s.t;
+si++;
+setTimeout(nextStep, 500 + Math.random() * 400);
+}
+setTimeout(nextStep, 600);
+})();
+
+// ═══════════════════════════════════════════════════════
+// HERO — Canvas Particle Background
+// ═══════════════════════════════════════════════════════
+(function () {
+const canvas = document.getElementById('heroParticleCanvas');
+if (! canvas) 
+return;
+
+const ctx = canvas.getContext('2d'),
+hero = canvas.parentElement;
+let W,
+H,
+particles = [];
+
+function resize() {
+const r = hero.getBoundingClientRect();
+W = canvas.width = r.width;
+H = canvas.height = r.height;
+}
+resize();
+window.addEventListener('resize', resize);
+
+for (let i = 0; i < 200; i++) 
+particles.push({
+x: Math.random() * (W || 800),
+y: Math.random() * (H || 400),
+size: Math.random() * 2.5 + 0.5,
+vx: (Math.random() - 0.5) * 0.4,
+vy: (Math.random() - 0.5) * 0.3,
+opacity: Math.random() * 0.25 + 0.05,
+hue: Math.random() > 0.5 ? 142 : 160
+});
+
+
+function draw() {
+ctx.clearRect(0, 0, W, H);
+particles.forEach(p => {
+p.x += p.vx;
+p.y += p.vy;
+if (p.x < 0) 
+p.x = W;
+
+if (p.x > W) 
+p.x = 0;
+
+if (p.y < 0) 
+p.y = H;
+
+if (p.y > H) 
+p.y = 0;
+
+ctx.beginPath();
+ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+ctx.fillStyle = `hsla(${
+p.hue
+},60%,35%,${
+p.opacity
+})`;
+ctx.fill();
+});
+for (let i = 0; i < particles.length; i++) 
+for (let j = i + 1; j < particles.length; j++) {
+const dx = particles[i].x - particles[j].x,
+dy = particles[i].y - particles[j].y,
+d = Math.sqrt(dx * dx + dy * dy);
+if (d < 80) {
+ctx.strokeStyle = `rgba(22,163,74,${
+0.08 * (1 - d / 80)
+})`;
+ctx.lineWidth = 0.5;
+ctx.beginPath();
+ctx.moveTo(particles[i].x, particles[i].y);
+ctx.lineTo(particles[j].x, particles[j].y);
+ctx.stroke();
+}
+}
+
+requestAnimationFrame(draw);
+}
+draw();
+})();
+
+// ═══════════════════════════════════════════════════════
+// AGENT CARD — AI Neural Network Canvas
+// ═══════════════════════════════════════════════════════
+(function () {
+document.querySelectorAll('.agent-neural-canvas').forEach(function (canvas) {
+const ctx = canvas.getContext('2d');
+const wrap = canvas.parentElement;
+let W,
+H;
+const nodes = [];
+const NODE_COUNT = 28;
+const particles = [];
+const PARTICLE_COUNT = 80;
+let time = 0;
+
+function resize() {
+const r = wrap.getBoundingClientRect();
+W = canvas.width = r.width;
+H = canvas.height = r.height;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// Create neural network nodes in layers
+function initNodes() {
+nodes.length = 0;
+const layers = [
+4,
+6,
+8,
+6,
+4
+]; // 5-layer neural net
+const totalLayers = layers.length;
+for (let l = 0; l < totalLayers; l++) {
+const count = layers[l];
+const lx = (W * 0.1) + (l / (totalLayers - 1)) * (W * 0.8);
+for (let n = 0; n < count; n++) {
+const ny = (H * 0.1) + ((n + 0.5) / count) * (H * 0.8);
+nodes.push({
+x: lx,
+y: ny,
+layer: l,
+baseRadius: 5 + Math.random() * 3,
+pulse: Math.random() * Math.PI * 2,
+pulseSpeed: 0.02 + Math.random() * 0.02,
+hue: l <= 1 ? 142 : (l <= 3 ? 160 : 190), // green → teal → blue
+active: false,
+activeTimer: 0
+});
+}
+}
+}
+initNodes();
+
+// Create traveling particles along connections
+function spawnParticle() {
+if (particles.length >= PARTICLE_COUNT) 
+return;
+
+// Pick a random node, send particle to a node in the next layer
+const srcLayer = Math.floor(Math.random() * 4);
+const srcNodes = nodes.filter(n => n.layer === srcLayer);
+const dstNodes = nodes.filter(n => n.layer === srcLayer + 1);
+if (! srcNodes.length || ! dstNodes.length) 
+return;
+
+const src = srcNodes[Math.floor(Math.random() * srcNodes.length)];
+const dst = dstNodes[Math.floor(Math.random() * dstNodes.length)];
+particles.push({
+x: src.x,
+y: src.y,
+tx: dst.x,
+ty: dst.y,
+progress: 0,
+speed: 0.002 + Math.random() * 0.004,
+hue: src.hue,
+size: 2 + Math.random() * 2
+});
+src.active = true;
+src.activeTimer = 30;
+}
+
+function draw() {
+ctx.clearRect(0, 0, W, H);
+time++;
+
+// Spawn particles
+if (Math.random() < 0.3) 
+spawnParticle();
+
+
+// Draw connections (all layers to next layer)
+for (let l = 0; l < 4; l++) {
+const srcN = nodes.filter(n => n.layer === l);
+const dstN = nodes.filter(n => n.layer === l + 1);
+srcN.forEach(s => {
+dstN.forEach(d => {
+const dist = Math.sqrt((s.x - d.x) ** 2 + (s.y - d.y) ** 2);
+const alpha = s.active ? 0.2 : 0.06;
+ctx.strokeStyle = `rgba(74,222,128,${alpha})`;
+ctx.lineWidth = s.active ? 1 : 0.5;
+ctx.beginPath();
+ctx.moveTo(s.x, s.y);
+ctx.lineTo(d.x, d.y);
+ctx.stroke();
+});
+});
+}
+
+// Draw traveling particles
+for (let i = particles.length - 1; i >= 0; i--) {
+const p = particles[i];
+p.progress += p.speed;
+if (p.progress >= 1) { // Activate destination node
+const dst = nodes.find(n => Math.abs(n.x - p.tx) < 1 && Math.abs(n.y - p.ty) < 1);
+if (dst) {
+dst.active = true;
+dst.activeTimer = 30;
+}
+particles.splice(i, 1);
+continue;
+}
+p.x = p.x + (p.tx - p.x) * p.speed * 1.5;
+p.y = p.y + (p.ty - p.y) * p.speed * 1.5;
+
+// Glow trail
+const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 4);
+gradient.addColorStop(0, `hsla(${
+p.hue
+}, 90%, 65%, 0.8)`);
+gradient.addColorStop(1, `hsla(${
+p.hue
+}, 90%, 65%, 0)`);
+ctx.beginPath();
+ctx.arc(p.x, p.y, p.size * 4, 0, Math.PI * 2);
+ctx.fillStyle = gradient;
+ctx.fill();
+
+// Core
+ctx.beginPath();
+ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+ctx.fillStyle = `hsla(${
+p.hue
+}, 90%, 70%, 0.9)`;
+ctx.fill();
+}
+
+// Draw nodes
+nodes.forEach(n => {
+n.pulse += n.pulseSpeed;
+if (n.activeTimer > 0) 
+n.activeTimer --;
+
+if (n.activeTimer <= 0) 
+n.active = false;
+
+
+const r = n.baseRadius + Math.sin(n.pulse) * 1.5;
+const glow = n.active ? 0.6 : 0.2;
+
+// Outer glow
+const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, r * 3);
+grad.addColorStop(0, `hsla(${
+n.hue
+}, 80%, 60%, ${glow})`);
+grad.addColorStop(1, `hsla(${
+n.hue
+}, 80%, 60%, 0)`);
+ctx.beginPath();
+ctx.arc(n.x, n.y, r * 3, 0, Math.PI * 2);
+ctx.fillStyle = grad;
+ctx.fill();
+
+// Node body
+ctx.beginPath();
+ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+ctx.fillStyle = n.active ? `hsla(${
+n.hue
+}, 90%, 65%, 0.95)` : `hsla(${
+n.hue
+}, 70%, 55%, 0.7)`;
+ctx.fill();
+
+// White center dot
+ctx.beginPath();
+ctx.arc(n.x, n.y, r * 0.35, 0, Math.PI * 2);
+ctx.fillStyle = `rgba(255,255,255,${
+n.active ? 0.9 : 0.4
+})`;
+ctx.fill();
+});
+
+// "Data flow" wave effect
+const waveX = (time * 2) % (W + 200) - 100;
+const waveGrad = ctx.createLinearGradient(waveX - 60, 0, waveX + 60, 0);
+waveGrad.addColorStop(0, 'rgba(74,222,128,0)');
+waveGrad.addColorStop(0.5, 'rgba(74,222,128,0.04)');
+waveGrad.addColorStop(1, 'rgba(74,222,128,0)');
+ctx.fillStyle = waveGrad;
+ctx.fillRect(waveX - 60, 0, 120, H);
+
+requestAnimationFrame(draw);
+}
+draw();
+});
+})();
+
+// ═══════════════════════════════════════════════════════
+// HERO Toggle
+// ═══════════════════════════════════════════════════════
+document.getElementById('heroToggleBtn').addEventListener('click', function () {
+const content = document.getElementById('heroExpandContent');
+const icon = document.getElementById('heroToggleIcon');
+const text = document.getElementById('heroToggleText');
+if (content.classList.contains('expanded')) {
+content.classList.remove('expanded');
+icon.style.transform = 'rotate(0deg)';
+text.textContent = 'Mehr erfahren';
+} else {
+content.classList.add('expanded');
+icon.style.transform = 'rotate(180deg)';
+text.textContent = 'Weniger anzeigen';
+}
+});
+</script>{% endblock %}

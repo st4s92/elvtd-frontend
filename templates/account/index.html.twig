@@ -1,585 +1,1334 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Portfolio{% endblock %}
+{% block title %}Portfolio
+{% endblock %}
 
 {% block body %}
-	<div class="wrapper">
-		<div class="container py-2">
-			{% if accounts|length > 0 %}
-				<div class="container py-2">
-					{% if admin_view != true %}
-						<h3>Dein Portfolio</h3>
-					{% else %}
-						<h3>Statistik</h3>
-					{% endif %}
-				</div>
+<style>
+/* ── Modern Design System ── */:root
+{
+	--g: #16a34a;
+	--gd: rgba(22, 163, 74, 0.1);
+	--r: #dc2626;
+	--rd: rgba(220, 38, 38, 0.08);
+	--bg-root: #f8fafc;
+	--bg-card: #ffffff;
+	--border: rgba(0, 0, 0, 0.06);
+	--txt-main: #0f172a;
+	--txt-dim: #64748b;
+	--accent: #16a34a;
+}
 
-				{% set totalEquity = 0 %}
-				{% set totalBalance = 0 %}
-				{% set totalProfit = 0 %}
-				{% set totalDeposits = 0 %}
-				{% set totalWithdrawals = 0 %}
+body {
+	background-color: var(--bg-root);
+	color: var(--txt-main);
+}
 
-				{% for account in accounts %}
-					{% set totalEquity = totalEquity + account.equity %}
-					{% set totalBalance = totalBalance + account.balance %}
-					{% set totalProfit = totalProfit + account.profit %}
-					{% set totalDeposits = totalDeposits + account.deposits %}
-					{% set totalWithdrawals = totalWithdrawals + account.withdrawals %}
-				{% endfor %}
+.pf-wrap {
+	padding: 2rem 0 4rem;
+}
+.container-custom {
+	max-width: 1280px;
+	margin: 0 auto;
+	padding: 0 1.5rem;
+}
 
-				<script>
-					document.addEventListener('DOMContentLoaded', function() {
-						// Daten für das Chart sammeln
-						const labels = [];
-						const data = [];
+.pf-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 2rem;
+}
+.pf-title {
+	font-size: 1.75rem;
+	font-weight: 800;
+	letter-spacing: -0.03em;
+	margin: 0;
+}
+.pf-subtitle {
+	font-size: 0.875rem;
+	color: var(--txt-dim);
+	margin-top: 0.25rem;
+}
 
-						{% for account in accounts %}
-						labels.push("{{ account.name }}");
-						data.push({{ account.balance }});
-						{% endfor %}
+.stats-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 1.25rem;
+	margin-bottom: 2.5rem;
+}
+.stat-card {
+	background: var(--bg-card);
+	padding: 1.5rem;
+	border-radius: 16px;
+	border: 1px solid var(--border);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+	transition: transform 0.2s, box-shadow 0.2s;
+}
+.stat-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+.stat-label {
+	font-size: 0.75rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	color: var(--txt-dim);
+	letter-spacing: 0.05em;
+	display: block;
+	margin-bottom: 0.75rem;
+}
+.stat-val {
+	font-size: 1.5rem;
+	font-weight: 800;
+	display: block;
+}
+.stat-delta {
+	font-size: 0.8rem;
+	font-weight: 700;
+	margin-top: 0.5rem;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+.delta-up {
+	color: var(--g);
+}
+.delta-down {
+	color: var(--r);
+}
 
-						// Chart.js erstellen
-						const ctx = document.getElementById('depositsPieChart').getContext('2d');
-						new Chart(ctx, {
-							type: 'doughnut',
-							data: {
-								labels: labels,
-								datasets: [{
-									label: 'Deposits by Account',
-									data: data,
-									backgroundColor: [
-										'#d2e8c8', '#e5fadc', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'
-									],
-									hoverOffset: 4,
-									pointRadius: 2,
-								}]
-							},
-							options: {
-								responsive: true,
-								plugins: {
-									legend: {
-										position: 'bottom'
-									},
-									tooltip: {
-										callbacks: {
-											label: function(tooltipItem) {
-												return `${tooltipItem.label}: ${tooltipItem.raw.toFixed(2)} €`;
-											}
-										}
-									}
-								}
-							}
-						});
-					});
-				</script>
+.chart-container {
+	background: var(--bg-card);
+	border: 1px solid var(--border);
+	border-radius: 20px;
+	padding: 1.5rem;
+	margin-bottom: 2.5rem;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+.chart-title {
+	font-size: 1rem;
+	font-weight: 700;
+	margin-bottom: 1.5rem;
+	color: var(--txt-main);
+}
 
-				<div class="container mb-4 mx-0 p-0">
-					<div class="row">
-						{% if admin_view != true %}
-							<div class="col-xl-4 col-sm-12 mb-xl-0 my-4">
-								<div class="text-center">
-									<div class="p-4">
-										<canvas id="depositsPieChart" width="100%" height="100%" style="min-width: 300px; min-height: 400px; max-width: 400px; max-height: 400px; margin: 0 auto;"></canvas>
-									</div>
-								</div>
-							</div>
-						{% endif %}
-						<div class="{% if admin_view %}col-xl-12{% else %}col-xl-8{% endif %} col-sm-12 mb-4">
-							<div class="row">
-								<div class="col-6 mb mb-4">
-									<div class="card">
-										<div class="card-header p-2 ps-3">
-											<h6 class="text-sm mb-0 text-capitalize pt-2">Gesamtdepot</h6>
-											<h4 class="mb-0">{{ totalBalance|number_format(2, ',', '.') }}</h4>
-										</div>
-										<hr class="dark horizontal my-0">
-										<div class="card-footer p-2 ps-3">
-											{% set totalYesterdayProfit = 0 %}
-											{% set totalYesterdayGain = 0 %}
+.card-table-wrap {
+	background: var(--bg-card);
+	border: 1px solid var(--border);
+	border-radius: 18px;
+	overflow: hidden;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+.pf-table {
+	width: 100%;
+	border-collapse: collapse;
+}
+.pf-table th {
+	background: #fdfdfd;
+	padding: 1rem 1.5rem;
+	text-align: left;
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--txt-dim);
+	text-transform: uppercase;
+	border-bottom: 1px solid var(--border);
+}
+.pf-table td {
+	padding: 1.25rem 1.5rem;
+	border-bottom: 1px solid var(--border);
+	vertical-align: middle;
+}
+.pf-table tr:last-child td {
+	border-bottom: none;
+}
+.pf-table tr:hover {
+	background: #fafafa;
+}
 
-											{% set yesterday = "now"|date_modify("-1 day")|date("Y-m-d") %}
+.pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 0.35rem 0.75rem;
+	border-radius: 20px;
+	font-size: 0.72rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+	background: rgba(0, 0, 0, 0.03);
+}
+.pill-online {
+	background: rgba(34, 197, 94, 0.1);
+	color: var(--g);
+}
+.pill-offline {
+	background: rgba(100, 116, 139, 0.1);
+	color: var(--txt-dim);
+}
+.pill-error {
+	background: rgba(220, 38, 38, 0.1);
+	color: var(--r);
+}
 
-											{% for account in accounts %}
-												{% for growth in account.dailyGrowth %}
-													{% if growth.date == yesterday %}
-														{% set totalYesterdayProfit = totalYesterdayProfit + (growth.profit ?? 0) %}
-														{% set totalYesterdayGain = totalYesterdayGain + (growth.gain ?? 0) %}
-													{% endif %}
-												{% endfor %}
-											{% endfor %}
-											<p class="mb-0 text-sm">
-                                        <span class="{% if totalYesterdayProfit >= 0 %}text-success{% else %}text-danger{% endif %} font-weight-bolder">
-                                            {% if totalYesterdayProfit > 0 %}+{% endif %}{{ totalYesterdayProfit|number_format(2, ',', '.') }}
-                                        </span> am Vortag
-											</p>
-										</div>
-									</div>
-								</div>
-								<div class="col-6 mb-4">
-									<div class="card">
-										<div class="card-header p-2 ps-3">
-											<h6 class="text-sm mb-0 text-capitalize pt-2">Gesamtprofit</h6>
-											<h4 class="mb-0">{{ totalProfit|number_format(2, ',', '.') }}</h4>
-										</div>
-										<hr class="dark horizontal my-0">
-										<div class="card-footer p-2 ps-3">
-											<p class="mb-0 text-sm">
-                                        <span class="{% if totalYesterdayGain >= 0 %}text-success{% else %}text-danger{% endif %} font-weight-bolder">
-                                            {% if totalYesterdayGain > 0 %}+{% endif %}{{ totalYesterdayGain|number_format(2, ',', '.') }}%
-                                        </span> am Vortag
-											</p>
-										</div>
-									</div>
-								</div>
-								<div class="col-6 mb-4">
-									<div class="card">
-										<div class="card-header p-2 ps-3">
-											<h6 class="text-sm mb-0 text-capitalize pt-2">Wachstum</h6>
-											<h4 class="mb-0">
-												{% if totalDeposits > 0 %}
-													{{(((totalBalance - totalDeposits) / totalDeposits) * 100)|number_format(2, ',', '.') }}%
-												{% endif %}
-											</h4>
-										</div>
-										<hr class="dark horizontal my-0">
-										<div class="card-footer p-2 ps-3">
-											{#                                <p class="mb-0 text-sm"><span class="text-success font-weight-bolder">+55% </span>than last week</p>#}
-										</div>
-									</div>
-								</div>
-								<div class="col-6 mb-4">
-									<div class="card">
-										<div class="card-header p-2 ps-3">
-											<h6 class="text-sm mb-0 text-capitalize pt-2">offener Profit</h6>
-											<h4 class="mb-0">{{ (totalEquity-totalBalance)|number_format(2, ',', '.') }}</h4>
-										</div>
-										<hr class="dark horizontal my-0">
-										<div class="card-footer p-2 ps-3">
-											{#                                <p class="mb-0 text-sm"><span class="text-success font-weight-bolder">+55% </span>than last week</p>#}
-										</div>
-									</div>
-								</div>
+.dot {
+	width: 7px;
+	height: 7px;
+	border-radius: 50%;
+	display: inline-block;
+}
+.dot-on {
+	background: var(--g);
+	box-shadow: 0 0 8px var(--g);
+	animation: pulse-g 2s infinite;
+}
+.dot-off {
+	background: var(--txt-dim);
+}
+.dot-r {
+	background: var(--r);
+	animation: pulse-r 2s infinite;
+}
+
+@keyframes pulse-g {
+	0,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
+}
+@keyframes pulse-r {
+	0,
+	100% {
+		transform: scale(1);
+		opacity: 1;
+	}
+	50% {
+		transform: scale(1.2);
+		opacity: 0.7;
+	}
+}
+
+.btn-modern {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 0.6rem 1.25rem;
+	border-radius: 10px;
+	font-weight: 700;
+	font-size: 0.85rem;
+	transition: all 0.2s;
+	border: none;
+	cursor: pointer;
+}
+.btn-primary {
+	background: var(--txt-main);
+	color: #fff;
+}
+.btn-primary:hover {
+	background: #000;
+	transform: translateY(-1px);
+}
+.btn-ghost {
+	background: transparent;
+	color: var(--txt-main);
+	border: 1px solid var(--border);
+}
+.btn-ghost:hover {
+	background: var(--bg-root);
+}
+.badge-acc {
+	font-size: 0.65rem;
+	background: #f1f5f9;
+	color: #475569;
+	padding: 2px 6px;
+	border-radius: 4px;
+	margin-top: 4px;
+	display: inline-block;
+}
+
+@media(max-width: 768px) {
+	.pf-header {
+		flex-direction: column;
+		align-items: flex-start !important;
+		gap: 1rem;
+	}
+	.header-right {
+		width: 100%;
+	}
+	.header-right .btn-modern {
+		width: 100%;
+		justify-content: center;
+	}
+	.stats-grid {
+		grid-template-columns: 1fr;
+	}
+
+	/* ── Mobile Table Transformation ── */
+	.pf-table thead {
+		display: none; /* Hide headers on mobile */
+	}
+	.pf-table,
+	.pf-table tbody,
+	.pf-table tr,
+	.pf-table td {
+		display: block;
+		width: 100%;
+	}
+	.pf-table tr {
+		margin-bottom: 1rem;
+		border-bottom: 1px solid var(--border);
+		padding: 1rem;
+		position: relative;
+		background: #fff;
+		border-radius: 12px;
+	}
+	.pf-table td {
+		text-align: left !important;
+		padding: 0.5rem 0 !important;
+		border: none !important;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+	.pf-table td:first-child {
+		display: block;
+		margin-bottom: 0.5rem;
+	}
+	.pf-table td:not(:first-child)::before {
+		content: attr(data-label);
+		font-size: 0.75rem;
+		font-weight: 700;
+		color: var(--txt-dim);
+		text-transform: uppercase;
+	}
+	.pf-table td:last-child {
+		justify-content: center;
+		margin-top: 0.5rem;
+		border-top: 1px solid var(--bg-root) !important;
+		padding-top: 1rem !important;
+	}
+	.clickable-row {
+		cursor: pointer;
+		transition: background 0.2s;
+	}
+	.clickable-row:active {
+		background: var(--bg-root);
+	}
+}
+
+/* ══════════════════════════════════════════════════════
+   LOADING ANIMATION - Particle Cloud (Light Theme)
+   ══════════════════════════════════════════════════════ */
+
+#loadingOverlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 9999;
+	background: #f8fafc;
+	overflow: hidden;
+}
+#loadingOverlay.fade-out {
+	animation: overlayFadeOut 0.8s ease forwards;
+}
+@keyframes overlayFadeOut {
+	to {
+		opacity: 0;
+		pointer-events: none;
+	}
+}
+#particleCanvas {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+}
+.overlay-ui {
+	position: absolute;
+	bottom: 12%;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 2;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 1rem;
+}
+.json-display {
+	background: rgba(255, 255, 255, 0.92);
+	backdrop-filter: blur(12px);
+	border: 1px solid var(--border);
+	border-radius: 16px;
+	padding: 1.25rem 1.75rem;
+	font-family: 'JetBrains Mono', 'Fira Code', monospace;
+	font-size: 0.78rem;
+	color: var(--txt-dim);
+	line-height: 1.7;
+	min-width: 360px;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+}
+.json-key {
+	color: var(--txt-main);
+	font-weight: 600;
+}
+.json-val-analysing {
+	color: #16a34a;
+	animation: valPulse 2s ease-in-out infinite;
+}
+.json-val-done {
+	color: #10b981;
+	font-weight: 600;
+}
+.json-val-number {
+	color: #0f172a;
+	font-weight: 700;
+}
+@keyframes valPulse {
+	0,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.4;
+	}
+}
+
+.status-text {
+	text-align: center;
+	z-index: 2;
+}
+.status-title {
+	font-size: 1.1rem;
+	font-weight: 800;
+	color: var(--txt-main);
+	letter-spacing: -0.02em;
+	margin-bottom: 0.25rem;
+}
+.status-sub {
+	font-size: 0.8rem;
+	color: var(--txt-dim);
+	font-weight: 500;
+	transition: opacity 0.3s ease;
+}
+.progress-bar {
+	width: 260px;
+	height: 4px;
+	background: rgba(0, 0, 0, 0.06);
+	border-radius: 4px;
+	overflow: hidden;
+	margin-top: 0.75rem;
+}
+.progress-fill {
+	height: 100%;
+	width: 0;
+	background: linear-gradient(90deg, #16a34a, #22c55e);
+	border-radius: 4px;
+	transition: width 0.4s ease;
+	box-shadow: 0 0 8px rgba(22, 163, 74, 0.4);
+}
+.progress-label {
+	font-size: 0.7rem;
+	font-weight: 700;
+	color: var(--txt-dim);
+	margin-top: 0.4rem;
+	font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
+
+/* ── Node Network Overlay ── */
+.node-network {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -55%);
+	width: 320px;
+	height: 320px;
+	z-index: 1;
+}
+.node-center {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 56px;
+	height: 56px;
+	background: rgba(255, 255, 255, 0.95);
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 0 30px rgba(22, 163, 74, 0.25), 0 4px 15px rgba(0, 0, 0, 0.08);
+	font-size: 1.3rem;
+	color: #16a34a;
+	z-index: 3;
+	animation: nodeAppear 0.8s ease forwards;
+}
+.orbit-node {
+	position: absolute;
+	width: 44px;
+	height: 44px;
+	background: rgba(255, 255, 255, 0.92);
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	box-shadow: 0 0 20px rgba(0, 0, 0, 0.06), 0 2px 10px rgba(0, 0, 0, 0.05);
+	font-size: 1rem;
+	z-index: 3;
+	opacity: 0;
+	animation: nodeAppear 0.6s ease forwards;
+}
+.orbit-node:nth-child(3) {
+	top: -10px;
+	left: 50%;
+	transform: translateX(-50%);
+	animation-delay: 0.2s;
+}
+.orbit-node:nth-child(4) {
+	bottom: -10px;
+	left: 50%;
+	transform: translateX(-50%);
+	animation-delay: 0.4s;
+}
+.orbit-node:nth-child(5) {
+	left: -10px;
+	top: 50%;
+	transform: translateY(-50%);
+	animation-delay: 0.6s;
+}
+.orbit-node:nth-child(6) {
+	right: -10px;
+	top: 50%;
+	transform: translateY(-50%);
+	animation-delay: 0.8s;
+}
+@keyframes nodeAppear {
+	from {
+		opacity: 0;
+		transform: translate(-50%, -50%) scale(0.5);
+	}
+	to {
+		opacity: 1;
+		transform: translate(-50%, -50%) scale(1);
+	}
+}
+.orbit-node:nth-child(3) {
+	animation-name: nodeAppearReset;
+}
+.orbit-node:nth-child(4) {
+	animation-name: nodeAppearReset;
+}
+.orbit-node:nth-child(5) {
+	animation-name: nodeAppearReset;
+}
+.orbit-node:nth-child(6) {
+	animation-name: nodeAppearReset;
+}
+@keyframes nodeAppearReset {
+	from {
+		opacity: 0;
+		scale: 0.5;
+	}
+	to {
+		opacity: 1;
+		scale: 1;
+	}
+}
+.beam-lines {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 2;
+}
+.beam-line {
+	stroke: url('#beamGrad');
+	stroke-width: 1.5;
+	opacity: 0.6;
+}
+.beam-particle {
+	fill: #16a34a;
+	filter: drop-shadow(0 0 4px rgba(22,163,74,0.6));
+}
+
+/* Content reveal animation */
+#portfolioContent {
+	opacity: 0;
+	transform: translateY(20px);
+	transition: opacity 0.6s ease, transform 0.6s ease;
+}
+#portfolioContent.revealed {
+	opacity: 1;
+	transform: translateY(0);
+}
+
+/* Staggered card reveals */
+.stat-card,
+.chart-container,
+.card-table-wrap {
+	opacity: 0;
+	transform: translateY(15px);
+	transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.stat-card.revealed,
+.chart-container.revealed,
+.card-table-wrap.revealed {
+	opacity: 1;
+	transform: translateY(0);
+}</style>{# ══════════════════════════════════════
+					   LOADING OVERLAY — Particle Cloud
+					   ══════════════════════════════════════ #}<div id="loadingOverlay">
+<canvas id="particleCanvas"></canvas>
+<div class="node-network">
+	<svg class="beam-lines" viewbox="0 0 320 320">
+		<defs>
+			<linearGradient id="beamGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+				<stop offset="0%" stop-color="#16a34a" stop-opacity="0"/>
+				<stop offset="50%" stop-color="#16a34a" stop-opacity="0.7"/>
+				<stop offset="100%" stop-color="#16a34a" stop-opacity="0"/>
+			</linearGradient>
+		</defs>
+		<line class="beam-line" x1="160" y1="160" x2="160" y2="12"/>
+		<line class="beam-line" x1="160" y1="160" x2="160" y2="308"/>
+		<line class="beam-line" x1="160" y1="160" x2="12" y2="160"/>
+		<line class="beam-line" x1="160" y1="160" x2="308" y2="160"/>
+		<circle class="beam-particle" r="3">
+			<animateMotion dur="2s" repeatcount="indefinite" path="M160,160 L160,12 L160,160" keytimes="0;0.5;1" calcmode="linear"/>
+		</circle>
+		<circle class="beam-particle" r="3">
+			<animateMotion dur="2.4s" repeatcount="indefinite" path="M160,160 L160,308 L160,160" keytimes="0;0.5;1" calcmode="linear"/>
+		</circle>
+		<circle class="beam-particle" r="3">
+			<animateMotion dur="2.2s" repeatcount="indefinite" path="M160,160 L12,160 L160,160" keytimes="0;0.5;1" calcmode="linear"/>
+		</circle>
+		<circle class="beam-particle" r="3">
+			<animateMotion dur="2.6s" repeatcount="indefinite" path="M160,160 L308,160 L160,160" keytimes="0;0.5;1" calcmode="linear"/>
+		</circle>
+	</svg>
+	<div class="node-center">
+		<i class="fas fa-bolt"></i>
+	</div>
+	<div class="orbit-node">
+		<i class="fas fa-wallet" style="color:#10b981;"></i>
+	</div>
+	<div class="orbit-node">
+		<i class="fas fa-chart-line" style="color:#8b5cf6;"></i>
+	</div>
+	<div class="orbit-node">
+		<i class="fas fa-sync" style="color:#f59e0b;"></i>
+	</div>
+	<div class="orbit-node">
+		<i class="fas fa-shield-alt" style="color:#ec4899;"></i>
+	</div>
+</div>
+<div class="overlay-ui">
+	<div class="json-display">
+		<div>{</div>
+		<div>&nbsp;&nbsp;<span class="json-key">"accounts"</span>:
+			<span class="json-val-analysing" id="jAccounts">"synchronising..."</span>
+		</div>
+		<div>&nbsp;&nbsp;<span class="json-key">"balance"</span>:
+			<span class="json-val-analysing" id="jBalance">"loading..."</span>
+		</div>
+		<div>&nbsp;&nbsp;<span class="json-key">"positions"</span>:
+			<span class="json-val-analysing" id="jPositions">"scanning..."</span>
+		</div>
+		<div>&nbsp;&nbsp;<span class="json-key">"risk_analysis"</span>:
+			<span class="json-val-analysing" id="jRisk">"calculating..."</span>
+		</div>
+		<div>&nbsp;&nbsp;<span class="json-key">"performance"</span>:
+			<span class="json-val-analysing" id="jPerf">"aggregating..."</span>
+		</div>
+		<div>}</div>
+	</div>
+	<div class="status-text">
+		<div class="status-title">Real-Time Data Synchronisation</div>
+		<div class="status-sub" id="statusMessage">Fetching account data from brokers...</div>
+		<div class="progress-bar">
+			<div class="progress-fill" id="progressFill"></div>
+		</div>
+		<div class="progress-label" id="progressLabel">0%</div>
+	</div>
+</div></div><script>
+(function () {
+const c = document.getElementById('particleCanvas'),
+ctx = c.getContext('2d');
+let W,
+H,
+particles = [],
+beams = [],
+t = 0,
+stopped = false;
+function resize() {
+W = c.width = c.offsetWidth;
+H = c.height = c.offsetHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+const PC = 600;
+for (let i = 0; i < PC; i++) {
+const a = Math.random() * Math.PI * 2,
+r = Math.pow(Math.random(), 0.6) * Math.min(W, H) * 0.35;
+particles.push({
+x: W / 2 + Math.cos(a) * r,
+y: H / 2 + Math.sin(a) * r * 0.7,
+bx: W / 2 + Math.cos(a) * r,
+by: H / 2 + Math.sin(a) * r * 0.7,
+vx: (Math.random() - 0.5) * 0.3,
+vy: (Math.random() - 0.5) * 0.3,
+sz: Math.random() * 3.5 + 1,
+op: Math.random() * 0.5 + 0.15,
+phase: Math.random() * Math.PI * 2,
+speed: Math.random() * 0.008 + 0.003,
+drift: Math.random() * 20 + 5,
+hue: 140 + Math.random() * 40
+});
+}
+for (let i = 0; i < 4; i++) {
+beams.push({
+a: Math.random() * Math.PI,
+speed: 0.0003 + Math.random() * 0.0005,
+w: 0.5 + Math.random() * 1
+});
+}
+function drawGrid() {
+ctx.strokeStyle = 'rgba(15,23,42,0.04)';
+ctx.lineWidth = 1;
+const s = 50,
+ox = (t * 8) % s,
+oy = (t * 8) % s;
+for (let x = - s + ox; x < W + s; x += s) {
+ctx.beginPath();
+ctx.moveTo(x, 0);
+ctx.lineTo(x, H);
+ctx.stroke();
+}
+for (let y = - s + oy; y < H + s; y += s) {
+ctx.beginPath();
+ctx.moveTo(0, y);
+ctx.lineTo(W, y);
+ctx.stroke();
+}
+}
+function drawBeams() {
+beams.forEach(b => {
+b.a += b.speed;
+const cos = Math.cos(b.a),
+sin = Math.sin(b.a);
+const len = Math.max(W, H);
+const grad = ctx.createLinearGradient(W / 2 - cos * len, H / 2 - sin * len, W / 2 + cos * len, H / 2 + sin * len);
+grad.addColorStop(0, 'rgba(22,163,74,0)');
+grad.addColorStop(0.45, 'rgba(22,163,74,0.06)');
+grad.addColorStop(0.5, 'rgba(22,163,74,0.12)');
+grad.addColorStop(0.55, 'rgba(22,163,74,0.06)');
+grad.addColorStop(1, 'rgba(22,163,74,0)');
+ctx.strokeStyle = grad;
+ctx.lineWidth = b.w;
+ctx.beginPath();
+ctx.moveTo(W / 2 - cos * len, H / 2 - sin * len);
+ctx.lineTo(W / 2 + cos * len, H / 2 + sin * len);
+ctx.stroke();
+});
+}
+function drawParticles() {
+particles.forEach(p => {
+p.phase += p.speed;
+const dx = Math.sin(p.phase) * p.drift;
+const dy = Math.cos(p.phase * 0.7) * p.drift * 0.6;
+p.x = p.bx + dx + p.vx * t * 0.5;
+p.y = p.by + dy + p.vy * t * 0.5;
+const pulse = 0.5 + 0.5 * Math.sin(p.phase * 2);
+const alpha = p.op * (0.6 + pulse * 0.4);
+const sz = p.sz * (0.8 + pulse * 0.3);
+ctx.beginPath();
+ctx.arc(p.x, p.y, sz, 0, Math.PI * 2);
+ctx.fillStyle = `hsla(${
+p.hue
+},45%,42%,${alpha})`;
+ctx.fill();
+if (sz > 2.5 && alpha > 0.3) {
+ctx.beginPath();
+ctx.arc(p.x, p.y, sz * 2, 0, Math.PI * 2);
+ctx.fillStyle = `hsla(${
+p.hue
+},50%,50%,${
+alpha * 0.15
+})`;
+ctx.fill();
+}
+});
+}
+function drawAxisLabels() {
+ctx.font = '11px system-ui,sans-serif';
+ctx.fillStyle = 'rgba(100,116,139,0.25)';
+const labels = [
+'8,000',
+'10,000',
+'12,000',
+'14,000',
+'18,000',
+'20,000'
+];
+const step = W / (labels.length + 1);
+labels.forEach((l, i) => {
+ctx.fillText(l, step * (i + 1) - 15, H - 30);
+});
+}
+function frame() {
+if (stopped) 
+return;
 
 
-								{% if admin_view != true %}
-									<div class="col-6 mb-4">
-										<div class="card">
-											<div class="card-header p-2 ps-3">
-												<h6 class="text-sm mb-0 text-capitalize pt-2">Einzahlungen</h6>
-												<h4 class="mb-0">{{ totalDeposits|number_format(2, ',', '.') }}</h4>
-											</div>
-											<hr class="dark horizontal my-0">
-											<div class="card-footer p-2 ps-3"></div>
-										</div>
-									</div>
-									<div class="col-6 mb-4">
-										<div class="card">
-											<div class="card-header p-2 ps-3">
-												<h6 class="text-sm mb-0 text-capitalize pt-2">Auszahlungen</h6>
-												<h4 class="mb-0">{{ totalWithdrawals|number_format(2, ',', '.') }}</h4>
-											</div>
-											<hr class="dark horizontal my-0">
-											<div class="card-footer p-2 ps-3"></div>
-										</div>
-									</div>
-								{% else %}
-									<div class="col-6 mb-4">
-										<div class="card">
-											<div class="card-header p-2 ps-3">
-												<h6 class="text-sm mb-0 text-capitalize pt-2">Verwaltete Konten</h6>
-												<h4 class="mb-0"> {{ accounts|length }}</h4>
-											</div>
-											<hr class="dark horizontal my-0">
-											<div class="card-footer p-2 ps-3"></div>
-										</div>
-									</div>
-									<div class="col-6 mb-4">
-										<div class="card">
-											<div class="card-header p-2 ps-3">
-												<h6 class="text-sm mb-0 text-capitalize pt-2">Registrierte Kunden</h6>
-												<h4 class="mb-0">{{ users|length }}</h4>
-											</div>
-											<hr class="dark horizontal my-0">
-											<div class="card-footer p-2 ps-3"></div>
-										</div>
-									</div>
-									<div class="col-6 mb-4">
-										<div class="card">
-											<div class="card-header p-2 ps-3">
-												<h6 class="text-sm mb-0 text-capitalize pt-2">Aktive Kunden (letzte 30 Min)</h6>
-												<h4 class="mb-0">{{ activeLast30Min }}</h4>
-											</div>
-											<hr class="dark horizontal my-0">
-											<div class="card-footer p-2 ps-3"></div>
-										</div>
-									</div>
-									<div class="col-6 mb-4">
-										<div class="card">
-											<div class="card-header p-2 ps-3">
-												<h6 class="text-sm mb-0 text-capitalize pt-2">Aktive Kunden (letzte 24h)</h6>
-												<h4 class="mb-0">{{ activeLast24h }}</h4>
-											</div>
-											<hr class="dark horizontal my-0">
-											<div class="card-footer p-2 ps-3"></div>
-										</div>
-									</div>
 
-									<div>
-										<a class="btn btn-dark" href="{{ path('app_admin_account_error') }}">Error Accounts</a>
-									</div>
-								{% endif %}
-							</div>
-						</div>
-					</div>
-				</div>
+t += 0.016;
+ctx.clearRect(0, 0, W, H);
+drawGrid();
+drawBeams();
+drawParticles();
+drawAxisLabels();
+requestAnimationFrame(frame);
+}
+frame();
+window._stopParticles = function () {
+stopped = true;
+};
+})();</script></div><div class="pf-wrap"><div
+class="container-custom">
 
-			{% if admin_view != true %}
-				<div class="container mb-5 mx-0 card p-0">
-					<div class="card">
-						<div class="card-header pb-0">
-							<h6 class="mb-0">Deine Performance</h6>
-						</div>
-						<div class="card-body">
-							<div class="col-xl-12 col-sm-12">
-								<script>
-									document.addEventListener('DOMContentLoaded', function() {
-										const datasets = [];
-										{% for account in accounts %}
-										{# Nur Accounts mit dailyGrowth anzeigen #}
-										{% if account.dailyGrowth is defined and account.dailyGrowth is not empty %}
-										{# Sicherer erster Balance-Wert #}
-										{% set firstEntry = account.dailyGrowth[0] %}
-										{% set firstBalance = (firstEntry.balance ?? 0)|abs %}
-										{% set firstGain = firstBalance > 0 ? firstBalance : 1 %} {# Niemals 0! #}
-
-										datasets.push({
-											label: '{{ account.name|escape('js') }}',
-											data: {{ account.dailyGrowth|map(d => {
-												x: d.date,
-												y: ((d.balance ?? 0) / firstGain)
-											})|json_encode|raw }},
-											borderColor: 'hsl({{ 160 + loop.index * 5 }}, {{ 70 - loop.index * 2 }}%, {{ 40 - loop.index * 2 }}%)',
-											backgroundColor: 'hsla({{ 160 + loop.index * 5 }}, {{ 70 - loop.index * 2 }}%, {{ 40 - loop.index * 2 }}%, 0.5)',
-											tension: 0.5,
-											fill: true,
-											pointRadius: 2,
-										});
-										{% endif %}
-										{% endfor %}
-
-										const ctx = document.getElementById('lineChart').getContext('2d');
-										const chart = new Chart(ctx, {
-											type: 'line',
-											data: {
-												datasets: datasets
-											},
-											options: {
-												responsive: true,
-												scales: {
-													x: {
-														type: 'time',
-														time: {
-															parser: 'yyyy-MM-dd', // Richtiges Format
-															tooltipFormat: 'P', // Format für das Tooltip
-															unit: 'day', // Einheit der X-Achse
-															displayFormats: {
-																day: 'yyyy-MM-dd' // Format der X-Achse
-															}
-														},
-														title: {
-															display: true,
-															text: 'Datum'
-														},
-														grid: {
-															display: false // Vertikales Grid entfernen
-														},
-														ticks: {
-															display: false // Beschriftung auf der x-Achse entfernen
-														}
-													},
-													y: {
-														title: {
-															display: true,
-															text: 'Wachstums-Faktor'
-														}
-													}
-												},
-												plugins: {
-													legend: {
-														position: 'top'
-													}
-												}
-											}
-										});
-									});
-								</script>
-								<canvas id="lineChart" height="100%" width="100%" style="overflow-x: hidden; max-height: 400px; min-height: 300px; min-width: 300px;"></canvas>
-							</div>
-						</div>
-					</div>
-				</div>
-			{% endif %}
-			{% endif %}
-
-			<div class="container my-5 mx-0 card p-0">
-				<div class="card">
-					<div class="card-header">
-						<h6 class="mb-0 float-sm-start">Deine Accounts<br>
-							<span class="text-sm mb-0 text-normal text-dark">
-                        <i class="fa fa-check text-info" aria-hidden="true"></i>
-                        Du hast<span class="font-weight-bold ms-1">{{ accounts|length }} von {{ app.user.maxAccounts }}</span> Accounts in Nutzung
-                    </span>
-						</h6>
-						<button {% if accounts|length < app.user.maxAccounts %}data-bs-toggle="modal" data-bs-target="#addAccountModal" id="toggleButton"{% endif %} class="float-sm-end btn {% if accounts|length < app.user.maxAccounts %}bg-gradient-dark{% else %}bg-secondary text-white{% endif %} mb-0"><i class="material-symbols-rounded text-sm">add</i>&nbsp;&nbsp;Account hinzufügen</button>
-						{% if accounts|length < app.user.maxAccounts %}
-							<!-- Modal -->
-							<div class="modal fade" id="addAccountModal" tabindex="-1" role="dialog" aria-labelledby="addAccountModal" aria-hidden="true">
-								<div class="modal-dialog modal-dialog-centered" role="document">
-									<div class="modal-content">
-										<div class="modal-header">
-											<h5 class="modal-title font-weight-normal">Account hinzufügen</h5>
-											<button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close">
-												<span aria-hidden="true">&times;</span>
-											</button>
-										</div>
-										<div class="p-4">
-											{{ form_start(form, { 'action': path('app_account_new') }) }}
-											{{ form_row(form.name, {'attr': {'class': 'form-control mb-3'}}) }}
-											{{ form_row(form.platform, {'attr': {'class': 'form-control mb-3'}}) }}
-											{{ form_row(form.broker, {'attr': {'class': 'form-control mb-3'}}) }}
-											{{ form_row(form.tradeServer, {'attr': {'class': 'form-control mb-3'}}) }}
-											{{ form_row(form.login, {'attr': {'class': 'form-control mb-3'}}) }}
-											{{ form_row(form.password, {'attr': {'class': 'form-control mb-3'}}) }}
-											<button type="submit" class="btn btn-dark">Account hinzufügen</button>
-											{{ form_end(form) }}
-										</div>
-									</div>
-								</div>
-							</div>
-						{% endif %}
-					</div>
-					<div class="table-responsive">
-						<table class="table align-items-center mb-0">
-							<thead>
-							<tr>
-								<th class="w-15">Account</th>
-								<th class="text-center w-10">Platform</th>
-								<th class="text-center w-10">Equity</th>
-								<th class="text-center w-10">Balance</th>
-								<th class="text-center w-10">offener Profit</th>
-								<th class="text-center w-10">Gesamtprofit</th>
-								<th class="text-center w-5"></th>
-							</tr>
-							</thead>
-							<tbody>
-
-
-							{% if accounts|length < 1 %}
-								<tr><td colspan="8">Keine Accounts vorhanden.</td></tr>
-							{% endif %}
-							{% for account in accounts %}
-								<tr>
-									<td>
-										{% if account.metaId is defined and account.metaId|length > 0 and account.error|length < 1 %}
-											<strong>{{ account.name }}</strong>{{ account.isActive ? '<span class="badge badge-success mx-2">Online</span>' : '<span class="badge badge-secondary mx-2">Pausiert</span>' }}
-										{% else %}
-											{% if account.error == "EMPTY_EWALLET" %}
-											{% elseif account.error == "subscription expired" %}
-												<strong>{{ account.name }}</strong>{{ account.isActive ? '<span class="badge badge-success mx-2">Online</span>' : '<span class="badge badge-danger mx-2">PAUSIERT</span>' }}
-												<span class="badge badge-danger mx-0">{{ account.error }}</span>
-											{% else %}
-												<strong>{{ account.name }}</strong>{{ account.isActive ? '<span class="badge badge-success mx-2">Online</span>' : '<span class="badge badge-secondary mx-2">wird verbunden ...</span>' }}
-												{% if is_granted('ROLE_ADMIN') %}
-													<span class="badge badge-danger mx-0">Fehler: {{ account.error }}</span>
-												{% endif %}
-											{% endif %}
-										{% endif %}
-										<br>
-										<small>{{ account.login }} - {{ account.broker }}</small>
-										{% if is_granted('ROLE_ADMIN') %}
-											<br>
-											<span class="badge badge-sm badge-info mt-1">
-                                            {{ account.user.username }} {% if account.user.firstname|length > 1 %} - {{ account.user.firstname }} {{ account.user.lastname }}{% endif %}
-                                        </span>
-										{% endif %}
-									</td>
-									<td class="text-center w-10">
-										{% if is_granted('ROLE_ADMIN') %}
-											<span class="badge badge-lg badge-dark text-uppercase text-white">{{ account.host }}</span><br>
-										{% endif %}
-										<span class="badge badge-lg badge-dark text-uppercase text-white">{{ account.platform }}</span><br>
-										<i class="material-symbols-rounded text-sm mt-2 mb-0 mx-0 position-relative" style="top: 2px">schedule</i>
-										<small class="my-0 position-relative bottom-1"> {{ account.lastUpdate|date('d.m.Y H:i:s') }}</small>
-									</td>
-
-									{% if account.metaId is defined and account.metaId|length > 0 %}
-										<td class="text-center w-10">{{ account.equity|number_format(2, ',', '.') }}</td>
-										<td class="text-center w-10">{{ account.balance|number_format(2, ',', '.') }}</td>
-										<td class="text-center w-10">
-											{% if account.equity is not null and account.balance is not null and account.balance != 0 %}
-												{% set openProfit = account.equity - account.balance %}
-												{% set openDrawdownPercent = (openProfit / account.balance) * 100 %}
-											{% else %}
-												{% set openProfit = 0 %}
-												{% set openDrawdownPercent = 0 %}
-											{% endif %}
-											{% if openProfit > 0.1 %}
-												<span class="text-success text-bold">{{ openProfit|number_format(2, ',', '.') }}</span><br>
-												<span class="badge badge-success my-auto">
-                                            <i class="material-symbols-rounded text-xs">arrow_upward</i>
-                                            <span class="text-xs">{{ openDrawdownPercent|number_format(2, ',', '.') }}%</span>
-                                        </span>
-											{% elseif openProfit < 0 %}
-												<span class="text-danger text-bold">{{ openProfit|number_format(2, ',', '.') }}</span><br>
-												<span class="badge badge-danger">
-                                            <i class="material-symbols-rounded text-xs">arrow_downward</i>
-                                            <span class="text-xs">{{ openDrawdownPercent|number_format(2, ',', '.') }}%</span>
-                                        </span>
-											{% else %}
-												<span class="text-secondary text-bold">{{ openProfit|number_format(2, ',', '.') }}</span><br>
-												<span class="badge badge-secondary">
-                                            <i class="material-symbols-rounded text-xs">swap_horiz</i>
-                                            <span class="text-xs">{{ openDrawdownPercent|number_format(2, ',', '.') }}%</span>
-                                        </span>
-											{% endif %}
-
-										</td>
-										<td class="text-center w-10">
-											{% if account.host != 'metapi' %}
-												{% set accountGain = account.deposits > 0 ? (((account.balance - account.deposits) / account.deposits) * 100)|number_format(2, ',', '.') : 0 %}
-												{% if account.profit > 0 %}
-													<span class="text-success text-bold">{{ account.profit|number_format(2, ',', '.') }}</span><br>
-													<span class="badge badge-success my-auto">
-                                                <i class="material-symbols-rounded text-xs">arrow_upward</i>
-                                                <span class="text-xs">{{ accountGain }}%</span>
-                                            </span>
-												{% elseif account.profit == 0 %}
-													<span class="text-secondary text-bold">{{ account.profit|round(0) }}</span><br>
-													<span class="badge badge-secondary">
-                                                <i class="material-symbols-rounded text-xs">swap_horiz</i>
-                                                <span class="text-xs">{{ accountGain }}%</span>
-                                            </span>
-												{% else %}
-													<span class="text-danger text-bold">{{ account.profit|number_format(2, ',', '.') }}</span><br>
-													<span class="badge badge-danger">
-                                                <i class="material-symbols-rounded text-xs">arrow_downward</i>
-                                                <span class="text-xs">{{ accountGain }}%</span>
-                                            </span>
-												{% endif %}
-											{% else %}
-												{% if account.profit > 0 %}
-													<span class="text-success text-bold">{{ account.profit|number_format(2, ',', '.') }}</span><br>
-													<span class="badge badge-success my-auto">
-                                                <i class="material-symbols-rounded text-xs">arrow_upward</i>
-                                                <span class="text-xs">{{ account.gain|round(2) }}%</span>
-                                            </span>
-												{% elseif account.profit == 0 %}
-													<span class="text-secondary text-bold">{{ account.profit|round(0) }}</span><br>
-													<span class="badge badge-secondary">
-                                                <i class="material-symbols-rounded text-xs">swap_horiz</i>
-                                                <span class="text-xs">{{ account.gain|round(2) }}%</span>
-                                            </span>
-												{% else %}
-													<span class="text-danger text-bold">{{ account.profit|number_format(2, ',', '.') }}</span><br>
-													<span class="badge badge-danger">
-                                                <i class="material-symbols-rounded text-xs">arrow_downward</i>
-                                                <span class="text-xs">{{ account.gain|round(2) }}%</span>
-                                            </span>
-												{% endif %}
-											{% endif %}
-										</td>
-									{% else %}
-										<td class="text-center"></td>
-										<td class="text-center"></td>
-										<td class="text-center"></td>
-										<td class="text-center"></td>
-									{% endif %}
-									<td class="text-center w-5">
-										{% if account.metaId is defined and account.metaId|length > 0 %}
-											<a href="{{ path('app_account_show', {'meta_id': account.metaId}) }}" class="btn btn-link text-dark px-3 mb-0" data-bs-toggle="tooltip" data-bs-placement="bottom" aria-label="ansehen" data-bs-original-title="ansehen"><i class="fa-classic fa-solid fa-eye"></i></a>
-											<a href="{{ path('app_account_edit', {'meta_id': account.metaId}) }}" class="btn btn-link text-dark px-3 mb-0" data-bs-toggle="tooltip" data-bs-placement="bottom" aria-label="bearbeiten" data-bs-original-title="bearbeiten"><i class="fa-classic fa-solid fa-pen"></i></a>
-											<form method="post" action="{{ path('app_account_delete', {'meta_id': account.metaId}) }}" style="display:inline;">
-												<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ account.metaId) }}">
-												<button class="btn btn-link text-dark px-3 mb-0" type="submit" data-bs-toggle="tooltip" data-bs-placement="bottom" aria-label="löschen" data-bs-original-title="löschen"><i class="fa-classic fa-solid fa-trash"></i></button>
-											</form>
-										{% else %}
-											{% set csrf = 854 %}
-											{% set csrfId = account.Id * csrf %}
-											<form method="post" action="{{ path('app_account_delete_unactive', {'id': csrfId}) }}" style="display:inline;">
-												<input type="hidden" name="_token" value="{{ csrf_token('delete' ~ csrfId) }}">
-												<button class="btn btn-link text-dark px-3 mb-0" type="submit" data-bs-toggle="tooltip" data-bs-placement="bottom" aria-label="löschen" data-bs-original-title="löschen"><i class="fa-classic fa-solid fa-trash"></i></button>
-											</form>
-										{% endif %}
-										{% if admin_view and account.host == 'metapi' %}
-											<a href="{{ path('app_metapi_close_all', {'meta_id': account.metaId}) }}" class="btn btn-link text-dark px-3 mb-0" data-bs-toggle="tooltip" data-bs-placement="bottom" aria-label="alle schließen" data-bs-original-title="ansehen">FLATTEN</a>
-										{% endif %}
-									</td>
-								</tr>
-							{% endfor %}
-							</tbody>
-						</table>
-					</div>
-				</div>
-			</div>
-
-			{% if openPositions|length > 0 %}
-				<div class="container my-5 mx-0 card p-0">
-					<div class="card">
-						<div class="card-header pb-0">
-							<h6 class="mb-0">offene Positionen</h6>
-						</div>
-						<div class="card-body px-0 table-responsive">
-							<table class="table">
-								<thead>
-								<tr>
-									<th class="w-15">Account</th>
-									<th class="w-15">Asset</th>
-									<th class="text-center w-10">Typ</th>
-									<th class="text-center w-10">Volumen</th>
-									<th class="text-center w-10">Preis</th>
-									<th class="text-center w-10">Profit</th>
-									<th></th>
-								</tr>
-								</thead>
-								<tbody>
-								{% for order in openPositions %}
-									<tr>
-										<td class="w-15"><strong>{{ order.account.name }}</strong><br>
-											<small>{{ order.account.login }}</small>
-										</td>
-										<td class="w-15"><strong>{{ order.symbol }}</strong><br><small>{{ order.openTime|date('d.m.Y H:i:s') }} - {{ order.ticket }} </small></td>
-										<td class="text-center align-middle w-10">{{ order.cmd == 1 ? '<span class="badge badge-success">Buy</span>' : '<span class="badge badge-danger">Sell</span>' }}</td>
-										<td class="text-center align-middle w-10">{{ order.volume }}</td>
-										<td class="text-center align-middle w-10">{{ order.price }}</td>
-										<td class="text-center align-middle w-10">
-											{% if order.profit >= 0 %}
-												<span class="text-success text-bold">{{ order.profit }}</span><br>
-												<span class="badge badge-success my-auto">
-                                                <i class="material-symbols-rounded text-xs">arrow_upward</i>
-                                                <span class="text-xs">{{ order.gain|round(2) }}%</span>
-                                            </span>
-											{% else %}
-												<span class="text-danger text-bold">{{ order.profit }}</span><br>
-												<span class="badge badge-danger">
-                                                <i class="material-symbols-rounded text-xs">arrow_downward</i>
-                                                <span class="text-xs">{{ order.gain|round(2) }}%</span
-                                            </span>
-											{% endif %}
-										</td>
-										<td class="w-10">
-											<a href="{{ path('app_account_show', {'meta_id': order.account.metaId}) }}" class="btn btn-link text-dark px-3 mb-0" data-bs-toggle="tooltip" data-bs-placement="bottom" aria-label="Account ansehen" data-bs-original-title="Account ansehen"><i class="fa-classic fa-solid fa-eye"></i></a><br>
-										</td>
-									</tr>
-								{% else %}
-									<tr><td colspan="8">Keine offenen Positionen vorhanden.</td></tr>
-								{% endfor %}
-								</tbody>
-							</table>
-						</div>
-					</div>
-				</div>
+{# ══════════════════════════════════════
+								   ACTUAL CONTENT (hidden until loaded)
+								   ══════════════════════════════════════ #}
+<div id="portfolioContent">
+	<header class="pf-header">
+		<div class="header-left">
+			<h1 class="pf-title">Dein Portfolio</h1>
+			<p class="pf-subtitle" id="headerSubtitle">Lade...</p>
+		</div>
+		<div class="header-right">
+			{% if accountCount < maxAccounts %}
+				<button class="btn-modern btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addAccountModal">
+					<i class="material-symbols-rounded">add</i>
+					Account hinzufügen
+				</button>
 			{% endif %}
 		</div>
+	</header>
+
+	<section class="stats-grid" id="statsGrid">
+		<div class="stat-card" id="statCapital">
+			<div class="stat-label">Gesamtkapital</div>
+			<div class="stat-val text-primary" id="valCapital" style="font-size: 1.8rem; font-weight: 800;">---</div>
+			<div class="stat-delta" id="deltaCapital" style="margin-top: 8px;">---</div>
+		</div>
+		<div class="stat-card" id="statProfit">
+			<div class="stat-label">Gesamtprofit</div>
+			<div class="stat-val text-success" id="valProfit" style="font-size: 1.8rem; font-weight: 800;">---</div>
+			<div class="stat-delta" id="deltaGrowth" style="margin-top: 8px;">---</div>
+		</div>
+		<div class="stat-card" id="statOpen">
+			<div class="stat-label">Offener Profit</div>
+			<div class="stat-val" id="valOpen" style="font-size: 1.8rem; font-weight: 800;">---</div>
+			<div class="stat-label mt-2" id="valDrawdown" style="font-size: 0.6rem; color: var(--txt-dim);">---</div>
+		</div>
+		<div class="stat-card" id="statCash">
+			<div class="d-flex justify-content-between align-items-end" style="margin-top: 8px;">
+				<div>
+					<div style="font-size: 0.7rem; color: var(--txt-dim);">Deposits:</div>
+					<div style="font-weight: 700;" id="valDeposits">---</div>
+				</div>
+				<div class="text-end">
+					<div style="font-size: 0.7rem; color: var(--txt-dim);">Withdrawals:</div>
+					<div style="font-weight: 700;" id="valWithdrawals">---</div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<div class="row">
+		<div class="col-xl-8">
+			<div class="chart-container" id="chartPerf">
+				<h3 class="chart-title">
+					<i class="fas fa-chart-area me-2 opacity-50"></i>Performance Verlauf (Relativ)</h3>
+				<canvas id="lineChart" style="max-height: 350px;"></canvas>
+			</div>
+		</div>
+		<div class="col-xl-4">
+			<div class="chart-container" id="chartAlloc">
+				<h3 class="chart-title">
+					<i class="fas fa-chart-pie me-2 opacity-50"></i>Allokation</h3>
+				<canvas id="allocationChart" style="max-height: 350px;"></canvas>
+			</div>
+		</div>
 	</div>
-{% endblock %}
+
+	<div class="card-table-wrap mb-5" id="tableWrap">
+		<table class="pf-table">
+			<thead>
+				<tr>
+					<th>Account</th>
+					<th>Status</th>
+					<th>Agent</th>
+					<th class="text-end">Equity / Balance</th>
+					<th class="text-center">Offener P&L</th>
+					<th class="text-center">Gesamtprofit</th>
+					<th class="text-end">Aktionen</th>
+				</tr>
+			</thead>
+			<tbody id="accountsBody"></tbody>
+		</table>
+	</div>
+</div></div></div>{# ══ Add Account Modal ══ #}<div class="modal fade" id="addAccountModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered">
+<div class="modal-content shadow-lg border-0" style="border-radius: 20px;">
+	<div class="modal-header border-0 pb-0">
+		<h5 class="fw-800">Account hinzufügen</h5>
+		<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+	</div>
+	<div class="modal-body p-4">
+		{{ form_start(form, { 'action': path('app_account_new') }) }}
+		<div class="row g-3">
+			<div class="col-12">{{ form_widget(form.name, {'attr': {'class': 'form-control rounded-pill px-3 shadow-none border', 'placeholder': 'Name (frei wählbar)'}}) }}</div>
+			<div class="col-12">{{ form_widget(form.platform, {'attr': {'class': 'form-control rounded-pill px-3 shadow-none border', 'placeholder': 'Plattform'}}) }}</div>
+			<div class="col-12">{{ form_widget(form.broker, {'attr': {'class': 'form-control rounded-pill px-3 shadow-none border', 'placeholder': 'Broker (z.B. FTMO)'}}) }}</div>
+			<div class="col-12">{{ form_widget(form.tradeServer, {'attr': {'class': 'form-control rounded-pill px-3 shadow-none border', 'placeholder': 'Server (z.B. FTMO-Server oder cTrader Email)'}}) }}</div>
+			<div class="col-12">{{ form_widget(form.login, {'attr': {'class': 'form-control rounded-pill px-3 shadow-none border', 'placeholder': 'Login (Account Nr)'}}) }}</div>
+			<div class="col-12">{{ form_widget(form.password, {'attr': {'class': 'form-control rounded-pill px-3 shadow-none border', 'placeholder': 'Passwort'}}) }}</div>
+		</div>
+		<button type="submit" class="btn btn-dark w-100 rounded-pill py-2 mt-3 fw-bold">Verknüpfen</button>
+		{{ form_end(form) }}
+	</div>
+</div></div></div>{# ══ Charts JS ══ #}<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script><script>document.addEventListener('DOMContentLoaded', function () {
+					
+					const fmt = (n, d = 2) => Number(n).toLocaleString('de-DE', {
+					minimumFractionDigits: d,
+					maximumFractionDigits: d
+					});
+					const overlay = document.getElementById('loadingOverlay');
+					const content = document.getElementById('portfolioContent');
+					const statusMsg = document.getElementById('statusMessage');
+					
+					// Rotate status messages during load
+					const messages = [
+					'Fetching account data from brokers...',
+					'Synchronising balances & equity...',
+					'Calculating open positions...',
+					'Aggregating performance metrics...',
+					'Analysing risk exposure...',
+					'Building portfolio overview...'
+					];
+					let msgIdx = 0;
+					const msgInterval = setInterval(() => {
+					msgIdx = (msgIdx + 1) % messages.length;
+					statusMsg.style.opacity = '0';
+					setTimeout(() => {
+					statusMsg.textContent = messages[msgIdx];
+					statusMsg.style.opacity = '1';
+					}, 200);
+					}, 2200);
+					
+					// Fetch data
+					fetch('{{ path("app_account_api_data") }}').then(r => r.json()).then(data => {
+					clearInterval(msgInterval);
+					
+					// Update JSON display with results
+					const jAccounts = document.getElementById('jAccounts');
+					const jBalance = document.getElementById('jBalance');
+					const jPositions = document.getElementById('jPositions');
+					const jRisk = document.getElementById('jRisk');
+					const jPerf = document.getElementById('jPerf');
+					
+					const progressFill = document.getElementById('progressFill');
+					const progressLabel = document.getElementById('progressLabel');
+					const setProgress = (pct) => {
+					progressFill.style.width = pct + '%';
+					progressLabel.textContent = pct + '%';
+					};
+					
+					const setDone = (el, val) => {
+					el.className = 'json-val-done';
+					el.textContent = val;
+					};
+					const setNum = (el, val) => {
+					el.className = 'json-val-number';
+					el.textContent = val;
+					};
+					
+					setTimeout(() => {
+					setDone(jAccounts, `"${
+					data.accounts.length
+					} accounts loaded"`);
+					setProgress(20);
+					}, 200);
+					setTimeout(() => {
+					setNum(jBalance, fmt(data.totalBalance) + ' €');
+					setProgress(40);
+					}, 500);
+					setTimeout(() => {
+					setDone(jPositions, '"synced"');
+					setProgress(60);
+					}, 800);
+					setTimeout(() => {
+					setDone(jRisk, '"calculated"');
+					setProgress(80);
+					}, 1100);
+					setTimeout(() => {
+					setDone(jPerf, '"ready"');
+					setProgress(100);
+					}, 1400);
+					
+					setTimeout(() => {
+					statusMsg.textContent = 'Portfolio ready.';
+					statusMsg.style.color = '#10b981';
+					}, 1600);
+					
+					// Transition to real content
+					setTimeout(() => {
+					overlay.classList.add('fade-out');
+					if (window._stopParticles) 
+					window._stopParticles();
+					
+					
+					
+					setTimeout(() => {
+					overlay.style.display = 'none';
+					renderPortfolio(data);
+					}, 800);
+					}, 2200);
+					}).catch(err => {
+					clearInterval(msgInterval);
+					statusMsg.textContent = 'Fehler beim Laden. Seite wird neu geladen...';
+					statusMsg.style.color = '#ef4444';
+					setTimeout(() => location.reload(), 2000);
+					});
+					
+					function renderPortfolio(data) {
+					const {
+					accounts,
+					totalEquity,
+					totalBalance,
+					totalProfit,
+					totalDeposits,
+					totalWithdrawals,
+					totalYesterdayProfit
+					} = data;
+					
+					// Header
+					document.getElementById('headerSubtitle').textContent = `${
+					accounts.length
+					} aktive Accounts \u2022 ${
+					fmt(totalBalance)
+					} \u20ac Gesamtkapital`;
+					
+					// Stats
+					document.getElementById('valCapital').textContent = fmt(totalBalance) + ' \u20ac';
+					const ydClass = totalYesterdayProfit >= 0 ? 'delta-up' : 'delta-down';
+					const ydIcon = totalYesterdayProfit >= 0 ? 'arrow-up' : 'arrow-down';
+					document.getElementById('deltaCapital').className = `stat-delta ${ydClass}`;
+					document.getElementById('deltaCapital').innerHTML = `<i class="fas fa-${ydIcon}"></i> ${
+					fmt(totalYesterdayProfit)
+					} \u20ac (Vortag)`;
+					
+					document.getElementById('valProfit').textContent = fmt(totalProfit) + ' \u20ac';
+					if (totalDeposits > 0) {
+					const totalGain = ((totalBalance - totalDeposits) / totalDeposits) * 100;
+					const gClass = totalGain >= 0 ? 'delta-up' : 'delta-down';
+					const gIcon = totalGain >= 0 ? 'chart-line' : 'chart-bar';
+					document.getElementById('deltaGrowth').className = `stat-delta ${gClass}`;
+					document.getElementById('deltaGrowth').innerHTML = `<i class="fas fa-${gIcon}"></i> ${
+					fmt(totalGain)
+					}% Wachstum`;
+					}
+					
+					const openPnl = totalEquity - totalBalance;
+					const openColor = openPnl >= 0 ? 'var(--g)' : 'var(--r)';
+					document.getElementById('valOpen').style.color = openColor;
+					document.getElementById('valOpen').textContent = fmt(openPnl) + ' \u20ac';
+					const dd = totalBalance > 0 ? ((totalEquity - totalBalance) / totalBalance * 100) : 0;
+					document.getElementById('valDrawdown').textContent = `Portfolio Drawdown: ${
+					dd.toFixed(2)
+					}%`;
+					
+					document.getElementById('valDeposits').textContent = fmt(totalDeposits, 0) + ' \u20ac';
+					document.getElementById('valWithdrawals').textContent = fmt(totalWithdrawals, 0) + ' \u20ac';
+					
+					// Accounts table
+					const tbody = document.getElementById('accountsBody');
+					accounts.forEach((acc, idx) => {
+					const openPnL = acc.equity - acc.balance;
+					const ddPct = acc.balance > 0 ? (openPnL / acc.balance * 100) : 0;
+					const pnlColor = openPnL >= 0 ? 'var(--g)' : 'var(--r)';
+					const profitColor = acc.profit >= 0 ? 'var(--g)' : 'var(--r)';
+					const profitBadge = acc.profit >= 0 ? 'bg-success' : 'bg-danger';
+					const platformIcon = acc.platform === 'ctrader' ? 'dna' : 'bolt';
+					
+					let statusHtml = '';
+					const isDisc = acc.error === 'DISCONNECTED' || acc.error === 'ST\u00d6RUNG';
+					const isError = acc.error && acc.error.length > 0;
+					
+					if (isDisc) {
+					const label = acc.error === 'ST\u00d6RUNG' ? 'St\u00f6rung' : 'Disconnected';
+					statusHtml = `<div class="pill pill-error"><span class="dot dot-r"></span> ${label}</div>`;
+					if (acc.reauthUrl) {
+					statusHtml += ` <a href="${
+					acc.reauthUrl
+					}" class="badge bg-warning text-dark ms-1" style="font-size:0.6rem;text-decoration:none;" onclick="return confirm('Neu autorisieren?');">REAUTH</a>`;
+					}
+					} else if (isError && acc.error !== 'subscription expired') {
+					const label = acc.isActive ? 'Online' : 'St\u00f6rung';
+					statusHtml = `<div class="pill pill-offline"><span class="dot dot-off"></span> ${label}</div>`;
+					} else {
+					const pillClass = acc.isActive ? 'pill-online' : 'pill-offline';
+					const dotClass = acc.isActive ? 'dot-on' : 'dot-off';
+					const label = acc.isActive ? 'Online' : 'Pausiert';
+					statusHtml = `<div class="pill ${pillClass}"><span class="dot ${dotClass}"></span> ${label}</div>`;
+					}
+					
+					const tr = document.createElement('tr');
+					tr.className = 'clickable-row';
+					tr.onclick = (e) => {
+					if (!e.target.closest('a') && !e.target.closest('form') && !e.target.closest('button')) {
+					window.location.href = acc.showUrl;
+					}
+					};
+					tr.style.opacity = '0';
+					tr.style.transform = 'translateY(10px)';
+					tr.style.transition = `opacity 0.4s ease ${
+					idx * 0.08
+					}s, transform 0.4s ease ${
+					idx * 0.08
+					}s`;
+					tr.innerHTML = `
+									<td data-label="Account">
+										<div class="d-flex align-items-center">
+											<div class="me-3" style="background:var(--bg-root);border-radius:12px;padding:10px;">
+												<i class="fas fa-${platformIcon} opacity-50"></i>
+											</div>
+											<div>
+												<a href="${
+					acc.showUrl
+					}" class="text-dark" style="font-weight:700;text-decoration:none;">${
+					acc.name
+					}</a><br>
+												<span class="badge-acc">${
+					acc.login
+					}</span>
+												<span class="badge-acc">${
+					acc.broker
+					}</span>
+											</div>
+										</div>
+									</td>
+									<td data-label="Status">${statusHtml}</td>
+									<td data-label="Agent">
+										${
+					acc.agents && acc.agents.length > 0 ? acc.agents.map(a => `<div class="pill pill-online" style="background:rgba(99,102,241,0.1) !important; color:var(--p) !important; border-color:rgba(99,102,241,0.2) !important;"><span class="dot" style="background:var(--p); box-shadow:0 0 10px var(--p);"></span> ${
+					a.name
+					}</div>`).join('') : `<a href="${
+					acc.showUrl
+					}" class="btn btn-sm btn-outline-primary rounded-pill px-3" style="font-size:0.7rem; font-weight:700; text-transform:uppercase;">Verbinden</a>`
+					}
+									</td>
+									<td data-label="Equity / Balance" class="text-end">
+										<span style="font-weight:800;">${
+					fmt(acc.equity)
+					}</span><br>
+										<span style="font-size:0.75rem;color:var(--txt-dim);">${
+					fmt(acc.balance)
+					}</span>
+									</td>
+									<td data-label="Offener P&L" class="text-center">
+										<span style="font-weight:700;color:${pnlColor}">${
+					fmt(openPnL)
+					} \u20ac</span><br>
+										<span style="font-size:0.75rem;color:${pnlColor};opacity:0.8;">${
+					ddPct.toFixed(2)
+					}%</span>
+									</td>
+									<td data-label="Gesamtprofit" class="text-center">
+										<span style="font-weight:700;color:${profitColor}">${
+					fmt(acc.profit)
+					} \u20ac</span><br>
+										<span class="badge ${profitBadge} p-1" style="font-size:0.65rem;">${
+					Number(acc.gain).toFixed(2)
+					}%</span>
+									</td>
+									<td data-label="Aktionen" class="text-end">
+										<div class="d-flex justify-content-end gap-2">
+											<a href="${
+					acc.showUrl
+					}" class="btn-modern btn-ghost p-2" title="Ansehen"><i class="fas fa-eye"></i></a>
+											<a href="${
+					acc.editUrl
+					}" class="btn-modern btn-ghost p-2" title="Bearbeiten"><i class="fas fa-pen"></i></a>
+											<form method="post" action="${
+					acc.deleteUrl
+					}" onsubmit="return confirm('L\u00f6schen?');">
+												<input type="hidden" name="_token" value="${
+					acc.deleteToken
+					}">
+												<button class="btn-modern btn-ghost p-2 text-danger" type="submit"><i class="fas fa-trash"></i></button>
+											</form>
+										</div>
+									</td>
+								`;
+					tbody.appendChild(tr);
+					});
+					
+					// Show content with staggered reveals
+					content.classList.add('revealed');
+					
+					requestAnimationFrame(() => { // Reveal stat cards
+					document.querySelectorAll('.stat-card').forEach((el, i) => {
+					setTimeout(() => el.classList.add('revealed'), i * 100);
+					});
+					// Reveal charts
+					setTimeout(() => {
+					document.getElementById('chartPerf').classList.add('revealed');
+					document.getElementById('chartAlloc').classList.add('revealed');
+					}, 500);
+					// Reveal table
+					setTimeout(() => {
+					document.getElementById('tableWrap').classList.add('revealed');
+					// Reveal rows
+					tbody.querySelectorAll('tr').forEach(tr => {
+					requestAnimationFrame(() => {
+					tr.style.opacity = '1';
+					tr.style.transform = 'translateY(0)';
+					});
+					});
+					}, 700);
+					});
+					
+					// Build charts
+					buildCharts(accounts);
+					}
+					
+					function buildCharts(accounts) { // 1. Performance Line Chart
+					const ctxLine = document.getElementById('lineChart');
+					if (ctxLine) {
+					const datasets = [];
+					accounts.forEach((acc, idx) => {
+					if (acc.dailyGrowth && acc.dailyGrowth.length > 0) {
+					const firstBal = Math.abs(acc.dailyGrowth[0].balance || 1);
+					datasets.push({
+					label: acc.name,
+					data: acc.dailyGrowth.map(d => ({
+					x: d.date,
+					y: (d.balance || 0) / (firstBal > 0 ? firstBal : 1)
+					})),
+					borderColor: `hsl(${
+					200 + (idx + 1) * 25
+					}, 70%, 50%)`,
+					backgroundColor: `hsla(${
+					200 + (idx + 1) * 25
+					}, 70%, 50%, 0.05)`,
+					tension: 0.4,
+					fill: true,
+					pointRadius: 0,
+					borderWidth: 2
+					});
+					}
+					});
+					new Chart(ctxLine, {
+					type: 'line',
+					data: {
+					datasets
+					},
+					options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					interaction: {
+					intersect: false,
+					mode: 'index'
+					},
+					scales: {
+					x: {
+					type: 'time',
+					time: {
+					unit: 'day'
+					},
+					grid: {
+					display: false
+					}
+					},
+					y: {
+					grid: {
+					color: 'rgba(0,0,0,0.03)'
+					},
+					title: {
+					display: true,
+					text: 'Wachstumsfaktor'
+					}
+					}
+					},
+					plugins: {
+					legend: {
+					position: 'bottom',
+					labels: {
+					usePointStyle: true,
+					boxWidth: 6,
+					font: {
+					size: 10
+					}
+					}
+					}
+					}
+					}
+					});
+					}
+					
+					// 2. Allocation Doughnut
+					const ctxAlloc = document.getElementById('allocationChart');
+					if (ctxAlloc) {
+					const labels = accounts.map(a => a.name);
+					const data = accounts.map(a => a.balance);
+					new Chart(ctxAlloc, {
+					type: 'doughnut',
+					data: {
+					labels,
+					datasets: [
+					{
+					data,
+					backgroundColor: labels.map(
+					(_, i) => `hsl(${
+					200 + i * 25
+					}, 65%, 55%)`
+					),
+					borderWidth: 0,
+					hoverOffset: 15
+					}
+					]
+					},
+					options: {
+					responsive: true,
+					maintainAspectRatio: false,
+					cutout: '75%',
+					plugins: {
+					legend: {
+					position: 'bottom',
+					labels: {
+					usePointStyle: true,
+					boxWidth: 6,
+					font: {
+					size: 10
+					}
+					}
+					},
+					tooltip: {
+					callbacks: {
+					label: (item) => `${
+					item.label
+					}: ${
+					item.raw.toLocaleString()
+					} \u20ac`
+					}
+					}
+					}
+					}
+					});
+					}
+					}
+					});</script>{% endblock %}

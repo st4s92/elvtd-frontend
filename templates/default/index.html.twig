@@ -1,696 +1,1609 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}ELVTD Finance - Dashboard{% endblock %}
+{% block title %}ELVTD Finance - Dashboard
+{% endblock %}
 
 {% block body %}
-    <div class="wrapper">
-        <div class="container py-2">
-            <div class="row mb-3">
-                <h3 class="mb-0 h4 font-weight-bolder">Dashboard</h3>
-            </div>
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+	<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+	<style>
+	/* ── Premium Home Design System ── */:root
+	{
+		--p: #6366f1; /* Indigo */
+		--p-rgb: 99, 102, 241;
+		--s: #10b981; /* Success */
+		--s-rgb: 16, 185, 129;
+		--d: #ef4444; /* Danger */
+		--d-rgb: 239, 68, 68;
+		--bg-mesh: fixed radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%), fixed radial-gradient(at 0% 100%, rgba(16, 185, 129, 0.15) 0px, transparent 50%), fixed radial-gradient(at 100% 100%, rgba(99, 102, 241, 0.1) 0px, transparent 50%), fixed radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.1) 0px, transparent 50%), #f8fafc;
+		--glass: rgba(255, 255, 255, 0.85);
+		--glass-border: rgba(255, 255, 255, 0.5);
+		--shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+		--font: 'Outfit', sans-serif;
+		--txt-main: #0f172a;
+		--txt-dim: #64748b;
+	}
 
-            <div class="row mb-4">
-                <div class="col-12 mb-4">
-                    <div class="card">
-                        <div class="card-header pb-0">
-                            <div class="row">
-                                <div class="col-12">
-                                    <h6>Dein Profil</h6>
-                       {#             <p class="text-sm mb-0">
-                                        {% if user.emailVerified < 1 %}
-                                            Bitte verifiziere deinen Account, um sicherzustellen, dass nur autorisierte Personen Zugriff haben. Da wir höchsten Wert auf Datenschutz und Datensicherheit legen, ist dieser Schritt notwendig, um deine persönlichen Informationen bestmöglich zu schützen.
-                                        {% endif %}
-                                    </p>#}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-body px-4 pb-4">
-                            <div class="row">
-                                <div class="col-12 col-md-3 mb-2">
-                                    <span class="badge badge-success py-4 d-block">
-                                        <span>
-                                            1. Account erstellen
-                                            <i class="fa fa-check mx-2" aria-hidden="true"></i>
-                                        </span>
-                                    </span>
-                                </div>
-                                <div class="col-12 col-md-3 mb-2">
-                                    <span class="badge {% if subscription|length >= 1 %}badge-success{% else %}badge-secondary{% endif %} {{ app.user.subscriptionStatus == 'deactivated' ? 'badge-danger' : '' }} py-4 d-block">
-                                        <span>
-                                            2. Abonnement aktivieren
-                                            <i class="fa fa-{% if subscription|length >= 1 %}{{ app.user.subscriptionStatus == 'deactivated' ? 'times' : 'check' }}{% else %}times{% endif %} mx-2" aria-hidden="true"></i>
-                                        </span>
-                                    </span>
-                                </div>
-                                <div class="col-12 col-md-3 mb-2">
-                                    <span class="badge {% if user_accounts|length > 0 %}badge-success{% else %}badge-secondary{% endif %} {{ app.user.subscriptionStatus == 'deactivated' ? 'badge-danger' : '' }} py-4 d-block">
-                                        <span>
-                                            3. Account hinzufügen
-                                            <i class="fa fa-{% if user_accounts|length > 0 %}{{ app.user.subscriptionStatus == 'deactivated' ? 'times' : 'check' }}{% else %}times{% endif %} mx-2" aria-hidden="true"></i>
-                                        </span>
-                                    </span>
-                                </div>
-                                <div class="col-12 col-md-3">
-                                    <span class="badge {% if account_agent_connections|length >= 1 %}badge-success{% else %}badge-secondary{% endif %} {{ app.user.subscriptionStatus == 'deactivated' ? 'badge-danger' : '' }} py-4 d-block">
-                                        <span>
-                                            4. Agent verbinden
-                                            <i class="fa fa-{% if account_agent_connections|length >= 1 %}{{ app.user.subscriptionStatus == 'deactivated' ? 'times' : 'check' }}{% else %}times{% endif %} mx-2" aria-hidden="true"></i>
-                                        </span>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+	body {
+		background: var(--bg-mesh);
+		background-attachment: fixed;
+		font-family: var(--font);
+		color: var(--txt-main);
+		min-height: 100vh;
+	}
 
-            <div class="row mb-4">
-                <div class="col-12 mb-4">
-                    <div class="card">
-                        <div class="card-header pb-0">
-                            <div class="row">
-                                <div class="col-12">
-                                    <h6 id="#subscription">Dein Abonnement</h6>
-                                    <p class="text-sm mb-0">
+	.pf-wrap {
+		padding: 2rem 0 5rem;
+		animation: entry-fade 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+	}
 
-{#                                        {% set currentPeriodEndTimestamp = subscription.currentPeriodEnd|date('U') %}#}
-{#                                        {% set nowTimestamp = "now"|date('U') %}#}
-{#                                        Ende: {{ currentPeriodEnd }} ({{ subscription.currentPeriodEnd|date('d.m.Y H:i:s') }})<br>#}
-{#                                        Now: {{ nowTimestamp }} ({{ "now"|date('d.m.Y H:i:s') }})<br>#}
+	.container-custom {
+		max-width: 1280px;
+		margin: 0 auto;
+		padding: 0 1.5rem;
+	}
 
-                                        {% if subscription is iterable and subscription|length >= 1 or (subscription.currentPeriodEnd is not null and subscription.currentPeriodEnd|date('U') >= "now"|date('U')) %}                                            {% if subscription.status == "trialing" %}
-                                                Deine Testphase läuft bis zum <strong>{{ subscription.currentPeriodEnd|date('d.m.Y H:i:s') }}</strong>
-                                            {% else %}
-                                                Dein Abonnement läuft bis zum <strong>{{ subscription.currentPeriodEnd|date('d.m.Y H:i:s') }}</strong>
-                                            {% endif %}
+	.glass-card {
+		background: var(--glass);
+		backdrop-filter: blur(16px);
+		-webkit-backdrop-filter: blur(16px);
+		border: 1px solid var(--glass-border);
+		box-shadow: var(--shadow);
+		border-radius: 24px;
+		transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+	}
 
-                                            <div class="row">
-                                                <div class="col-xl-6 col-sm-12 mb-xl-0 my-4">
-                                                    <div class="card">
-                                                        <table class="table">
-                                                            <tbody>
-                                                                <tr>
-                                                                    <td><strong>Status</strong></td>
-                                                                    <td>{{subscription.status }}</td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <td><strong>Start</strong></td>
-                                                                    <td>{{ subscription.currentPeriodStart|date('d.m.Y H:i:s') }}</td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <td><strong>Ende</strong></td>
-                                                                    <td>{{ subscription.currentPeriodEnd|date('d.m.Y H:i:s') }}</td>
-                                                                </tr>
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                </div>
+	.glass-card:hover {
+		transform: translateY(-5px);
+		box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.1);
+		border-color: rgba(var(--p-rgb), 0.3);
+	}
 
-                                                <div class="col-xl-6 col-sm-12 mb-xl-0 my-4">
-                                                    <div class="card">
-                                                        <table class="table">
-                                                            <tbody>
-                                                                <tr>
-                                                                    <td><strong>Accounts</strong></td>
-                                                                    <td>{{ user_accounts|length }} von {{ user.maxAccounts }}</td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <td><strong>Agents</strong></td>
-                                                                    <td>{{ account_agent_connections|length }} von {{ user.maxAccounts }}</td>
-                                                                </tr>
-                                                                <tr>
-                                                                    <td><strong>Copy Trader</strong></td>
-                                                                    <td>0 von 0</td>
-                                                                </tr>
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        {% elseif user.affiliateCode == "elvtd2555" %}
-                                            Herzlich Willkommen bei der Testphase von ELVTD Finance!
-                                        {% else %}
-                                            Du hast noch kein aktives Paket. Wähle eine Mitgliedschaft aus um zu starten.
-                                        {% endif %}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-body mt-4 px-4 pb-4">
-                            <div class="row">
-                                <div class="col-md-4 mb-4">
-                                    <div class="card bg-gradient-dark shadow-lg">
-                                        <span class="badge rounded-pill bg-primary w-40 mt-n2 mx-auto">Abonnement</span>
-                                        <div class="card-header text-center pt-4 pb-3 bg-transparent">
-                                            <h4 class="text-white">Halbjahresmitgliedschaft<br>Exklusiver Mitgliedervorteil</h4>
-                                            {% if user.affiliateCode != "elvtd2555" %}
-                                            <h1 class="font-weight-bold mt-2 text-white">
-                                                259<small class="text-lg">€ / Monat</small>
-                                            </h1>
-                                            {% endif %}
-                                        </div>
-                                        <div class="card-body pt-0">
-                                            <div class="d-flex justify-content-lg-start p-2">
-                                                <i class="material-symbols-rounded my-auto text-white">done</i>
-                                                <span class="ps-3 text-white">Mindestlaufzeit: 6 Monate</span>
-                                            </div>
-                                            <div class="d-flex justify-content-lg-start p-2">
-                                                <i class="material-symbols-rounded my-auto text-white">done</i>
-                                                <span class="ps-3 text-white">1 Trading Account (MT4, MT5, cTrader)<br>
-                                                    <small class="text-xs">Tradovate, Bitget coming soon</small></br>
-                                                </span>
-                                            </div>
+	.dash-title {
+		font-size: 2.5rem;
+		font-weight: 800;
+		letter-spacing: -0.05em;
+		background: linear-gradient(135deg, #0f172a 0%, #475569 100%);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		margin-bottom: 0.25rem;
+	}
 
-                                            <div class="d-flex justify-content-lg-start p-2">
-                                                <i class="material-symbols-rounded my-auto text-white">done</i>
-                                                <span class="ps-3 text-white">1 Agent pro Account</span>
-                                            </div>
+	.dash-subtitle {
+		font-size: 1rem;
+		font-weight: 500;
+		color: #64748b;
+	}
 
-                                            <div class="d-flex justify-content-lg-start p-2">
-                                                <i class="material-symbols-rounded my-auto text-white">done</i>
-                                                <span class="ps-3 text-white">Inklusive ELALIHOLDING Indikator</span>
-                                            </div>
+	.step-badge {
+		padding: 0.75rem 1.25rem;
+		border-radius: 16px;
+		font-weight: 700;
+		font-size: 0.85rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 10px;
+		transition: all 0.3s;
+		border: 1px solid transparent;
+	}
 
-                                            <div class="d-flex justify-content-lg-start p-2">
-                                                <i class="material-symbols-rounded my-auto text-white">done</i>
-                                                <span class="ps-3 text-white">Tägliche Live-Trading-Sessions</span>
-                                            </div>
+	.step-done {
+		background: rgba(var(--s-rgb), 0.1);
+		color: var(--s);
+		border-color: rgba(var(--s-rgb), 0.2);
+	}
 
-                                            <div class="d-flex justify-content-lg-start p-2">
-                                                <i class="material-symbols-rounded my-auto text-white">done</i>
-                                                <span class="ps-3 text-white">Alle Inhalte von ELALIHOLDING Premium+</span>
-                                            </div>
+	.step-pending {
+		background: rgba(148, 163, 184, 0.1);
+		color: #64748b;
+		border-color: rgba(148, 163, 184, 0.15);
+	}
 
-                                            {% if subscription is defined and (subscription is iterable and subscription|length >= 1 or (subscription.currentPeriodEnd is not null and subscription.currentPeriodEnd|date('U') >= "now"|date('U'))) %}
-                                                {% if subscription.status == "trialing" %}
-                                                    <span class="d-block text-white text-xs text-center my-4">Deine Testphase läuft bis zum <strong>{{ subscription.currentPeriodEnd|date('d.m.Y H:i:s') }}</strong></span>
-                                                {% else %}
-                                                    <span class="d-block text-white text-xs text-center my-4">Dein Abonnement läuft bis zum <strong>{{ subscription.currentPeriodEnd|date('d.m.Y H:i:s') }}</strong></span>
-                                                {% endif %}
-                                            {% else %}
-                                                <a href="https://shop.elaliholding.com/?add-to-cart=55229" target="_blank" class="w-100 btn btn-icon bg-gradient-success mt-3 mb-0 d-flex justify-content-center">
-                                                    Jetzt starten (Kreditkarte)
-                                                    <i class="fas fa-arrow-right my-auto mx-1"></i>
-                                                </a>
-                                                <br>{#
-                                                <a href="https://copecart.com/products/cdf18f78/checkout" target="_blank" class="w-100 btn btn-icon bg-gradient-success mt-0 mb-0 d-flex justify-content-center">
-                                                    Jetzt starten (PayPal)
-                                                    <i class="fas fa-arrow-right my-auto mx-1"></i>
-                                                </a>#}
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
+	.pf-table th {
+		font-size: 0.7rem;
+		font-weight: 800;
+		color: var(--txt-dim);
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		padding: 1.25rem 1.5rem;
+		border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+	}
 
-                                <!-- Modal -->
-                                <div class="modal fade" id="trialModal" tabindex="-1" role="dialog" aria-labelledby="trialModal" aria-hidden="true">
-                                    <div class="modal-dialog modal-dialog-centered" role="document">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title font-weight-normal">Starte deine 14-tägige Testphase</h5>
-                                                <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close">
-                                                    <span aria-hidden="true">&times;</span>
-                                                </button>
-                                            </div>
-                                            <div class="p-4">
-                                                <p>
-                                                    Wir bieten dir eine 14-tägige kostenlose Testphase, um alle Funktionen
-                                                    unseres Services kennenzulernen. Während dieser Testphase kannst du
-                                                    uneingeschränkt auf alle Features zugreifen und maximal 1 Trading Account verbinden.
-                                                </p>
+	.pf-table td {
+		padding: 1.25rem 1.5rem;
+		vertical-align: middle;
+	}
 
-                                                <p>
-                                                    Nach Ablauf der Testphase wird dein Zugang automatisch eingeschränkt, es sei denn,
-                                                    du entscheidest dich für eine Premium-Mitgliedschaft.
-                                                </p>
+	@keyframes entry-fade {
+		from {
+			opacity: 0;
+			transform: translateY(20px);
+			filter: blur(5px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+			filter: blur(0);
+		}
+	}
 
-                                                <a href="{{ path('app_trial_start') }}" class="btn btn-primary float-end">
-                                                    Testphase jetzt starten
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+	.stagger-1 {
+		animation: entry-fade 0.8s 0.1s both;
+	}
+	.stagger-2 {
+		animation: entry-fade 0.8s 0.2s both;
+	}
+	.stagger-3 {
+		animation: entry-fade 0.8s 0.3s both;
+	}
+	.stagger-4 {
+		animation: entry-fade 0.8s 0.4s both;
+	}
 
-                                <!-- Modal -->
-                                <div class="modal fade" id="elvtdModal" tabindex="-1" role="dialog" aria-labelledby="trialModal" aria-hidden="true">
-                                    <div class="modal-dialog modal-dialog-centered" role="document">
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title font-weight-normal">Starte deine ELVTD Testphase</h5>
-                                                <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close">
-                                                    <span aria-hidden="true">&times;</span>
-                                                </button>
-                                            </div>
-                                            <div class="p-4">
-                                                <p>Mit Aktivierung der ELVTD-Testphase erhalten Sie temporären, uneingeschränkten Zugang zu sämtlichen Funktionen der Plattform. Während dieser Testphase ist die Verbindung eines (1) Trading-Kontos möglich.</p>
-                                                <p>Bitte beachten Sie ausdrücklich die Vorgaben der ELVTD-Gruppe. Eine Anpassung von Multiplikatoren ist ausschließlich nach vorheriger Abstimmung zulässig.</p>
-                                                <p>
-                                                    <strong>Risikohinweis:</strong>  <br>
-                                                    Die Nutzung dieser automatisierten Handelsplattform erfolgt auf eigenes Risiko. Aufgrund von Marktvolatilität, wirtschaftlichen sowie politischen Unwägbarkeiten kann es zu erheblichen Verlusten bis hin zum vollständigen Verlust des eingesetzten Kapitals kommen.
-                                                    <br>
-                                                    Mit der Teilnahme an der Testphase erkennen Sie diese Risiken ausdrücklich an und erklären sich mit deren Bedingungen einverstanden. Es besteht keine Gewinnzusage. Historische Performance stellt keinen verlässlichen Indikator für zukünftige Entwicklungen dar. Bitte handeln Sie stets mit der gebotenen Sorgfalt und Verantwortung.
-                                                    <br>
-                                                </p>
-                                                <a href="{{ path('app_elvtd_start') }}" class="btn btn-primary float-end">
-                                                    Testphase jetzt starten
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+	/* ── Subscription Status Enhancements ── */
+	.sub-item {
+		margin-bottom: 1.5rem;
+	}
+	.sub-label-wrap {
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-end;
+		margin-bottom: 0.5rem;
+	}
+	.sub-label {
+		font-size: 0.75rem;
+		font-weight: 700;
+		color: var(--txt-dim);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+	.sub-value {
+		font-size: 0.9rem;
+		font-weight: 800;
+		color: var(--txt-main);
+	}
+	.sub-progress-bg {
+		height: 8px;
+		background: rgba(0, 0, 0, 0.05);
+		border-radius: 10px;
+		overflow: hidden;
+		position: relative;
+	}
+	.sub-progress-fill {
+		height: 100%;
+		border-radius: 10px;
+		background: linear-gradient(90deg, var(--p), #818cf8);
+		box-shadow: 0 0 15px rgba(var(--p-rgb), 0.3);
+		transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+	}
+	.sub-progress-fill.success {
+		background: linear-gradient(90deg, var(--s), #34d399);
+		box-shadow: 0 0 15px rgba(var(--s-rgb), 0.3);
+	}
 
-                                <div class="col-md-4 mb-4">
-                                    <div class="card bg-gradient-dark shadow-lg">
-                                        <span class="badge rounded-pill bg-primary w-40 mt-n2 mx-auto">Abonnement</span>
-                                        <div class="card-header text-center pt-4 pb-3 bg-transparent">
-                                            <h4 class="text-white">Jahresmitgliedschaft <br> Exklusiver Mitgliedervorteil</h4>
-                                            {% if user.affiliateCode != "elvtd2555" %}
-                                                <h1 class="font-weight-bold mt-2 text-white">
-                                                    209<small class="text-lg">€ / Monat</small>
-                                                </h1>
-                                            {% endif %}
-                                        </div>
-                                        <div class="card-body pt-0">
-                                            <div class="d-flex justify-content-lg-start p-2">
-                                                <i class="material-symbols-rounded my-auto text-white">done</i>
-                                                <span class="ps-3 text-white">Mindestlaufzeit: 12 Monate</span>
-                                            </div>
-                                            <div class="d-flex justify-content-lg-start p-2">
-                                                <i class="material-symbols-rounded my-auto text-white">done</i>
-                                                <span class="ps-3 text-white">1 Trading Account (MT4, MT5, cTrader)<br>
-                                                    <small class="text-xs">Tradovate, Bitget coming soon</small></br>
-                                                </span>
-                                            </div>
+	.status-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		padding: 0.5rem 1rem;
+		background: rgba(var(--s-rgb), 0.1);
+		border: 1px solid rgba(var(--s-rgb), 0.2);
+		border-radius: 100px;
+		color: var(--s);
+		font-size: 0.75rem;
+		font-weight: 800;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+	.status-dot {
+		width: 8px;
+		height: 8px;
+		background: var(--s);
+		border-radius: 50%;
+		box-shadow: 0 0 10px var(--s);
+		animation: pulse-dot 2s infinite;
+	}
+	@keyframes pulse-dot {
+		0% {
+			transform: scale(1);
+			opacity: 1;
+		}
+		50% {
+			transform: scale(1.5);
+			opacity: 0.5;
+		}
+		100% {
+			transform: scale(1);
+			opacity: 1;
+		}
+	}
 
-                                            <div class="d-flex justify-content-lg-start p-2">
-                                                <i class="material-symbols-rounded my-auto text-white">done</i>
-                                                <span class="ps-3 text-white">1 Agent pro Account</span>
-                                            </div>
+	.expiry-box {
+		background: #f1f5f9;
+		border-radius: 16px;
+		padding: 1rem;
+		text-align: center;
+		margin-top: 2rem;
+	}
+	.expiry-label {
+		display: block;
+		font-size: 0.7rem;
+		font-weight: 700;
+		color: var(--txt-dim);
+		text-transform: uppercase;
+		margin-bottom: 0.25rem;
+	}
+	.expiry-date {
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--txt-main);
+	}
 
-                                            <div class="d-flex justify-content-lg-start p-2">
-                                                <i class="material-symbols-rounded my-auto text-white">done</i>
-                                                <span class="ps-3 text-white">Inklusive ELALIHOLDING Indikator</span>
-                                            </div>
+	.bg-gradient-dark {
+		background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%) !important;
+		color: white !important;
+	}
+	.bg-gradient-dark * {
+		color: white !important;
+	}
 
-                                            <div class="d-flex justify-content-lg-start p-2">
-                                                <i class="material-symbols-rounded my-auto text-white">done</i>
-                                                <span class="ps-3 text-white">Tägliche Live-Trading-Sessions</span>
-                                            </div>
+	/* ── Master Trades Premium Glassmorphism ── */
+	.glass-premium {
+		background: rgba(15, 23, 42, 0.75) !important;
+		backdrop-filter: blur(28px) saturate(200%);
+		-webkit-backdrop-filter: blur(28px) saturate(200%);
+		border: 1px solid rgba(255, 255, 255, 0.12) !important;
+		border-radius: 32px !important;
+		box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.02) !important;
+		position: relative;
+		overflow: hidden;
+	}
+	.glass-premium::after {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: url("data:image/svg+xml, %3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+		filter: contrast(120%) brightness(100%);
+		opacity: 0.03;
+		pointer-events: none;
+		z-index: 1;
+	}
+	.glass-premium > * {
+		position: relative;
+		z-index: 2;
+	}
+	.glass-premium .card-title {
+		color: #ffffff !important;
+		font-weight: 900;
+		letter-spacing: 0.08em;
+	}
+	.badge-master-premium {
+		background: rgba(255, 255, 255, 0.1);
+		color: white;
+		border: 1px solid rgba(255, 255, 255, 0.2);
+		text-transform: uppercase;
+		font-weight: 900;
+		padding: 6px 14px;
+		font-size: 0.65rem;
+		letter-spacing: 0.12em;
+		box-shadow: 0 0 15px rgba(255, 255, 255, 0.05);
+	}
+	.trade-featured-glass {
+		background: rgba(255, 255, 255, 0.04);
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		border-radius: 24px;
+		padding: 1.75rem;
+		margin-bottom: 1.25rem;
+		position: relative;
+		transition: all 0.3s cubic-bezier(0.2, 0, 0, 1);
+	}
+	.trade-featured-glass:hover {
+		background: rgba(255, 255, 255, 0.07);
+		border-color: rgba(255, 255, 255, 0.15);
+		transform: translateY(-4px) scale(1.02);
+		box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+	}
+	.trade-symbol-premium {
+		color: white;
+		font-weight: 900;
+		font-size: 1.5rem;
+		letter-spacing: -0.04em;
+	}
+	.trade-meta-premium {
+		color: rgba(255, 255, 255, 0.5);
+		font-weight: 700;
+		font-size: 0.75rem;
+	}
+	.text-glow-success {
+		color: #10b981 !important;
+		text-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+	}
+	.text-glow-danger {
+		color: #ef4444 !important;
+		text-shadow: 0 0 20px rgba(239, 68, 68, 0.6);
+	}
+	.trade-item-frosted {
+		background: rgba(255, 255, 255, 0.03);
+		border: 1px solid rgba(255, 255, 255, 0.05);
+		border-radius: 18px;
+		padding: 1.15rem;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		transition: all 0.25s ease;
+	}
+	.trade-item-frosted:hover {
+		background: rgba(255, 255, 255, 0.08);
+		border-color: rgba(255, 255, 255, 0.1);
+		transform: scale(1.02);
+	}
+	.badge-buy-premium {
+		background: rgba(16, 185, 129, 0.15);
+		color: #10b981;
+		border: 1px solid rgba(16, 185, 129, 0.3);
+	}
+	.badge-sell-premium {
+		background: rgba(239, 68, 68, 0.15);
+		color: #ef4444;
+		border: 1px solid rgba(239, 68, 68, 0.3);
+	}
+	.sub-item-premium .sub-label {
+		color: rgba(255, 255, 255, 0.5) !important;
+		font-weight: 800 !important;
+		font-size: 0.65rem !important;
+		letter-spacing: 0.05em;
+	}
+	.sub-item-premium .sub-value {
+		color: white !important;
+		font-weight: 900 !important;
+	}
+	.sub-progress-fill-premium {
+		box-shadow: 0 0 15px currentColor;
+		border-radius: 10px;
+	}
+	.expiry-box-premium {
+		background: rgba(255, 255, 255, 0.03);
+		border: 1px dashed rgba(255, 255, 255, 0.1);
+		border-radius: 20px;
+		padding: 1.25rem;
+		text-align: center;
+	}
+	.expiry-date-premium {
+		color: white !important;
+		font-weight: 900 !important;
+		font-size: 1.1rem !important;
+	}
 
-                                            <div class="d-flex justify-content-lg-start p-2">
-                                                <i class="material-symbols-rounded my-auto text-white">done</i>
-                                                <span class="ps-3 text-white">Alle Inhalte von ELALIHOLDING Premium+</span>
-                                            </div>
+	/* ══════════════════════════════════════════════════════
+	   PRICING SECTION — Premium Animated Design
+	   ══════════════════════════════════════════════════════ */
+	.pricing-section {
+		position: relative;
+		padding: 3rem 0 2rem;
+	}
+	.pricing-section-header {
+		text-align: center;
+		margin-bottom: 3rem;
+	}
+	.pricing-section-header h2 {
+		font-size: 2.2rem;
+		font-weight: 800;
+		letter-spacing: -0.04em;
+		background: linear-gradient(135deg, #0f172a 0%, #334155 50%, #16a34a 100%);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+		margin-bottom: 0.5rem;
+	}
+	.pricing-section-header p {
+		font-size: 1rem;
+		color: var(--txt-dim);
+		font-weight: 500;
+	}
 
-                                            {% if subscription is defined and (subscription is iterable and subscription|length >= 1 or (subscription.currentPeriodEnd is not null and subscription.currentPeriodEnd|date('U') >= "now"|date('U'))) %}
-                                                {% if subscription.status == "trialing" %}
-                                                    <span class="d-block text-white text-xs text-center my-4">Deine Testphase läuft bis zum <strong>{{ subscription.currentPeriodEnd|date('d.m.Y H:i:s') }}</strong></span>
-                                                {% else %}
-                                                    <span class="d-block text-white text-xs text-center my-4">Dein Abonnement läuft bis zum <strong>{{ subscription.currentPeriodEnd|date('d.m.Y H:i:s') }}</strong></span>
-                                                {% endif %}
-                                            {% else %}
-                                                <a href="https://shop.elaliholding.com/?add-to-cart=55231" target="_blank" class="w-100 btn btn-icon bg-gradient-success mt-3 mb-0 d-flex justify-content-center">
-                                                    Jetzt starten (Kreditkarte)
-                                                    <i class="fas fa-arrow-right my-auto mx-1"></i>
-                                                </a>
-                                                <br>{#
-                                                <a href="https://copecart.com/products/c46a571a/checkout" target="_blank" class="w-100 btn btn-icon bg-gradient-success mt-0 mb-0 d-flex justify-content-center">
-                                                    Jetzt starten (PayPal)
-                                                    <i class="fas fa-arrow-right my-auto mx-1"></i>
-                                                </a>#}
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
+	.pricing-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 1.5rem;
+		align-items: stretch;
+	}
+	@media(max-width: 768px) {
+		.pricing-grid {
+			grid-template-columns: 1fr;
+		}
+	}
 
-                                <div class="col-md-4 mb-4">
-                                    <div class="card bg-gradient-dark shadow-lg">
-                                        <span class="badge rounded-pill bg-primary w-40 mt-n2 mx-auto">Abonnement</span>
-                                        <div class="card-header text-center pt-4 pb-3 bg-transparent">
-                                            <h4 class="text-white">Jahresmitgliedschaft <br> Exklusiver Mitgliedervorteil</h4>
-                                            {% if user.affiliateCode != "elvtd2555" %}
-                                                <h1 class="font-weight-bold mt-2 text-white">
-                                                    2.199<small class="text-lg">€ / Einmalzahlung</small>
-                                                </h1>
-                                            {% endif %}
-                                        </div>
-                                        <div class="card-body pt-0">
-                                            <div class="d-flex justify-content-lg-start p-2">
-                                                <i class="material-symbols-rounded my-auto text-white">done</i>
-                                                <span class="ps-3 text-white">Rabatt von 309€</span>
-                                            </div>
-                                            <div class="d-flex justify-content-lg-start p-2">
-                                                <i class="material-symbols-rounded my-auto text-white">done</i>
-                                                <span class="ps-3 text-white">1 Trading Account (MT4, MT5, cTrader)<br>
-                                                    <small class="text-xs">Tradovate, Bitget coming soon</small></br>
-                                                </span>
-                                            </div>
+	/* ── Individual Pricing Card ── */
+	.pricing-card {
+		position: relative;
+		border-radius: 24px;
+		overflow: hidden;
+		transition: all 0.5s cubic-bezier(0.175,0.885,0.32,1.275);
+	}
+	.pricing-card:hover {
+		transform: translateY(-8px);
+	}
 
-                                            <div class="d-flex justify-content-lg-start p-2">
-                                                <i class="material-symbols-rounded my-auto text-white">done</i>
-                                                <span class="ps-3 text-white">1 Agent pro Account</span>
-                                            </div>
+	/* Animated gradient border */
+	.pricing-card::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: 24px;
+		padding: 2px;
+		background: linear-gradient(135deg, rgba(22,163,74,0.3), rgba(99,102,241,0.2), rgba(22,163,74,0.3));
+		background-size: 200% 200%;
+		animation: borderShift 4s ease infinite;
+		-webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+		mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+		-webkit-mask-composite: xor;
+		mask-composite: exclude;
+		pointer-events: none;
+		z-index: 1;
+	}
+	@keyframes borderShift {
+		0,
+		100% {
+			background-position: 0 50%;
+		}
+		50% {
+			background-position: 100% 50%;
+		}
+	}
 
-                                            <div class="d-flex justify-content-lg-start p-2">
-                                                <i class="material-symbols-rounded my-auto text-white">done</i>
-                                                <span class="ps-3 text-white">Inklusive ELALIHOLDING Indikator</span>
-                                            </div>
+	.pricing-card-inner {
+		position: relative;
+		background: linear-gradient(160deg, #1a2332 0%, #0d1520 40%, #111b27 100%);
+		border-radius: 24px;
+		padding: 2rem 1.75rem 1.75rem;
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
 
-                                            <div class="d-flex justify-content-lg-start p-2">
-                                                <i class="material-symbols-rounded my-auto text-white">done</i>
-                                                <span class="ps-3 text-white">Tägliche Live-Trading-Sessions</span>
-                                            </div>
+	/* Subtle mesh glow inside card */
+	.pricing-card-inner::before {
+		content: '';
+		position: absolute;
+		top: -60%;
+		right: -40%;
+		width: 200%;
+		height: 200%;
+		background: radial-gradient(circle at 70% 30%, rgba(22,163,74,0.08) 0%, transparent 50%);
+		pointer-events: none;
+	}
+	.pricing-card-inner::after {
+		content: '';
+		position: absolute;
+		bottom: -50%;
+		left: -30%;
+		width: 160%;
+		height: 160%;
+		background: radial-gradient(circle at 30% 70%, rgba(99,102,241,0.06) 0%, transparent 50%);
+		pointer-events: none;
+	}
 
-                                            <div class="d-flex justify-content-lg-start p-2">
-                                                <i class="material-symbols-rounded my-auto text-white">done</i>
-                                                <span class="ps-3 text-white">Alle Inhalte von ELALIHOLDING Premium+</span>
-                                            </div>
+	/* ── Featured card (Empfehlung) ── */
+	.pricing-card.featured {
+		z-index: 2;
+	}
+	.pricing-card.featured::before {
+		padding: 2px;
+		background: linear-gradient(135deg, #16a34a, #22d3ee, #8b5cf6, #16a34a);
+		background-size: 300% 300%;
+		animation: borderShiftFeatured 3s ease infinite;
+	}
+	@keyframes borderShiftFeatured {
+		0,
+		100% {
+			background-position: 0 50%;
+		}
+		50% {
+			background-position: 100% 50%;
+		}
+	}
+	.pricing-card.featured .pricing-card-inner::before {
+		background: radial-gradient(circle at 70% 30%, rgba(22,163,74,0.12) 0%, transparent 50%);
+	}
+	.pricing-card.featured:hover {
+		box-shadow: 0 20px 60px rgba(22, 163, 74, 0.2), 0 0 40px rgba(22, 163, 74, 0.1);
+	}
 
-                                            {% if subscription is defined and (subscription is iterable and subscription|length >= 1 or (subscription.currentPeriodEnd is not null and subscription.currentPeriodEnd|date('U') >= "now"|date('U'))) %}
-                                                {% if subscription.status == "trialing" %}
-                                                    <span class="d-block text-white text-xs text-center my-4">Deine Testphase läuft bis zum <strong>{{ subscription.currentPeriodEnd|date('d.m.Y H:i:s') }}</strong></span>
-                                                {% else %}
-                                                    <span class="d-block text-white text-xs text-center my-4">Dein Abonnement läuft bis zum <strong>{{ subscription.currentPeriodEnd|date('d.m.Y H:i:s') }}</strong></span>
-                                                {% endif %}
-                                            {% else %}
-                                                <a href="https://shop.elaliholding.com/?add-to-cart=55236" target="_blank" class="w-100 btn btn-icon bg-gradient-success mt-3 mb-0 d-flex justify-content-center">
-                                                    Jetzt starten (Kreditkarte)
-                                                    <i class="fas fa-arrow-right my-auto mx-1"></i>
-                                                </a>
-                                                <br>{#
-                                                <a href="https://copecart.com/products/4b1f2ef3/checkout" target="_blank" class="w-100 btn btn-icon bg-gradient-success mt-0 mb-0 d-flex justify-content-center">
-                                                    Jetzt starten (PayPal)
-                                                    <i class="fas fa-arrow-right my-auto mx-1"></i>
-                                                </a>#}
-                                            {% endif %}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+	/* ── Professional card ── */
+	.pricing-card.professional::before {
+		background: linear-gradient(135deg, rgba(59,130,246,0.4), rgba(139,92,246,0.3), rgba(59,130,246,0.4));
+		background-size: 200% 200%;
+		animation: borderShift 4s ease infinite;
+	}
+	.pricing-card.professional:hover {
+		box-shadow: 0 20px 60px rgba(59, 130, 246, 0.15), 0 0 30px rgba(59, 130, 246, 0.08);
+	}
 
-                            <div class="card text-center mt-3">
-                                <div class="overflow-hidden position-relative border-radius-lg bg-cover p-6" style="background-image: url('https://promo.gbebrokers.com/_next/image/?url=%2F_next%2Fstatic%2Fmedia%2Fhero-elaliholding.95257825.png&w=640&q=75'); background-position: center right; background-size: inherit; background-repeat: no-repeat;">
-                                    <span class="mask bg-gradient-dark opacity-6"></span>
-                                    <div class="card-body position-relative z-index-1 d-flex flex-column justify-content-center mt-5">
-                                        <h3 class="text-white" style="text-shadow: 1px 1px black;">Kostenlose Testphase bis zu 12 Monate!</h3>
-                                        <h4 class="text-white" style="text-shadow: 1px 1px black;">In Zusammenarbeit mit unserem Partner GBE Brokers</h4>
-                                        <button type="submit" data-bs-toggle="modal" data-bs-target="#extendModal" id="toggleButton" class="text-white text-sm font-weight-bold mb-0 icon-move-right mt-4 btn btn-primary w-md-30 w-80 mx-auto" href="javascript:;">
-                                            Kostenlos testen
-                                            <i class="material-symbols-rounded text-sm mx-auto position-relative" aria-hidden="true">arrow_forward</i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+	/* ── Badge ── */
+	.pricing-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 6px 16px;
+		border-radius: 100px;
+		font-size: 0.7rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		margin-bottom: 1.25rem;
+		position: relative;
+		z-index: 1;
+	}
+	.pricing-badge.badge-standard {
+		background: rgba(22, 163, 74, 0.15);
+		color: #4ade80;
+		border: 1px solid rgba(22, 163, 74, 0.2);
+	}
+	.pricing-badge.badge-featured {
+		background: linear-gradient(135deg, rgba(22,163,74,0.2), rgba(34,211,238,0.15));
+		color: #4ade80;
+		border: 1px solid rgba(22, 163, 74, 0.3);
+		box-shadow: 0 0 20px rgba(22, 163, 74, 0.15);
+		animation: badgeGlow 2s ease-in-out infinite;
+	}
+	@keyframes badgeGlow {
+		0,
+		100% {
+			box-shadow: 0 0 15px rgba(22, 163, 74, 0.15);
+		}
+		50% {
+			box-shadow: 0 0 25px rgba(22, 163, 74, 0.3);
+		}
+	}
+	.pricing-badge.badge-pro {
+		background: rgba(59, 130, 246, 0.15);
+		color: #93c5fd;
+		border: 1px solid rgba(59, 130, 246, 0.2);
+	}
 
-                            <!-- Modal -->
-                            <div class="modal fade" id="extendModal" tabindex="-1" role="dialog" aria-labelledby="extendModal" aria-hidden="true">
-                                <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 1000px;">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title font-weight-normal">Bis zu 12 Monate kostenlose Testphase</h5>
-                                            <button type="button" class="btn-close text-dark" data-bs-dismiss="modal" aria-label="Close">
-                                                <span aria-hidden="true">&times;</span>
-                                            </button>
-                                        </div>
-                                        <div class="p-4">
-                                            <img src="../assets/img/gbe.png" width="100%" class="d-block mb-3 mx-auto" style="max-width: 600px;" />
-                                            <p>
-                                                <strong>Kostenlose Testphase – bis zu 12 Monate Premium dank Partnerschaft mit GBE Brokers</strong>
-                                            </p>
-                                            <p>
-                                                In Zusammenarbeit mit unserem Partner GBE Brokers bieten wir dir die Möglichkeit, deine kostenlose Testphase auf bis zu 12 Monate zu verlängern. Um von diesem exklusiven Angebot zu profitieren, musst du lediglich ein GBE Classic Konto bei GBE Brokers eröffnen und eine Mindesteinzahlung tätigen. Bitte beachte, dass wir Einzahlungen unter 5.000 € nicht für die Nutzung der Agents empfehlen, da sie eine effiziente Handelsstrategie erschweren könnte und die Lotsizes nicht auf das notwendige Verhältnis reduziert werden können.
-                                            </p>
+	/* ── Card Title ── */
+	.pricing-title {
+		text-align: center;
+		margin-bottom: 0.75rem;
+		position: relative;
+		z-index: 1;
+	}
+	.pricing-title h4 {
+		font-size: 1.15rem;
+		font-weight: 700;
+		color: #e2e8f0 !important;
+		line-height: 1.4;
+		margin: 0;
+	}
 
-                                            <div class="card-body px-0 table-responsive">
-                                                <table class="table">
-                                                    <thead>
-                                                        <tr>
-                                                            <th>Einzahlung</th>
-                                                            <th>Laufzeit</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody>
-                                                        <tr>
-                                                            <td>5.000€</td>
-                                                            <td>3 Monate gratis</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td>20.000€</td>
-                                                            <td>6 Monate gratis</td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td>50.000€</td>
-                                                            <td>12 Monate gratis</td>
-                                                        </tr>
-                                                    </tbody>
-                                                </table>
-                                            </div>
+	/* ── Price ── */
+	.pricing-price {
+		text-align: center;
+		margin-bottom: 1.75rem;
+		position: relative;
+		z-index: 1;
+	}
+	.pricing-amount {
+		font-size: 3.5rem;
+		font-weight: 800;
+		letter-spacing: -0.04em;
+		line-height: 1;
+		background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+	}
+	.pricing-card.featured .pricing-amount {
+		background: linear-gradient(135deg, #4ade80 0%, #22d3ee 50%, #ffffff 100%);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+	}
+	.pricing-card.professional .pricing-amount {
+		background: linear-gradient(135deg, #93c5fd 0%, #c4b5fd 50%, #ffffff 100%);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
+	}
+	.pricing-period {
+		font-size: 1rem;
+		font-weight: 500;
+		color: #64748b !important;
+		margin-left: 4px;
+	}
 
-                                            <p>
-                                                Solltest du planen, mehr als 10.000 € einzuzahlen, stellen wir dir gerne den direkten Kontakt zu einem persönlichen Berater bei GBE Brokers her, der dich individuell unterstützen und beraten kann.
-                                            </p>
+	/* ── Divider ── */
+	.pricing-divider {
+		height: 1px;
+		background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+		margin-bottom: 1.5rem;
+		position: relative;
+		z-index: 1;
+	}
 
-                                            <p>
-                                                Mit diesem Angebot erhältst du bis zu 12 Monate uneingeschränkten Zugang zu allen Premium-Funktionen unserer Plattform sowie die Möglichkeit, deine automatisierten Handelsstrategien mit 1 Trading Account optimal zu testen und davon zu profitieren.
-                                            </p>
+	/* ── Features List ── */
+	.pricing-features {
+		list-style: none;
+		padding: 0;
+		margin: 0 0 1.75rem;
+		flex: 1;
+		position: relative;
+		z-index: 1;
+	}
+	.pricing-features li {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 10px 0;
+		font-size: 0.88rem;
+		font-weight: 500;
+		color: #cbd5e1 !important;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+	}
+	.pricing-features li:last-child {
+		border-bottom: none;
+	}
+	.pricing-features li .check-icon {
+		width: 22px;
+		height: 22px;
+		border-radius: 50%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		font-size: 0.65rem;
+	}
+	.check-green {
+		background: rgba(22, 163, 74, 0.15);
+		color: #4ade80 !important;
+		box-shadow: 0 0 10px rgba(22, 163, 74, 0.15);
+	}
+	.check-blue {
+		background: rgba(59, 130, 246, 0.15);
+		color: #93c5fd !important;
+		box-shadow: 0 0 10px rgba(59, 130, 246, 0.15);
+	}
 
-                                            <a href="https://promo.gbebrokers.com/de/elaliholding/?sidc=D4519FC0-7B54-48D0-B91A-A453178599F1" class="btn btn-primary float-end" target="_blank">
-                                                Testphase jetzt starten
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+	/* ── CTA Button ── */
+	.pricing-cta {
+		display: block;
+		width: 100%;
+		padding: 14px 24px;
+		border: none;
+		border-radius: 14px;
+		font-size: 0.95rem;
+		font-weight: 700;
+		text-align: center;
+		text-decoration: none;
+		cursor: pointer;
+		transition: all 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+		position: relative;
+		z-index: 1;
+		overflow: hidden;
+	}
+	.pricing-cta::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%);
+		opacity: 0;
+		transition: opacity 0.3s;
+	}
+	.pricing-cta:hover::before {
+		opacity: 1;
+	}
+	.pricing-cta-green {
+		background: linear-gradient(135deg, #16a34a, #15803d);
+		color: #fff !important;
+		box-shadow: 0 4px 20px rgba(22, 163, 74, 0.3);
+	}
+	.pricing-cta-green:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 8px 30px rgba(22, 163, 74, 0.45);
+		color: #fff !important;
+	}
+	.pricing-cta-glow {
+		background: linear-gradient(135deg, #16a34a, #0ea5e9);
+		color: #fff !important;
+		box-shadow: 0 4px 24px rgba(22, 163, 74, 0.35), 0 0 40px rgba(22, 163, 74, 0.1);
+		animation: ctaGlow 2s ease-in-out infinite;
+	}
+	@keyframes ctaGlow {
+		0,
+		100% {
+			box-shadow: 0 4px 24px rgba(22, 163, 74, 0.35), 0 0 30px rgba(22, 163, 74, 0.1);
+		}
+		50% {
+			box-shadow: 0 4px 30px rgba(22, 163, 74, 0.5), 0 0 50px rgba(22, 163, 74, 0.2);
+		}
+	}
+	.pricing-cta-glow:hover {
+		transform: translateY(-2px);
+		color: #fff !important;
+		animation: none;
+		box-shadow: 0 8px 40px rgba(22, 163, 74, 0.5), 0 0 60px rgba(22, 163, 74, 0.2);
+	}
+	.pricing-cta-blue {
+		background: linear-gradient(135deg, #3b82f6, #6366f1);
+		color: #fff !important;
+		box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+	}
+	.pricing-cta-blue:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 8px 30px rgba(59, 130, 246, 0.45);
+		color: #fff !important;
+	}
 
-            <div class="row mb-4">
-                <div class="col-12 mb-4">
-                    <div class="card">
-                        <div class="card-header pb-0">
-                            <div class="row">
-                                <div class="col-lg-6 col-7">
-                                    <h6>Dein Portfolio</h6>
-                                    <p class="text-sm mb-0">
-                                        <i class="fa fa-check text-info" aria-hidden="true"></i>
-                                        Insgesamt sind<span class="font-weight-bold ms-1">{{ user_accounts|length }} / {{ app.user.maxAccounts }}</span>
-                                        Accounts angelegt
-                                    </p>
-                                </div>
-                                <div class="col-lg-6 col-5 d-flex align-items-center">
-                                    <a href="{{ path('app_account_index') }}" class="ms-auto btn bg-gradient-dark mb-0">Zum Portfolio <i class="fas fa-arrow-right ms-1"></i></a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-body px-0 pb-2 table-responsive">
-                            <table class="table align-items-center mb-0">
-                                <thead>
-                                <tr>
-                                    <th class="w-15">Account</th>
-                                    <th class="text-center w-10">Platform</th>
-                                    <th class="text-center w-10">Equity</th>
-                                    <th class="text-center w-10">Balance</th>
-                                    <th class="text-center w-10">offener Profit</th>
-                                    <th class="text-center w-10">Gesamtprofit</th>
-                                </tr>
-                                </thead>
-                                <tbody>
+	/* ── Savings tag ── */
+	.pricing-save {
+		display: inline-block;
+		font-size: 0.7rem;
+		font-weight: 700;
+		color: #fbbf24 !important;
+		background: rgba(251, 191, 36, 0.1);
+		padding: 3px 10px;
+		border-radius: 100px;
+		margin-top: 6px;
+		border: 1px solid rgba(251, 191, 36, 0.15);
+	}
+
+	/* ── Floating particles for featured card ── */
+	.pricing-particles {
+		position: absolute;
+		inset: 0;
+		overflow: hidden;
+		pointer-events: none;
+		z-index: 0;
+	}
+	.pricing-particles span {
+		position: absolute;
+		width: 3px;
+		height: 3px;
+		background: rgba(22, 163, 74, 0.4);
+		border-radius: 50%;
+		animation: pFloat linear infinite;
+	}
+	.pricing-particles span:nth-child(1) {
+		left: 15%;
+		animation-duration: 6s;
+		animation-delay: 0s;
+	}
+	.pricing-particles span:nth-child(2) {
+		left: 35%;
+		animation-duration: 8s;
+		animation-delay: 1s;
+	}
+	.pricing-particles span:nth-child(3) {
+		left: 55%;
+		animation-duration: 7s;
+		animation-delay: 2s;
+	}
+	.pricing-particles span:nth-child(4) {
+		left: 75%;
+		animation-duration: 9s;
+		animation-delay: 0.5s;
+	}
+	.pricing-particles span:nth-child(5) {
+		left: 90%;
+		animation-duration: 6.5s;
+		animation-delay: 1.5s;
+	}
+	.pricing-particles span:nth-child(6) {
+		left: 25%;
+		animation-duration: 7.5s;
+		animation-delay: 3s;
+	}
+}
+
+@media(max-width: 768px) {
+	.pf-table thead {
+		display: none;
+	}
+	.pf-table,
+	.pf-table tbody,
+	.pf-table tr,
+	.pf-table td {
+		display: block;
+		width: 100%;
+	}
+	.pf-table tr {
+		margin-bottom: 1.25rem;
+		border: 1px solid rgba(255, 255, 255, 0.1) !important;
+		border-radius: 20px;
+		padding: 1.25rem;
+		background: rgba(255, 255, 255, 0.02);
+		transition: background 0.2s;
+	}
+	.pf-table tr:active {
+		background: rgba(255, 255, 255, 0.08);
+	}
+	.pf-table td {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 0.6rem 0 !important;
+		border: none !important;
+		text-align: right !important;
+	}
+	.pf-table td:first-child {
+		display: block;
+		text-align: left !important;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+		padding-bottom: 0.75rem !important;
+		margin-bottom: 0.5rem;
+	}
+	.pf-table td:not(:first-child)::before {
+		content: attr(data-label);
+		font-size: 0.65rem;
+		font-weight: 700;
+		color: rgba(255, 255, 255, 0.35);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+}
+
+@keyframes pFloat {
+	0% {
+		bottom: -5%;
+		opacity: 0;
+		transform: translateX(0);
+	}
+	10% {
+		opacity: 0.6;
+	}
+	90% {
+		opacity: 0.6;
+	}
+	100% {
+		bottom: 105%;
+		opacity: 0;
+		transform: translateX(20px);
+	}
+}
+
+.clickable-row {
+	transition: all 0.2s ease;
+}
+.clickable-row:hover {
+	background: rgba(255, 255, 255, 0.05) !important;
+}
+.clickable-row:active {
+	transform: scale(0.98);
+	background: rgba(255, 255, 255, 0.1) !important;
+}
+@keyframes pulse-neon {
+	0% {
+		transform: scale(1);
+		box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+	}
+	50% {
+		transform: scale(1.1);
+		box-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
+	}
+	100% {
+		transform: scale(1);
+		box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+	}
+}
+.animate-pulse-neon {
+	animation: pulse-neon 2s infinite ease-in-out;
+}
+.countdown-capsule {
+	background: rgba(255, 255, 255, 0.02);
+	border: 1px solid rgba(255, 255, 255, 0.06);
+	border-radius: 24px;
+	padding: 1.5rem 1.75rem;
+	min-width: 120px;
+	text-align: center;
+	backdrop-filter: blur(12px);
+	transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.countdown-capsule:hover {
+	background: rgba(255, 255, 255, 0.06);
+	border-color: rgba(99, 102, 241, 0.3);
+	transform: translateY(-5px);
+	box-shadow: 0 15px 30px -10px rgba(99, 102, 241, 0.2);
+}
+.countdown-num {
+	font-size: 3rem;
+	font-weight: 950;
+	line-height: 1;
+	display: block;
+	letter-spacing: -0.05em;
+}
+.gradient-text-premium {
+	background: linear-gradient(135deg, #fff 10%, #6366f1 100%);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	filter: drop-shadow(0 0 12px rgba(99, 102, 241, 0.4));
+}
+.countdown-unit-label {
+	font-size: 0.65rem;
+	font-weight: 800;
+	color: rgba(255, 255, 255, 0.3);
+	letter-spacing: 0.25em;
+	margin-top: 10px;
+	text-transform: uppercase;
+}
+.countdown-sep-premium {
+	font-size: 2.2rem;
+	font-weight: 900;
+	color: rgba(255, 255, 255, 0.05);
+	margin-bottom: 25px;
+}
+.animate-pulse-subtle {
+	animation: pulse-subtle 4s infinite ease-in-out;
+}
+@keyframes pulse-subtle {
+	0,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.7;
+	}
+}
+</style>
+<div class="pf-wrap">
+	<div
+		class="container-custom">
+		{# ── Dashboard Header ── #}
+		<div class="row mb-5 stagger-1">
+			<div class="col-12">
+				<h1 class="dash-title">Dashboard</h1>
+				<p class="dash-subtitle">Willkommen zurück,
+					{{ app.user.firstName }}! Dein finanzielles Ökosystem auf einen Blick.</p>
+			</div>
+		</div>
+
+		{# ── Profile & Steps ── #}
+		<div class="row mb-4 stagger-2">
+			<div class="col-12">
+				<div class="glass-card p-4">
+					<div class="row align-items-center">
+						<div class="col-md-3">
+							<h5 class="fw-800 mb-1">Dein Profil</h5>
+							<p class="text-xs text-dim mb-0">Deine Onboarding-Schritte</p>
+						</div>
+						<div class="col-md-9">
+							<div class="d-flex flex-wrap gap-2 justify-content-md-end">
+								{% set step1 = user.username and user.firstName and user.lastName %}
+								<div class="step-badge {{ step1 ? 'step-done' : 'step-pending' }}">
+									<i class="fas {{ step1 ? 'fa-check-circle' : 'fa-circle' }}"></i>
+									<span>Persönliche Daten</span>
+								</div>
+								{% set step2 = subscription|length >= 1 and app.user.subscriptionStatus != 'deactivated' %}
+								<div class="step-badge {{ step2 ? 'step-done' : 'step-pending' }}">
+									<i class="fas {{ step2 ? 'fa-check-circle' : 'fa-circle' }}"></i>
+									<span>Abo aktiviert</span>
+								</div>
+								{% set step3 = user_accounts|length > 0 %}
+								<div class="step-badge {{ step3 ? 'step-done' : 'step-pending' }}">
+									<i class="fas {{ step3 ? 'fa-check-circle' : 'fa-circle' }}"></i>
+									<span>Account verknüpft</span>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		{# ── Subscription & Master Trades Briefing ── #}
+		<div
+			class="row mb-5 stagger-3 g-4">
+			<!-- Abonnement-Status (Premium Glass) -->
+			<div class="col-md-6">
+				<div class="glass-card glass-premium p-4 h-100 position-relative animate__animated animate__fadeInLeft">
+					{% set isActive = subscription is iterable and subscription|length >= 1 or (subscription is not null and subscription.currentPeriodEnd is not null and subscription.currentPeriodEnd|date('U') >= "now"|date('U')) %}
+
+					<div class="d-flex justify-content-between align-items-center mb-4">
+						<h6 class="card-title fw-900 mb-0 opacity-80" style="letter-spacing: 0.05em; text-transform: uppercase; font-size: 0.75rem;">Abonnement-Status</h6>
+						{% if isActive %}
+							<div class="status-pill d-flex align-items-center gap-2 bg-success bg-opacity-10 px-3 py-1 rounded-pill" style="border: 1px solid rgba(16, 185, 129, 0.3);">
+								<span class="status-dot-on" style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 10px #10b981;"></span>
+								<span class="fw-900 text-white" style="font-size: 0.65rem; letter-spacing: 0.1em; text-shadow: 0 0 8px rgba(16, 185, 129, 0.8);">AKTIV</span>
+							</div>
+						{% else %}
+							<div class="status-pill d-flex align-items-center gap-2 bg-danger bg-opacity-10 px-3 py-1 rounded-pill" style="border: 1px solid rgba(239, 68, 68, 0.3);">
+								<span class="status-dot-off" style="width: 8px; height: 8px; background: #ef4444; border-radius: 50%; box-shadow: 0 0 10px #ef4444;"></span>
+								<span class="fw-900 text-white" style="font-size: 0.65rem; letter-spacing: 0.1em; text-shadow: 0 0 8px rgba(239, 68, 68, 0.8);">INAKTIV</span>
+							</div>
+						{% endif %}
+					</div>
+
+					<div class="subscription-details-premium">
+						{% if isActive %}
+							{% set maxAcc = user.maxAccounts > 0 ? user.maxAccounts : 10 %}
+							{# Account Usage #}
+							<div class="sub-item-premium mb-4">
+								<div class="d-flex justify-content-between mb-2">
+									<span class="sub-label">Account-Kapazität</span>
+									<span class="sub-value">{{ user_accounts|length }}
+										/
+										{{ maxAcc }}</span>
+								</div>
+								{% set acc_pct = (user_accounts|length / maxAcc) * 100 %}
+								<div class="progress bg-white bg-opacity-5" style="height: 6px; border-radius: 10px; overflow: visible;">
+									<div class="progress-bar sub-progress-fill-premium bg-primary" style="width: {{ acc_pct }}%; height: 100%; border-radius: 10px;"></div>
+								</div>
+							</div>
+
+							{# Agent Usage #}
+							<div class="sub-item-premium mb-4">
+								<div class="d-flex justify-content-between mb-2">
+									<span class="sub-label">Agent-Automatisierung</span>
+									<span class="sub-value">{{ account_agent_connections|length }}
+										/
+										{{ maxAcc }}</span>
+								</div>
+								{% set agent_pct = (account_agent_connections|length / maxAcc) * 100 %}
+								<div class="progress bg-white bg-opacity-5" style="height: 6px; border-radius: 10px; overflow: visible;">
+									<div class="progress-bar sub-progress-fill-premium bg-success" style="width: {{ agent_pct }}%; height: 100%; border-radius: 10px;"></div>
+								</div>
+							</div>
+
+							{# Expiry Box #}
+							<div class="expiry-box-premium mt-5">
+								<div class="sub-label mb-2">GÜLTIG BIS ZUM</div>
+								<div class="expiry-date-premium">
+									{% if subscription is not empty and subscription.status == "trialing" %}
+										<i class="fas fa-magic me-2 text-white text-opacity-40"></i>
+										{{ subscription.currentPeriodEnd|date('d.m.Y H:i') }}
+										(Testphase)
+									{% else %}
+										<i class="far fa-calendar-alt me-2 text-white text-opacity-40"></i>
+										{{ subscription and subscription.currentPeriodEnd ? subscription.currentPeriodEnd|date('d.m.Y H:i') : 'Unbegrenzt' }}
+									{% endif %}
+								</div>
+							</div>
+
+							{# Animated Seconds Remaining #}
+							{% if subscription and subscription.currentPeriodEnd %}
+								{% set remaining_seconds = subscription.currentPeriodEnd|date('U') - "now"|date('U') %}
+								{% set remaining_days = (remaining_seconds / 86400)|round(0, 'floor') %}
+								{% set remaining_hours = ((remaining_seconds % 86400) / 3600)|round(0, 'floor') %}
+
+								<div class="mt-5 pt-4 border-top border-white border-opacity-10">
+									<div class="mb-4 text-center">
+										<span class="sub-label d-flex align-items-center justify-content-center gap-2" style="letter-spacing: 0.25em; font-size: 0.6rem; opacity: 0.5;">
+											<span class="status-dot-mini animate-pulse-subtle" style="width: 6px; height: 6px; background: #10b981; border-radius: 50%; box-shadow: 0 0 10px #10b981;"></span>
+											DASHBOARD STATUS:
+											<span class="text-white text-opacity-80 fw-900">ACTIVE</span>
+										</span>
+									</div>
+
+									<div
+										class="d-flex align-items-center justify-content-center gap-3">
+										{# Days Capsule #}
+										<div class="countdown-capsule animate__animated animate__fadeInLeft">
+											<div class="countdown-num gradient-text-premium">{{ remaining_days }}</div>
+											<div class="countdown-unit-label">TAGE</div>
+										</div>
+
+										<div class="countdown-sep-premium animate__animated animate__fadeIn animate__delay-1s">:</div>
+
+										{# Hours Capsule #}
+										<div class="countdown-capsule animate__animated animate__fadeInRight">
+											<div class="countdown-num text-white text-opacity-80">{{ remaining_hours }}</div>
+											<div class="countdown-unit-label">STUNDEN</div>
+										</div>
+									</div>
+								</div>
+							{% endif %}
+						{% else %}
+							<div class="text-center py-5">
+								<i class="fas fa-exclamation-triangle text-glow-danger mb-3" style="font-size: 2rem;"></i>
+								<p class="small fw-900 text-white text-opacity-40 text-uppercase mb-4" style="letter-spacing: 0.1em;">Kein aktives Abonnement</p>
+								<a href="https://shop.elaliholding.com/?add-to-cart=55229" target="_blank" class="btn btn-primary rounded-pill px-5 fw-900 shadow-lg" style="font-size: 0.8rem; letter-spacing: 0.05em; padding: 1rem 0;">Premium jetzt aktivieren</a>
+							</div>
+						{% endif %}
+					</div>
+				</div>
+			</div>
+
+			<!-- Live Master-Trades (Premium Glass) -->
+			<div class="col-md-6">
+				<div class="glass-card glass-premium p-4 h-100 position-relative animate__animated animate__fadeInRight">
+					<div class="d-flex justify-content-between align-items-center mb-4">
+						<h6 class="card-title fw-900 mb-0 opacity-80" style="letter-spacing: 0.05em; text-transform: uppercase; font-size: 0.75rem; color: white !important;">Live Master-Trades</h6>
+						<span class="badge badge-master-premium rounded-pill px-3 py-1">MASTER</span>
+					</div>
+
+					{% if master_trades|length > 0 %}
+						{% set latest = master_trades[0] %}
+						<div class="trade-featured-glass shadow-lg">
+							<div class="d-flex justify-content-between align-items-start mb-3">
+								<div>
+									<div class="trade-symbol-premium">{{ latest.order_symbol }}</div>
+									<div class="trade-meta-premium mt-1">
+										<i class="far fa-clock me-1 opacity-50"></i>
+										{{ latest.order_open_at|date('d.m.Y H:i') }}
+										<span class="mx-2 opacity-20">|</span>
+										<i class="fas fa-layer-group me-1 opacity-50"></i>
+										{{ latest.order_lot }}
+										Lot
+									</div>
+								</div>
+								<div class="badge {{ latest.order_type == 'DEAL_TYPE_BUY' ? 'badge-buy-premium' : 'badge-sell-premium' }} rounded-pill px-3 py-1 fw-900" style="font-size: 0.65rem;">
+									{{ latest.order_type == 'DEAL_TYPE_BUY' ? 'BUY' : 'SELL' }}
+								</div>
+							</div>
+
+							<div class="mt-4 pt-3 border-top border-white border-opacity-10 d-flex justify-content-between align-items-center">
+								<div class="text-white text-opacity-40 fw-800" style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em;">Real-In Profit</div>
+								<div class="fw-900 {{ latest.order_profit >= 0 ? 'text-glow-success' : 'text-glow-danger' }}" style="font-size: 2.2rem; letter-spacing: -0.04em;">
+									{{ latest.order_profit >= 0 ? '+' : '' }}{{ latest.order_profit|number_format(2, ',', '.') }}
+									€
+								</div>
+							</div>
+						</div>
+
+						{# ── Maintenance Notice (Premium Refined) ── #}
+						<div class="maintenance-notice mt-4 mb-3">
+							<div class="p-4 rounded-24 position-relative overflow-hidden" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(37, 99, 235, 0.05));
+																																												        border: 1px solid rgba(59, 130, 246, 0.2);
+																																														backdrop-filter: blur(12px);">
+								<div class="d-flex align-items-start gap-3 position-relative" style="z-index: 2;">
+									<div class="flex-shrink-0">
+										<div class="d-flex align-items-center justify-content-center rounded-circle bg-info bg-opacity-20 animate-pulse-neon" style="width: 36px; height: 36px;">
+											<i class="fas fa-info-circle text-info" style="font-size: 1rem;"></i>
+										</div>
+									</div>
+									<div>
+										<h6 class="fw-900 text-white mb-1" style="font-size: 0.85rem; letter-spacing: 0.02em;">System-Optimierung</h6>
+										<p class="text-white text-opacity-60 mb-0" style="font-size: 0.7rem; line-height: 1.6; font-weight: 500;">
+											Wir führen derzeit planmäßige Wartungsarbeiten durch.
+											<span class="text-info fw-800">Master-Trades</span>
+											werden angezeigt, jedoch gegebenenfalls nicht kopiert. Nach Abschluss wird der Betrieb vollautomatisch fortgesetzt.
+										</p>
+									</div>
+								</div>
+								{# Decorative Icon #}
+								<div class="position-absolute top-0 end-0 p-3 opacity-10" style="transform: rotate(15deg) translateY(-10px);">
+									<i class="fas fa-shield-alt fa-3x text-white"></i>
+								</div>
+							</div>
+						</div>
+
+						<div class="trade-list-container d-flex flex-column gap-2">
+							{% for trade in master_trades|slice(1, 2) %}
+								<div class="trade-item-frosted">
+									<div class="d-flex align-items-center gap-3">
+										<div class="badge {{ trade.order_type == 'DEAL_TYPE_BUY' ? 'text-success' : 'text-danger' }} fw-900 border border-current border-opacity-20" style="font-size: 0.55rem; min-width: 42px; background: none;">
+											{{ trade.order_type == 'DEAL_TYPE_BUY' ? 'BUY' : 'SELL' }}
+										</div>
+										<div>
+											<div class="fw-800 text-white" style="font-size: 0.95rem;">{{ trade.order_symbol }}</div>
+											<div class="text-white text-opacity-40 fw-700" style="font-size: 0.65rem;">{{ trade.order_lot }}
+												Lot</div>
+										</div>
+									</div>
+									<div class="text-end">
+										<div class="fw-900 {{ trade.order_profit >= 0 ? 'text-glow-success' : 'text-glow-danger' }}" style="font-size: 1.1rem;">
+											{{ trade.order_profit >= 0 ? '+' : '' }}{{ trade.order_profit|number_format(2, ',', '.') }}
+											€
+										</div>
+										<div class="text-white text-opacity-30 fw-600" style="font-size: 0.6rem;">{{ trade.order_close_at|date('d.m.Y H:i') }}</div>
+									</div>
+								</div>
+							{% endfor %}
+						</div>
+					{% else %}
+						<div class="text-center py-5">
+							<div class="spinner-grow text-primary text-opacity-20 mb-3" role="status"></div>
+							<p class="small fw-900 text-white text-opacity-30 text-uppercase" style="letter-spacing: 0.2em;">Searching for signals...</p>
+						</div>
+					{% endif %}
+				</div>
+			</div>
+		</div>
+
+		{# ── Membership Selection ── #}
+		<div class="pricing-section mb-5">
+			<div class="pricing-section-header">
+				<h2>Mitgliedschaft w&auml;hlen</h2>
+				<p>Sichere Dir Deinen Zugang zum ELVTD Finance &Ouml;kosystem.</p>
+			</div>
+
+			<div
+				class="pricing-grid">
+				{# ── Card 1: Halbjahr ── #}
+				<div class="pricing-card">
+					<div class="pricing-card-inner">
+						<span class="pricing-badge badge-standard">
+							<i class="fas fa-rocket" style="font-size:0.6rem;"></i>
+							Abonnement</span>
+						<div class="pricing-title">
+							<h4>Halbjahresmitgliedschaft<br>Exklusiv</h4>
+						</div>
+						{% if user.affiliateCode != "elvtd2555" %}
+							<div class="pricing-price">
+								<span class="pricing-amount">259</span>
+								<span class="pricing-period">&euro; / Monat</span>
+							</div>
+						{% endif %}
+						<div class="pricing-divider"></div>
+						<ul class="pricing-features">
+							<li>
+								<span class="check-icon check-green">
+									<i class="fas fa-check"></i>
+								</span>
+								Mindestlaufzeit: 6 Monate</li>
+							<li>
+								<span class="check-icon check-green">
+									<i class="fas fa-check"></i>
+								</span>
+								1 Trading Account (MT4, MT5, cTrader)</li>
+							<li>
+								<span class="check-icon check-green">
+									<i class="fas fa-check"></i>
+								</span>
+								1 Agent pro Account</li>
+							<li>
+								<span class="check-icon check-green">
+									<i class="fas fa-check"></i>
+								</span>
+								Alle Premium+ Inhalte</li>
+						</ul>
+						<a href="https://shop.elaliholding.com/?add-to-cart=55229" target="_blank" class="pricing-cta pricing-cta-green">Jetzt starten</a>
+					</div>
+				</div>
+
+				{# ── Card 2: Jahresmitgliedschaft (Featured) ── #}
+				<div class="pricing-card featured">
+					<div class="pricing-card-inner">
+						<div class="pricing-particles">
+							<span></span>
+							<span></span>
+							<span></span>
+							<span></span>
+							<span></span>
+							<span></span>
+						</div>
+						<span class="pricing-badge badge-featured">
+							<i class="fas fa-star" style="font-size:0.6rem;"></i>
+							Empfehlung</span>
+						<div class="pricing-title">
+							<h4>Jahresmitgliedschaft<br>Exklusiv</h4>
+						</div>
+						{% if user.affiliateCode != "elvtd2555" %}
+							<div class="pricing-price">
+								<span class="pricing-amount">209</span>
+								<span class="pricing-period">&euro; / Monat</span>
+								<br><span class="pricing-save">
+									<i class="fas fa-tag" style="font-size:0.55rem;"></i>
+									600&euro; / Jahr gespart</span>
+							</div>
+						{% endif %}
+						<div class="pricing-divider"></div>
+						<ul class="pricing-features">
+							<li>
+								<span class="check-icon check-green">
+									<i class="fas fa-check"></i>
+								</span>
+								Mindestlaufzeit: 12 Monate</li>
+							<li>
+								<span class="check-icon check-green">
+									<i class="fas fa-check"></i>
+								</span>
+								1 Trading Account (MT4, MT5, cTrader)</li>
+							<li>
+								<span class="check-icon check-green">
+									<i class="fas fa-check"></i>
+								</span>
+								1 Agent pro Account</li>
+							<li>
+								<span class="check-icon check-green">
+									<i class="fas fa-check"></i>
+								</span>
+								Alle Premium+ Inhalte</li>
+						</ul>
+						<a href="https://shop.elaliholding.com/?add-to-cart=55231" target="_blank" class="pricing-cta pricing-cta-glow">Jetzt starten</a>
+					</div>
+				</div>
+
+				{# ── Card 3: Einmalzahlung (Professional) ── #}
+				<div class="pricing-card professional">
+					<div class="pricing-card-inner">
+						<span class="pricing-badge badge-pro">
+							<i class="fas fa-crown" style="font-size:0.6rem;"></i>
+							Professional</span>
+						<div class="pricing-title">
+							<h4>Jahresmitgliedschaft<br>Einmalzahlung</h4>
+						</div>
+						{% if user.affiliateCode != "elvtd2555" %}
+							<div class="pricing-price">
+								<span class="pricing-amount">2.199</span>
+								<span class="pricing-period">&euro; / Einmal</span>
+								<br><span class="pricing-save">
+									<i class="fas fa-tag" style="font-size:0.55rem;"></i>
+									309&euro; Rabatt gesichert</span>
+							</div>
+						{% endif %}
+						<div class="pricing-divider"></div>
+						<ul class="pricing-features">
+							<li>
+								<span class="check-icon check-blue">
+									<i class="fas fa-check"></i>
+								</span>
+								309&euro; Rabatt gesichert</li>
+							<li>
+								<span class="check-icon check-blue">
+									<i class="fas fa-check"></i>
+								</span>
+								1 Trading Account (MT4, MT5, cTrader)</li>
+							<li>
+								<span class="check-icon check-blue">
+									<i class="fas fa-check"></i>
+								</span>
+								1 Agent pro Account</li>
+							<li>
+								<span class="check-icon check-blue">
+									<i class="fas fa-check"></i>
+								</span>
+								Alle Premium+ Inhalte</li>
+						</ul>
+						<a href="https://shop.elaliholding.com/?add-to-cart=55236" target="_blank" class="pricing-cta pricing-cta-blue">Jetzt starten</a>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		{# ── Charts Section ── #}
+		<div class="row mt-5 mb-5 g-4 reveal">
+			<div class="col-xl-8">
+				<div class="glass-card p-4 h-100 shadow-sm">
+					<div class="d-flex justify-content-between align-items-center mb-4">
+						<h5 class="fw-800 text-main mb-0">Performance Verlauf</h5>
+						<div class="dropdown">
+							<button class="btn btn-link text-dim p-0" type="button" data-bs-toggle="dropdown">
+								<i class="fas fa-ellipsis-v"></i>
+							</button>
+							<ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 glass-card">
+								<li>
+									<a class="dropdown-item text-xs fw-600" href="#">Export PDF</a>
+								</li>
+								<li>
+									<a class="dropdown-item text-xs fw-600" href="#">Daten CSV</a>
+								</li>
+							</ul>
+						</div>
+					</div>
+					<div style="height: 350px;">
+						<canvas id="lineChart"></canvas>
+					</div>
+				</div>
+			</div>
+			<div class="col-xl-4">
+				<div class="glass-card p-4 h-100 shadow-sm text-center">
+					<h5 class="fw-800 text-main mb-4">Allokation</h5>
+					<div style="height: 350px;">
+						<canvas id="allocationChart"></canvas>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		{# ── Portfolio Section ── #}
+		<div class="row mb-5 stagger-2">
+			<div class="col-12">
+				<div class="glass-card overflow-hidden">
+					<div class="p-4 d-flex justify-content-between align-items-center border-bottom border-light">
+						<div>
+							<h6 class="fw-800 mb-0">Dein Portfolio</h6>
+							<p class="text-xs text-dim mb-0">
+								<i class="fa fa-check text-info me-1"></i>
+								{{ user_accounts|length }}
+								/
+								{{ app.user.maxAccounts }}
+								Accounts aktiv</p>
+						</div>
+						<a href="{{ path('app_account_index') }}" class="btn btn-primary btn-sm rounded-pill fw-700 px-4">Portfolio
+							<i class="fas fa-arrow-right ms-2 text-xs"></i>
+						</a>
+					</div>
+					<div class="table-responsive">
+						<table class="pf-table w-100">
+							<thead>
+								<tr>
+									<th class="w-20">Account</th>
+									<th class="text-center">Platform</th>
+									<th class="text-center">Equity</th>
+									<th class="text-center">Balance</th>
+									<th class="text-center">offener Profit</th>
+									<th class="text-center">Gesamtprofit</th>
+								</tr>
+							</thead>
+							<tbody>
+								{% if user_accounts|length < 1 %}
+									<tr>
+										<td colspan="6" class="text-center py-5 text-muted opacity-50">Keine Accounts vorhanden.</td>
+									</tr>
+								{% else %}
+									{% for account in user_accounts %}
+										{% set showUrl = account.metaId ? path('app_account_show', {'meta_id': account.metaId}) : null %}
+										<tr class="{% if showUrl %}clickable-row{% endif %}" {% if showUrl %} onclick="window.location.href='{{ showUrl }}'" {% endif %} style="{% if showUrl %}cursor: pointer;{% endif %}">
+											<td data-label="Account">
+												<div class="d-flex align-items-center">
+													<div>
+														<h6 class="mb-0 text-sm fw-800">{{ account.name }}</h6>
+														<span class="text-xs text-dim">{{ account.login }}
+															|
+															{{ account.broker }}</span>
+													</div>
+												</div>
+											</td>
+											<td class="text-center" data-label="Platform">
+												<span class="badge bg-dark rounded-pill text-xxs px-3 py-2">{{ account.platform }}</span>
+											</td>
+											<td class="text-center fw-800" data-label="Equity">{{ account.equity|number_format(2, ',', '.') }}
+												€</td>
+											<td class="text-center text-dim" data-label="Balance">{{ account.balance|number_format(2, ',', '.') }}
+												€</td>
+											<td class="text-center" data-label="offener Profit">
+												{% set openProfit = account.equity - account.balance %}
+												{% if openProfit > 0.1 %}
+													<span class="text-success fw-800">+{{ openProfit|number_format(2, ',', '.') }}
+														€</span>
+												{% elseif openProfit < -0.1 %}
+													<span class="text-danger fw-800">{{ openProfit|number_format(2, ',', '.') }}
+														€</span>
+												{% else %}
+													<span class="text-dim">0,00 €</span>
+												{% endif %}
+											</td>
+											<td class="text-center" data-label="Gesamtprofit">
+												<div class="text-success fw-800">+{{ account.profit|number_format(2, ',', '.') }}
+													€</div>
+												<span class="text-xxs fw-800 text-success bg-success bg-opacity-10 px-2 py-1 rounded-pill">{{ account.gain|round(2) }}%</span>
+											</td>
+										</tr>
+									{% endfor %}
+								{% endif %}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
 
 
-                                {% if user_accounts|length < 1 %}
-                                    <tr><td colspan="8">Keine Accounts vorhanden.</td></tr>
-                                {% endif %}
-                                {% for account in user_accounts %}
-                                    <tr>
-                                        <td>
-                                            {% if account.metaId is defined and account.metaId|length > 0 %}
-                                                <strong>{{ account.name }}</strong>{{ account.isActive ? '<span class="badge badge-success mx-2">Online</span>' : '' }}<br>
-                                            {% else %}
-                                                <strong>{{ account.name }}</strong>{{ account.isActive ? '<span class="badge badge-success mx-2">Online</span>' : '' }}<br>
-                                            {% endif %}
-                                            {% if account.error|length > 0 %}
-                                                {% if is_granted('ROLE_ADMIN') %}
-                                                    <span class="badge badge-danger mx-0">Fehler: {{ account.error }}</span>
-                                                {% endif %}
-                                            {% endif %}
-                                            <small>{{ account.login }} - {{ account.broker }}</small>
-                                        </td>
-                                        <td class="text-center w-10">
-                                            <span class="badge badge-lg badge-dark text-uppercase text-white">{{ account.platform }}
-                                            </span><br>
-                                            <i class="material-symbols-rounded text-sm mt-2 mb-0 mx-0 position-relative" style="top: 2px">schedule</i>
-                                            <small class="my-0 position-relative bottom-1"> {{ account.lastUpdate|date('d.m.Y H:i:s') }}</small>
-                                        </td>
-                                        <td class="text-center w-10">{{ account.equity|number_format(2, ',', '.') }}</td>
-                                        <td class="text-center w-10">{{ account.balance|number_format(2, ',', '.') }}</td>
-                                        <td class="text-center w-10">
-                                            {% if account.equity is not null and account.balance is not null and account.balance != 0 %}
-                                                {% set openProfit = account.equity - account.balance %}
-                                                {% set openDrawdownPercent = (openProfit / account.balance) * 100 %}
-                                            {% else %}
-                                                {% set openProfit = 0 %}
-                                                {% set openDrawdownPercent = 0 %}
-                                            {% endif %}
-                                            {% if openProfit > 0.1 %}
-                                                <span class="text-success text-bold">{{ openProfit|number_format(2, ',', '.') }}</span><br>
-                                                <span class="badge badge-success my-auto">
-                                                    <i class="material-symbols-rounded text-xs">arrow_upward</i>
-                                                    <span class="text-xs">{{ openDrawdownPercent|number_format(2, ',', '.') }}%</span>
-                                                </span>
-                                            {% elseif openProfit < 0 %}
-                                                <span class="text-danger text-bold">{{ openProfit|number_format(2, ',', '.') }}</span><br>
-                                                <span class="badge badge-danger">
-                                                    <i class="material-symbols-rounded text-xs">arrow_downward</i>
-                                                    <span class="text-xs">{{ openDrawdownPercent|number_format(2, ',', '.') }}%</span>
-                                                </span>
-                                            {% else %}
-                                                <span class="text-secondary text-bold">{{ openProfit|number_format(2, ',', '.') }}</span><br>
-                                                <span class="badge badge-secondary">
-                                                    <i class="material-symbols-rounded text-xs">swap_horiz</i>
-                                                    <span class="text-xs">{{ openDrawdownPercent|number_format(2, ',', '.') }}%</span>
-                                                </span>
-                                            {% endif %}
+		{# ── Modals ── #}
+		<div class="modal fade" id="trialModal" tabindex="-1" role="dialog" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered" role="document">
+				<div class="modal-content glass-card border-light border-opacity-20 shadow-xl">
+					<div class="modal-header border-bottom border-light border-opacity-10 p-4">
+						<h5 class="modal-title fw-800 text-main">14-Tage Testphase starten</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+					</div>
+					<div class="modal-body p-4">
+						<p class="text-sm opacity-8">Erlerbe den vollen Funktionsumfang von ELALIHOLDING Premium für 14 Tage absolut kostenlos.</p>
+						<ul class="list-unstyled mb-4">
+							<li class="mb-2">
+								<i class="fas fa-check text-success me-2"></i>
+								Alle Strategien verfügbar</li>
+							<li class="mb-2">
+								<i class="fas fa-check text-success me-2"></i>
+								Voller Support-Zugang</li>
+						</ul>
+						<a href="{{ path('app_trial_start') }}" class="btn btn-primary w-100 rounded-pill fw-700 py-3 shadow-lg">Jetzt Testphase aktivieren</a>
+					</div>
+				</div>
+			</div>
+		</div>
 
-                                        </td>
-                                        <td class="text-center w-10">
-                                            {% if account.profit > 0 %}
-                                                <span class="text-success text-bold">{{ account.profit|number_format(2, ',', '.') }}</span><br>
-                                                <span class="badge badge-success my-auto">
-                                                    <i class="material-symbols-rounded text-xs">arrow_upward</i>
-                                                    <span class="text-xs">{{ account.gain|round(2) }}%</span>
-                                                </span>
-                                            {% elseif account.profit == 0 %}
-                                                <span class="text-secondary text-bold">{{ account.profit|round(0) }}</span><br>
-                                                <span class="badge badge-secondary">
-                                                    <i class="material-symbols-rounded text-xs">swap_horiz</i>
-                                                    <span class="text-xs">{{ account.gain|round(2) }}%</span>
-                                                </span>
-                                            {% else %}
-                                                <span class="text-danger text-bold">{{ account.profit|number_format(2, ',', '.') }}</span><br>
-                                                <span class="badge badge-danger">
-                                                    <i class="material-symbols-rounded text-xs">arrow_downward</i>
-                                                    <span class="text-xs">{{ account.gain|round(2) }}%</span>
-                                                </span>
-                                            {% endif %}
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
+		<div class="modal fade" id="extendModal" tabindex="-1" role="dialog" aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 800px;">
+				<div class="modal-content glass-card border-light border-opacity-20 shadow-xl">
+					<div class="modal-header border-bottom border-light border-opacity-10 p-4">
+						<h5 class="modal-title fw-800 text-main">Exklusiver Vorteil GBE Brokers</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+					</div>
+					<div class="modal-body p-4">
+						<p class="text-sm">Durch unsere Partnerschaft mit GBE Brokers sicherst Du Dir bis zu 12 Monate Gratis Premium-Zugang.</p>
+						<a href="https://record.gbebrokers.com/_O-f9d-r3V7oR_v_1_H7K7GNd7ZgqdRLk/1/" target="_blank" class="btn btn-primary rounded-pill px-5 fw-700">Zu GBE Brokers</a>
+					</div>
+				</div>
+			</div>
+		</div>
 
-            <div class="row mb-4">
-                <div class="col-12 mb-4">
-                    <div class="card">
-                        <div class="card-header pb-0">
-                            <div class="row">
-                                <div class="col-lg-6 col-7">
-                                    <h6>Verfügbare Agents</h6>
-                                    <p class="text-sm mb-0">
-                                        <i class="fa fa-check text-info" aria-hidden="true"></i>
-                                        Insgesamt sind<span class="font-weight-bold ms-1">{{ agents|length }}</span>
-                                        Agents verfügbar zum abonnieren
-                                    </p>
-                                </div>
-                                <div class="col-lg-6 col-5 d-flex align-items-center">
-                                    <a href="{{ path('app_agents_index') }}" class="ms-auto btn bg-gradient-dark mb-0">Zu den Agents <i class="fas fa-arrow-right ms-1"></i></a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="card-body px-0 pb-2">
-                            <div class="table-responsive">
-                                <table class="table align-items-center mb-0">
-                                    <thead>
-                                    <tr>
-                                        <th class="text-uppercase text-xxs font-weight-bolder opacity-7 text-white opacity-8"></th>
-                                        <th class="text-uppercase text-xxs font-weight-bolder opacity-7 ps-2 text-white opacity-8"></th>
-                                        <th class="text-center text-uppercase text-xxs font-weight-bolder opacity-7 opacity-8">Rendite</th>
-                                        <th class="text-center text-uppercase text-xxs font-weight-bolder opacity-7 opacity-8">Trefferquote</th>
-                                        <th class="text-center text-uppercase text-xxs font-weight-bolder opacity-7 opacity-8">max. DrawDown</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody>
-                                    {% for account in accounts %}
-                                        {% set agent = agents|filter(a => a.fromAccountId == account.id)|first %}
-                                        <tr>
-                                            <td>
-                                                <div class="d-flex px-2 py-1">
-                                                    <div class="text-bg-dark-blue p-1 border-radius-2xl mx-2">
-                                                        <i class="material-symbols-rounded text-2xl text-white my0  p-1"
-                                                           style="margin-left: auto;">network_intel_node</i>
-                                                    </div>
-                                                    <div class="d-flex flex-column justify-content-center">
-                                                        <h6 class="mb-0 text-sm mx-2">{{ agent.name }}</h6>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="avatar-group align-middle text-center text-sm">
-                                                    <a href="javascript:;" class="avatar avatar-xs rounded-circle">
-                                                        <img src="../assets/img/team-1.jpg" alt="team1">
-                                                    </a>
-                                                    <a href="javascript:;" class="avatar avatar-xs rounded-circle">
-                                                        <img src="../assets/img/team-2.jpg" alt="team2">
-                                                    </a>
-                                                    <a href="javascript:;" class="avatar avatar-xs rounded-circle">
-                                                        <img src="../assets/img/team-3.jpg" alt="team3">
-                                                    </a>
-                                                    <a href="javascript:;" class="avatar avatar-xs rounded-circle">
-                                                        <img src="../assets/img/team-4.jpg" alt="team4">
-                                                    </a>
-                                                    <span class="text-xs font-weight-bold d-flex flex-column justify-content-center"> {{ agent.users }} Abonnenten </span>
-                                                </div>
-                                            </td>
-                                            <td class="align-middle text-center text-sm">
-                                                <span class="text-xs font-weight-bold"> ~ {{ agent.apy|round(2) }}% / Jahr </span>
-                                            </td>
-                                            <td class="align-middle">
-                                                <div class="progress-wrapper w-75 mx-auto">
-                                                    <div class="progress-info">
-                                                        <div class="progress-percentage">
-                                                            <span class="text-xs font-weight-bold">{{ agent.winrate }}%</span>
-                                                        </div>
-                                                    </div>
-                                                    <div class="progress">
-                                                        <div style="width: {{ agent.winrate|number_format(1) }}% !important;"
-                                                             class="progress-bar bg-gradient-info w-60"
-                                                             role="progressbar"
-                                                             aria-valuenow="{{ agent.winrate|number_format(1) }}"
-                                                             aria-valuemin="0" aria-valuemax="100"></div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td class="align-middle">
-                                                <div class="progress-wrapper w-75 mx-auto">
-                                                    <div class="progress-info">
-                                                        <div class="progress-percentage">
-                                                            <span class="text-xs font-weight-bold">{{ agent.maxDrawdown|round(2) }}%</span>
-                                                        </div>
-                                                    </div>
-                                                    <div class="progress">
-                                                        <div style="width: {{ agent.maxDrawdown|number_format(1) }}% !important;"
-                                                             class="progress-bar bg-gradient-primary w-60"
-                                                             role="progressbar"
-                                                             aria-valuenow="{{ agent.maxDrawdown|number_format(1) }}"
-                                                             aria-valuemin="0" aria-valuemax="100"></div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-{% endblock %}
+		<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+		<script>
+			document.addEventListener('DOMContentLoaded', function () {
+const ctx = document.getElementById('lineChart');
+if (ctx) {
+const datasets = [];{% for account in user_accounts %}{% if account.dailyGrowth is defined and account.dailyGrowth is not empty %}{% set firstBalance = (account.dailyGrowth[0].balance ?? 1)|abs %}datasets.push({
+label: '{{ account.name|escape('js') }}',
+data: {{ account.dailyGrowth|map(d => {x: d.date, y: (d.balance ?? 0) / (firstBalance > 0 ? firstBalance : 1)})|json_encode|raw }},
+borderColor: 'hsl(                        {{ 200 + loop.index * 25 }}, 70%, 50%)',
+backgroundColor: 'hsla(                        {{ 200 + loop.index * 25 }}, 70%, 50%, 0.05)',
+tension: 0.4,
+fill: true,
+pointRadius: 0,
+borderWidth: 3
+});{% endif %}{% endfor %}new Chart(ctx, {
+type: 'line',
+data: {
+datasets: datasets
+},
+options: {
+responsive: true,
+maintainAspectRatio: false,
+plugins: {
+legend: {
+display: false
+}
+},
+scales: {
+y: {
+grid: {
+color: 'rgba(0,0,0,0.05)',
+drawBorder: false
+},
+ticks: {
+font: {
+family: 'Outfit',
+size: 10
+}
+}
+},
+x: {
+grid: {
+display: false
+},
+ticks: {
+font: {
+family: 'Outfit',
+size: 10
+},
+maxRotation: 0
+}
+}
+}
+}
+});
+}
+
+const ctxAlloc = document.getElementById('allocationChart');
+if (ctxAlloc) {
+new Chart(ctxAlloc, {
+type: 'doughnut',
+data: {
+labels: [{% for account in user_accounts %}'{{ account.name|escape('js') }}',{% endfor %}],
+datasets: [
+{
+data: [{% for account in user_accounts %}{{ account.equity }},{% endfor %}],
+backgroundColor: [{% for account in user_accounts %}'hsl(                        {{ 200 + loop.index * 25 }}, 70%, 50%)',{% endfor %}],
+borderWidth: 0
+}
+]
+},
+options: {
+responsive: true,
+maintainAspectRatio: false,
+cutout: '75%',
+plugins: {
+legend: {
+position: 'bottom',
+labels: {
+font: {
+family: 'Outfit',
+size: 11
+},
+usePointStyle: true
+}
+}
+}
+}
+});
+}
+});
+		</script>
+	</div>{# Closes container-custom #}</div>{# Closes pf-wrap #}{% endblock %}
