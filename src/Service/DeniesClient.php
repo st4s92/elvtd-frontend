@@ -117,6 +117,28 @@ class DeniesClient
     }
 
     /**
+     * Get cTrader metadata (ctid + isLive) for an account by login.
+     * @return array{ctid: int|null, isLive: bool}
+     */
+    public function getCtraderInfoByLogin(int $login): array
+    {
+        try {
+            $response = $this->request('GET', "account/paginated?PerPage=1&Page=1&AccountNumber=" . $login);
+            if (empty($response->data->data)) {
+                return ['ctid' => null, 'isLive' => true, 'accessToken' => null];
+            }
+            $acc = $response->data->data[0];
+            $ctid = (int) ($acc->ctid_trader_account_id ?? 0) ?: null;
+            $name = strtolower(($acc->server_name ?? '') . ' ' . ($acc->broker_name ?? '') . ' ' . ($acc->dedicated_server_name ?? ''));
+            $isLive = str_contains($name, 'live');
+            $accessToken = $acc->access_token ?? $acc->accessToken ?? null;
+            return ['ctid' => $ctid, 'isLive' => $isLive, 'accessToken' => $accessToken];
+        } catch (\Exception $e) {
+            return ['ctid' => null, 'isLive' => true, 'accessToken' => null];
+        }
+    }
+
+    /**
      * Get full account detail with live data (active orders, order logs, server status).
      * Calls GET /trader/account/{id}/detail
      */
@@ -146,8 +168,22 @@ class DeniesClient
     public function getOpenPositions(int $accountId): array
     {
         try {
-            // Using orders/paginated with IsClosed=false as per OpenAPI schema
-            $response = $this->request('GET', "orders/paginated?PerPage=100&Page=1&AccountId=" . $accountId . "&IsClosed=false");
+            // Using orders/paginated with IsClosed=false and Status=600
+            $response = $this->request('GET', "orders/paginated?PerPage=100&Page=1&AccountId=" . $accountId . "&IsClosed=false&Status=600");
+            return $response->data->data ?? [];
+        } catch (\Exception $e) {
+            return [];
+        }
+    }
+
+    /**
+     * Get all open positions across the entire server for sentiment analysis.
+     */
+    public function getGlobalOpenPositions(int $limit = 1000): array
+    {
+        try {
+            // Use the global endpoint as suggested by user
+            $response = $this->request('GET', "orders/paginated?PerPage=" . $limit . "&Page=1&Status=600&IsClosed=false");
             return $response->data->data ?? [];
         } catch (\Exception $e) {
             return [];

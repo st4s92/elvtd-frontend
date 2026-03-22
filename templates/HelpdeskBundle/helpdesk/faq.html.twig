@@ -1,69 +1,350 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Helpdesk FAQ{% endblock %}
+{% block title %}Help Center{% endblock %}
 
 {% block body %}
-    <div class="container">
-        <h3 class="mt-4 mb-4">Help Center</h3>
-        <div class="row">
-            {% for category in categories %}
-                <div class="col-md-4 mb-4">
-                    <div class="card text-center" style="height: 250px;">
-                        <div class="card-body d-flex flex-column justify-content-center">
-                            <i class="material-symbols-rounded mt-5 mb-3" style="font-size: 40px;">{{ category.logo ?: 'help' }}</i>
-                            <h5 class="card-title mt-2">{{ category.title }}</h5>
-                            <a href="{{ path('app_helpdesk_faq_category', {'id': category.id}) }}" class="btn btn-primary mt-auto">Zur Anleitung</a>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-    </div>
-    <hr>
-    <div class="container">
-        <div class="card">
-            <div class="card-header">
-                <h6 class="float-start">Deine Tickets</h6>
-                <a href="{{ path('app_helpdesk_new') }}" class="btn btn-primary float-end">Neues Ticket</a>
-            </div>
-            <table class="table table-responsive">
-                <thead>
-                <tr>
-                    <th>Titel</th>
-                    <th>Status</th>
-                    <th>Erstellt am</th>
-                    <th></th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for ticket in tickets %}
-                    <tr>
-                        <td>{{ ticket.title }}</td>
-                        <td>
-                            {% if ticket.status == 'open' %}offen{% endif %}
-                            {% if ticket.status == 'in_progress' %}wird bearbeitet{% endif %}
-                            {% if ticket.status == 'closed' %}geschlossen{% endif %}
-                        </td>
-                        <td>{{ ticket.createdAt|date('d.m.Y H:i:s') }}</td>
-                        <td>
-                            {% if is_granted('ROLE_ADMIN') %}
-                                <form action="{{ path('app_helpdesk_change_state', {'id': ticket.id}) }}" method="POST" style="display:inline;">
-                                    <select name="state" onchange="this.form.submit()">
-                                        <option value="open" {% if ticket.status == 'open' %}selected{% endif %}>offen</option>
-                                        <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>wird bearbeitet</option>
-                                        <option value="closed" {% if ticket.status == 'closed' %}selected{% endif %}>geschlossen</option>
-                                    </select>
-                                </form>
-                                <form action="{{ path('app_helpdesk_delete', {'id': ticket.id}) }}" method="POST" style="display:inline;" onsubmit="return confirm('Bist du dir sicher, dass du dieses Ticket löschen möchtest?');">
-                                    <button type="submit" class="btn btn-sm btn-outline-none text-dark px-3 mb-0">Löschen</button>
-                                </form>
-                            {% endif %}
-                            <a href="{{ path('app_helpdesk_show', {'id': ticket.id}) }}" class="btn btn-sm btn-dark px-3 mb-0 float-end">Ansehen</a>
-                        </td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+<style>
+	:root {
+		--hd-bg: #f5f2ed;
+		--hd-card: #ffffff;
+		--hd-dark: #0f172a;
+		--hd-dim: #64748b;
+		--hd-border: rgba(0,0,0,0.06);
+		--hd-green: #16a34a;
+		--hd-blue: #3b82f6;
+		--hd-purple: #8b5cf6;
+		--hd-amber: #f59e0b;
+		--hd-red: #ef4444;
+		--hd-radius: 16px;
+	}
+	.hd-wrap {
+		max-width: 1100px;
+		margin: 0 auto;
+		padding: 2rem 1.5rem 4rem;
+	}
+
+	/* ── Hero ── */
+	.hd-hero {
+		text-align: center;
+		margin-bottom: 3rem;
+	}
+	.hd-hero h1 {
+		font-size: 2.2rem;
+		font-weight: 800;
+		color: var(--hd-dark);
+		margin-bottom: 0.5rem;
+	}
+	.hd-hero p {
+		color: var(--hd-dim);
+		font-size: 1rem;
+		max-width: 500px;
+		margin: 0 auto;
+	}
+
+	/* ── Category Grid ── */
+	.hd-cat-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+		gap: 1.2rem;
+		margin-bottom: 3rem;
+	}
+	.hd-cat-card {
+		background: var(--hd-card);
+		border: 1px solid var(--hd-border);
+		border-radius: var(--hd-radius);
+		padding: 2rem 1.5rem;
+		text-align: center;
+		cursor: pointer;
+		transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+		text-decoration: none;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.8rem;
+		position: relative;
+		overflow: hidden;
+	}
+	.hd-cat-card::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(135deg, rgba(22,163,74,0.04), rgba(139,92,246,0.04));
+		opacity: 0;
+		transition: opacity 0.3s;
+	}
+	.hd-cat-card:hover::before { opacity: 1; }
+	.hd-cat-card:hover {
+		transform: translateY(-4px);
+		box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+		border-color: rgba(22,163,74,0.2);
+	}
+	.hd-cat-icon {
+		width: 64px;
+		height: 64px;
+		border-radius: 16px;
+		background: linear-gradient(135deg, rgba(22,163,74,0.08), rgba(139,92,246,0.08));
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 28px;
+		color: var(--hd-green);
+		transition: transform 0.3s;
+	}
+	.hd-cat-card:hover .hd-cat-icon {
+		transform: scale(1.1);
+	}
+	.hd-cat-title {
+		font-size: 1rem;
+		font-weight: 700;
+		color: var(--hd-dark);
+	}
+	.hd-cat-arrow {
+		margin-top: auto;
+		color: var(--hd-dim);
+		font-size: 0.8rem;
+		opacity: 0;
+		transform: translateY(4px);
+		transition: all 0.3s;
+	}
+	.hd-cat-card:hover .hd-cat-arrow {
+		opacity: 1;
+		transform: translateY(0);
+		color: var(--hd-green);
+	}
+
+	/* ── Tickets Section ── */
+	.hd-section {
+		margin-top: 2rem;
+	}
+	.hd-section-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 1.2rem;
+	}
+	.hd-section-title {
+		font-size: 1.3rem;
+		font-weight: 800;
+		color: var(--hd-dark);
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+	}
+	.hd-section-count {
+		font-size: 0.75rem;
+		font-weight: 700;
+		background: rgba(22,163,74,0.1);
+		color: var(--hd-green);
+		padding: 0.25rem 0.7rem;
+		border-radius: 20px;
+	}
+	.hd-btn-new {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.55rem 1.2rem;
+		background: linear-gradient(135deg, #16a34a, #22c55e);
+		color: #fff;
+		border: none;
+		border-radius: 10px;
+		font-size: 0.85rem;
+		font-weight: 600;
+		text-decoration: none;
+		transition: all 0.25s;
+		cursor: pointer;
+	}
+	.hd-btn-new:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 6px 20px rgba(22,163,74,0.3);
+		color: #fff;
+	}
+
+	/* ── Ticket List ── */
+	.hd-ticket-list {
+		background: var(--hd-card);
+		border: 1px solid var(--hd-border);
+		border-radius: var(--hd-radius);
+		overflow: hidden;
+	}
+	.hd-ticket-item {
+		display: flex;
+		align-items: center;
+		padding: 1rem 1.5rem;
+		border-bottom: 1px solid var(--hd-border);
+		transition: background 0.2s;
+		gap: 1rem;
+	}
+	.hd-ticket-item:last-child { border-bottom: none; }
+	.hd-ticket-item:hover { background: rgba(0,0,0,0.015); }
+
+	.hd-ticket-status {
+		width: 10px;
+		height: 10px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+	.hd-ticket-status.open { background: var(--hd-green); box-shadow: 0 0 8px rgba(22,163,74,0.4); }
+	.hd-ticket-status.in_progress { background: var(--hd-amber); box-shadow: 0 0 8px rgba(245,158,11,0.4); }
+	.hd-ticket-status.closed { background: var(--hd-dim); }
+
+	.hd-ticket-info { flex: 1; min-width: 0; }
+	.hd-ticket-title-text {
+		font-weight: 600;
+		color: var(--hd-dark);
+		font-size: 0.9rem;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.hd-ticket-meta {
+		font-size: 0.75rem;
+		color: var(--hd-dim);
+		margin-top: 0.15rem;
+	}
+	.hd-ticket-badge {
+		font-size: 0.7rem;
+		font-weight: 600;
+		padding: 0.2rem 0.6rem;
+		border-radius: 6px;
+		white-space: nowrap;
+	}
+	.hd-ticket-badge.open { background: rgba(22,163,74,0.1); color: var(--hd-green); }
+	.hd-ticket-badge.in_progress { background: rgba(245,158,11,0.1); color: var(--hd-amber); }
+	.hd-ticket-badge.closed { background: rgba(100,116,139,0.1); color: var(--hd-dim); }
+
+	.hd-ticket-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex-shrink: 0;
+	}
+	.hd-btn-view {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		padding: 0.4rem 0.9rem;
+		background: var(--hd-dark);
+		color: #fff;
+		border: none;
+		border-radius: 8px;
+		font-size: 0.75rem;
+		font-weight: 600;
+		text-decoration: none;
+		transition: all 0.2s;
+	}
+	.hd-btn-view:hover { opacity: 0.85; color: #fff; }
+
+	/* Admin controls */
+	.hd-admin-select {
+		font-size: 0.75rem;
+		padding: 0.3rem 0.5rem;
+		border: 1px solid var(--hd-border);
+		border-radius: 6px;
+		background: #fff;
+		cursor: pointer;
+	}
+	.hd-admin-delete {
+		background: none;
+		border: 1px solid rgba(239,68,68,0.2);
+		color: var(--hd-red);
+		border-radius: 6px;
+		padding: 0.3rem 0.6rem;
+		font-size: 0.7rem;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+	.hd-admin-delete:hover {
+		background: rgba(239,68,68,0.05);
+	}
+
+	.hd-empty {
+		text-align: center;
+		padding: 3rem;
+		color: var(--hd-dim);
+	}
+	.hd-empty i { font-size: 2rem; margin-bottom: 0.5rem; display: block; opacity: 0.3; }
+
+	@media(max-width: 640px) {
+		.hd-hero h1 { font-size: 1.6rem; }
+		.hd-ticket-item { flex-wrap: wrap; padding: 0.8rem 1rem; }
+		.hd-ticket-actions { width: 100%; justify-content: flex-end; margin-top: 0.5rem; }
+	}
+</style>
+
+<div class="hd-wrap">
+	{# ═══ HERO ═══ #}
+	<div class="hd-hero">
+		<h1>Help Center</h1>
+		<p>Finde Antworten in unseren Anleitungen oder erstelle ein Support-Ticket</p>
+	</div>
+
+	{# ═══ FAQ CATEGORIES ═══ #}
+	<div class="hd-cat-grid">
+		{% for category in categories %}
+			<a href="{{ path('app_helpdesk_faq_category', {'id': category.id}) }}" class="hd-cat-card">
+				<div class="hd-cat-icon">
+					<i class="material-symbols-rounded">{{ category.logo ?: 'help' }}</i>
+				</div>
+				<div class="hd-cat-title">{{ category.title }}</div>
+				<div class="hd-cat-arrow"><i class="fas fa-arrow-right"></i> Anleitung ansehen</div>
+			</a>
+		{% endfor %}
+	</div>
+
+	{# ═══ TICKETS ═══ #}
+	<div class="hd-section">
+		<div class="hd-section-header">
+			<div class="hd-section-title">
+				Deine Tickets
+				{% if tickets|length > 0 %}
+					<span class="hd-section-count">{{ tickets|length }}</span>
+				{% endif %}
+			</div>
+			<a href="{{ path('app_helpdesk_new') }}" class="hd-btn-new">
+				<i class="fas fa-plus"></i> Neues Ticket
+			</a>
+		</div>
+
+		<div class="hd-ticket-list">
+			{% if tickets|length > 0 %}
+				{% for ticket in tickets %}
+					<div class="hd-ticket-item">
+						<div class="hd-ticket-status {{ ticket.status }}"></div>
+						<div class="hd-ticket-info">
+							<div class="hd-ticket-title-text">{{ ticket.title }}</div>
+							<div class="hd-ticket-meta">
+								#{{ ticket.id }} &middot; {{ ticket.createdAt|date('d.m.Y H:i') }}
+							</div>
+						</div>
+						<span class="hd-ticket-badge {{ ticket.status }}">
+							{% if ticket.status == 'open' %}Offen{% elseif ticket.status == 'in_progress' %}In Bearbeitung{% else %}Geschlossen{% endif %}
+						</span>
+						<div class="hd-ticket-actions">
+							{% if is_granted('ROLE_ADMIN') %}
+								<form action="{{ path('app_helpdesk_change_state', {'id': ticket.id}) }}" method="POST" style="display:inline;">
+									<select name="state" onchange="this.form.submit()" class="hd-admin-select">
+										<option value="open" {% if ticket.status == 'open' %}selected{% endif %}>Offen</option>
+										<option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>In Bearbeitung</option>
+										<option value="closed" {% if ticket.status == 'closed' %}selected{% endif %}>Geschlossen</option>
+									</select>
+								</form>
+								<form action="{{ path('app_helpdesk_delete', {'id': ticket.id}) }}" method="POST" style="display:inline;" onsubmit="return confirm('Ticket wirklich löschen?');">
+									<button type="submit" class="hd-admin-delete"><i class="fas fa-trash-alt"></i></button>
+								</form>
+							{% endif %}
+							<a href="{{ path('app_helpdesk_show', {'id': ticket.id}) }}" class="hd-btn-view">
+								<i class="fas fa-eye"></i> Ansehen
+							</a>
+						</div>
+					</div>
+				{% endfor %}
+			{% else %}
+				<div class="hd-empty">
+					<i class="fas fa-ticket-alt"></i>
+					Noch keine Tickets vorhanden
+				</div>
+			{% endif %}
+		</div>
+	</div>
+</div>
 {% endblock %}

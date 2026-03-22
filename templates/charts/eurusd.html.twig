@@ -22,15 +22,25 @@
                 datafeedUrl = customDataUrl.startsWith('https://') ? customDataUrl : `https://${customDataUrl}`;
             }
 
+            // Helper: UTC→NY time with DST
+            function toNYMinutes(ts) {
+                var d = new Date(ts);
+                var m = d.getUTCMonth(), day = d.getUTCDate();
+                var isDST = false;
+                if (m > 2 && m < 10) isDST = true;
+                else if (m === 2) { var s = 14 - new Date(d.getUTCFullYear(),2,1).getUTCDay(); isDST = day >= s; }
+                else if (m === 10) { var f = 7 - new Date(d.getUTCFullYear(),10,1).getUTCDay(); isDST = day < f; }
+                var nyH = (d.getUTCHours() + 24 + (isDST ? -4 : -5)) % 24;
+                return nyH * 60 + d.getUTCMinutes();
+            }
+
             var widget = window.tvWidget = new TradingView.widget({
-                // debug: true, // uncomment this line to see Library errors and warnings in the console
                 fullscreen: false,
                 autosize: true,
                 symbol: 'AAPL',
                 interval: '1D',
                 container: "tv_chart_container",
                 overrides: {
-                    // https://www.tradingview.com/charting-library-docs/latest/customization/overrides/chart-overrides
                     "paneProperties.horzGridProperties.style": "1",
                     "paneProperties.vertGridProperties.style": "1",
                     "paneProperties.legendProperties.showSeriesOHLC": false,
@@ -38,38 +48,55 @@
                     "paneProperties.legendProperties.showStudyTitles": false,
                     "paneProperties.legendProperties.showStudyValues": false,
                     "paneProperties.legendProperties.showSeriesTitle": false,
+                    "paneProperties.legendProperties.showBarChange": false,
+                    "paneProperties.legendProperties.showVolume": false,
                     "mainSeriesProperties.statusViewStyle.showExchange": false,
                 },
 
-                //	BEWARE: no trailing slash is expected in feed URL
-                datafeed: new Datafeeds.UDFCompatibleDatafeed(datafeedUrl, undefined, {
-                    maxResponseLength: 1000,
-                    expectedOrder: 'latestFirst',
-                }),
+                datafeed: (function() {
+                    var _df = new Datafeeds.UDFCompatibleDatafeed(datafeedUrl, undefined, {
+                        maxResponseLength: 1000, expectedOrder: 'latestFirst',
+                    });
+                    window._kzBars = [];
+                    var _origGB = _df.getBars.bind(_df);
+                    _df.getBars = function(si, res, pp, onRes, onErr) {
+                        _origGB(si, res, pp, function(bars, meta) {
+                            if (bars && bars.length) bars.forEach(function(b) { window._kzBars.push({time:b.time,high:b.high,low:b.low,close:b.close}); });
+                            onRes(bars, meta);
+                        }, onErr);
+                    };
+                    return _df;
+                })(),
                 library_path: "charting_library/",
                 locale: getParameterByName('lang') || "de",
 
-                // https://www.tradingview.com/charting-library-docs/latest/api/interfaces/Charting_Library.ChartingLibraryWidgetOptions/#enabled_features
-                // https://www.tradingview.com/charting-library-docs/latest/customization/Featuresets/
                 disabled_features: [
                     "use_localstorage_for_settings",
                     "save_chart_properties_to_local_storage",
                     "header_saveload",
                     "items_favoriting",
                     "show_object_tree",
-                    "header_resolutions" ,
-                    "header_compare" ,
-                    "header_quick_search" ,
+                    "header_resolutions",
+                    "header_compare",
+                    "header_quick_search",
                     "header_fullscreen_button",
-                    "header_indicators",
                     "header_settings",
                     "header_undo_redo",
                     "header_chart_type",
                     "edit_buttons_in_legend",
-                    "context_menus",
+                    // "context_menus",
                     "go_to_date",
                     "timeframes_toolbar",
                     "left_toolbar",
+                    "create_volume_indicator_by_default",
+                    "create_volume_indicator_by_default_once",
+                    "legend_context_menu",
+                    "show_chart_property_page",
+                    "chart_property_page_scales",
+                    "chart_property_page_background",
+                    "chart_property_page_trading",
+                    "display_market_status",
+                    "popup_hints",
                 ],
                 enabled_features: [""],
 
@@ -79,6 +106,127 @@
                 user_id: 'public_user_id',
                 theme: getParameterByName('theme'),
             });
+
+            // ICT Killzone sessions (NY time minutes): [startMin, endMin, color, label]
+            var kzSessions = [
+                [1200, 1440, '#2962ff', 'Asia'],   // 20:00-00:00
+                [120,  300,  '#ef5350', 'London'],  // 02:00-05:00
+                [570,  660,  '#089981', 'NY AM'],   // 09:30-11:00
+                [720,  780,  '#ffeb3b', 'NY Lunch'],// 12:00-13:00
+                [810,  960,  '#9c27b0', 'NY PM'],   // 13:30-16:00
+            ];
+
+            function drawKillzones(chart, bars) {
+                if (!bars || !bars.length) return;
+                // Group bars by sessions, find highs/lows, draw trend_lines
+                var sessions = []; // {startTime, endTime, high, low, color, label}
+                var active = {}; // keyed by session index
+
+                bars.forEach(function(bar) {
+                    var t = toNYMinutes(bar.time);
+                    kzSessions.forEach(function(kz, idx) {
+                        var inSession = (kz[0] < kz[1]) ? (t >= kz[0] && t < kz[1]) : (t >= kz[0] || t < kz[1]);
+                        if (inSession) {
+                            if (!active[idx]) {
+                                active[idx] = { startTime: bar.time / 1000, high: bar.high, low: bar.low, highTime: bar.time / 1000, lowTime: bar.time / 1000, color: kz[2], label: kz[3] };
+                            } else {
+                                if (bar.high > active[idx].high) { active[idx].high = bar.high; active[idx].highTime = bar.time / 1000; }
+                                if (bar.low < active[idx].low) { active[idx].low = bar.low; active[idx].lowTime = bar.time / 1000; }
+                                active[idx].endTime = bar.time / 1000;
+                            }
+                        } else if (active[idx]) {
+                            active[idx].endTime = active[idx].endTime || (bar.time / 1000);
+                            sessions.push(active[idx]);
+                            delete active[idx];
+                        }
+                    });
+                });
+                // Push any still-active sessions
+                Object.keys(active).forEach(function(k) {
+                    active[k].endTime = active[k].endTime || Math.floor(Date.now()/1000);
+                    sessions.push(active[k]);
+                });
+
+                // Only keep last 3 days worth (limit clutter)
+                var cutoff = Date.now()/1000 - 3 * 86400;
+                sessions = sessions.filter(function(s) { return s.startTime > cutoff; });
+
+                // Find mitigation points + draw lines
+                var allBars = window._kzBars || [];
+                sessions.forEach(function(s) {
+                    var sessionEndMs = (s.endTime || s.startTime) * 1000;
+                    s.highEndTime = null;
+                    s.lowEndTime = null;
+                    for (var bi = 0; bi < allBars.length; bi++) {
+                        var b = allBars[bi];
+                        if (b.time <= sessionEndMs) continue;
+                        if (!s.highEndTime && b.high >= s.high) s.highEndTime = b.time / 1000;
+                        if (!s.lowEndTime && b.low <= s.low) s.lowEndTime = b.time / 1000;
+                        if (s.highEndTime && s.lowEndTime) break;
+                    }
+                    // Unmitigated lines extend to last bar + 5 bars
+                    var lastBarTime = allBars.length ? allBars[allBars.length - 1].time / 1000 : s.endTime;
+                    var barInterval = allBars.length > 1 ? (allBars[allBars.length - 1].time - allBars[allBars.length - 2].time) / 1000 : 900;
+                    var defaultEnd = lastBarTime + (barInterval * 5);
+                    var highEnd = s.highEndTime || defaultEnd;
+                    var lowEnd = s.lowEndTime || defaultEnd;
+
+                    chart.createMultipointShape(
+                        [{ time: s.highTime || s.startTime, price: s.high }, { time: highEnd, price: s.high }],
+                        { shape: 'trend_line', lock: true, disableSelection: true, disableSave: true, disableUndo: true,
+                          overrides: { linecolor: '#94a3b8', linestyle: 0, linewidth: 1, showLabel: true,
+                              text: s.label + ' H', textcolor: '#94a3b8', fontsize: 7, vertLabelsAlign: 'bottom' } }
+                    );
+                    chart.createMultipointShape(
+                        [{ time: s.lowTime || s.startTime, price: s.low }, { time: lowEnd, price: s.low }],
+                        { shape: 'trend_line', lock: true, disableSelection: true, disableSave: true, disableUndo: true,
+                          overrides: { linecolor: '#94a3b8', linestyle: 0, linewidth: 1, showLabel: true,
+                              text: s.label + ' L', textcolor: '#94a3b8', fontsize: 7, vertLabelsAlign: 'top' } }
+                    );
+                });
+            }
+
+            widget.onChartReady(function() {
+                var chart = widget.activeChart();
+                chart.getAllStudies().forEach(function(s) { chart.removeEntity(s.id); });
+
+                // Depth Zones as rectangles (from collected bar data)
+                setTimeout(function() {
+                    var bars = window._kzBars || [];
+                    if (!bars.length) return;
+                    var lastClose = bars[bars.length - 1].close || bars[bars.length - 1].high;
+                    if (!lastClose) return;
+                    var offset = 100, step = offset / 5;
+                    var vr = chart.getVisibleRange();
+                    var farLeft = Math.floor(vr.to - 900);
+                    var farRight = Math.floor(vr.to + 90000);
+                    var upTr = [60, 72, 82, 90];
+                    var dnTr = [60, 72, 82, 90];
+                    for (var i = 0; i < 4; i++) {
+                        chart.createMultipointShape(
+                            [{time: farLeft, price: lastClose + step*(i+1)}, {time: farRight, price: lastClose + step*(i+2)}],
+                            {shape:'rectangle',lock:true,disableSelection:true,disableSave:true,disableUndo:true,
+                             overrides:{backgroundColor:'#ff5000',color:'#ff500000',transparency:upTr[i],fillBackground:true,linewidth:0}}
+                        );
+                        chart.createMultipointShape(
+                            [{time: farLeft, price: lastClose - step*(i+1)}, {time: farRight, price: lastClose - step*(i+2)}],
+                            {shape:'rectangle',lock:true,disableSelection:true,disableSave:true,disableUndo:true,
+                             overrides:{backgroundColor:'#0078ff',color:'#0078ff00',transparency:dnTr[i],fillBackground:true,linewidth:0}}
+                        );
+                    }
+                    console.log('[DepthZones] Drew rectangles at price ' + lastClose);
+                }, 4500);
+
+                // Killzones from collected bar data (intercepted from datafeed)
+                setTimeout(function() {
+                    var bars = window._kzBars || [];
+                    if (!bars.length) { console.warn('[Killzones] No bars collected'); return; }
+                    bars.sort(function(a,b){ return a.time - b.time; });
+                    console.log('[Killzones] Drawing from ' + bars.length + ' collected bars');
+                    drawKillzones(chart, bars);
+                }, 4000);
+            });
+
             window.frames[0].focus();
         };
 

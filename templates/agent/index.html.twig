@@ -698,6 +698,376 @@
 		color: var(--ag-green);
 	}
 
+	/* ── Master Orders Section ── */
+	.master-orders-section {
+		margin-bottom: 3rem;
+	}
+	.master-orders-card {
+		position: relative;
+		border-radius: 24px;
+		overflow: hidden;
+		transition: all 0.5s cubic-bezier(0.175,0.885,0.32,1.275);
+	}
+	.master-orders-card::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: 24px;
+		padding: 2px;
+		background: linear-gradient(135deg, rgba(22,163,74,0.3), rgba(6,182,212,0.2), rgba(139,92,246,0.2), rgba(22,163,74,0.3));
+		background-size: 300% 300%;
+		animation: agBorderShift 6s ease infinite;
+		-webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+		mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+		-webkit-mask-composite: xor;
+		mask-composite: exclude;
+		pointer-events: none;
+		z-index: 1;
+	}
+	.master-orders-inner {
+		background: linear-gradient(160deg, #1a2332 0%, #0d1520 40%, #111b27 100%);
+		border-radius: 24px;
+		overflow: hidden;
+	}
+	.master-orders-layout {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		height: 600px;
+	}
+	@media(max-width: 768px) {
+		.master-orders-layout {
+			grid-template-columns: 1fr;
+		}
+	}
+	/* Left: TradingView Chart */
+	.mo-chart-side {
+		position: relative;
+		overflow: hidden;
+		border-right: 1px solid rgba(255, 255, 255, 0.05);
+	}
+	.mo-chart-side iframe {
+		width: 100%;
+		height: 100%;
+		border: none;
+	}
+	.mo-chart-header {
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.75rem 1rem;
+		background: linear-gradient(180deg, rgba(13, 21, 32, 0.95) 0%, rgba(13, 21, 32, 0) 100%);
+		z-index: 3;
+		pointer-events: none;
+	}
+	.mo-chart-symbol {
+		font-size: 0.85rem;
+		font-weight: 800;
+		color: #f1f5f9;
+		letter-spacing: -0.02em;
+	}
+	.mo-chart-symbol i {
+		color: #4ade80;
+		margin-right: 6px;
+		font-size: 0.7rem;
+	}
+	.mo-live-dot {
+		display: inline-block;
+		width: 6px;
+		height: 6px;
+		background: #4ade80;
+		border-radius: 50%;
+		margin-right: 6px;
+		animation: moPulse 2s ease-in-out infinite;
+		box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
+	}
+	@keyframes moPulse {
+		0,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.4;
+		}
+	}
+	/* Right: Orders list */
+	.mo-orders-side {
+		display: flex;
+		flex-direction: column;
+	}
+	.mo-orders-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 1.25rem 1.5rem;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+	}
+	.mo-orders-header h6 {
+		font-size: 0.72rem;
+		font-weight: 800;
+		color: rgba(255, 255, 255, 0.6);
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+		margin: 0;
+	}
+	.mo-badge-live {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 0.6rem;
+		font-weight: 700;
+		color: #4ade80;
+		background: rgba(74, 222, 128, 0.1);
+		border: 1px solid rgba(74, 222, 128, 0.2);
+		padding: 4px 10px;
+		border-radius: 100px;
+		text-transform: uppercase;
+		letter-spacing: 0.08em;
+	}
+	.mo-orders-list {
+		flex: 1;
+		overflow-y: auto;
+		padding: 0;
+		scrollbar-width: thin;
+		scrollbar-color: rgba(74, 222, 128, 0.3) rgba(255, 255, 255, 0.03);
+	}
+	.mo-orders-list::-webkit-scrollbar {
+		width: 6px;
+	}
+	.mo-orders-list::-webkit-scrollbar-track {
+		background: rgba(255, 255, 255, 0.03);
+		border-radius: 3px;
+	}
+	.mo-orders-list::-webkit-scrollbar-thumb {
+		background: linear-gradient(180deg, rgba(74, 222, 128, 0.4), rgba(139, 92, 246, 0.4));
+		border-radius: 3px;
+	}
+	.mo-orders-list::-webkit-scrollbar-thumb:hover {
+		background: linear-gradient(180deg, rgba(74, 222, 128, 0.6), rgba(139, 92, 246, 0.6));
+	}
+	.mo-order-item {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 1rem 1.5rem;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+		transition: all 0.25s ease;
+		cursor: pointer;
+	}
+	.mo-order-item:hover {
+		background: rgba(255, 255, 255, 0.06);
+	}
+	.mo-order-item.active {
+		background: rgba(74, 222, 128, 0.06);
+		border-left: 3px solid #4ade80;
+	}
+	.mo-order-item:last-child {
+		border-bottom: none;
+	}
+	.mo-order-left {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+	.mo-order-type {
+		font-size: 0.55rem;
+		font-weight: 900;
+		min-width: 38px;
+		text-align: center;
+		padding: 3px 6px;
+		border-radius: 6px;
+		border: 1px solid currentColor;
+		opacity: 0.8;
+	}
+	.mo-order-type.buy {
+		color: #4ade80;
+		border-color: rgba(74, 222, 128, 0.3);
+		background: rgba(74, 222, 128, 0.08);
+	}
+	.mo-order-type.sell {
+		color: #f87171;
+		border-color: rgba(248, 113, 113, 0.3);
+		background: rgba(248, 113, 113, 0.08);
+	}
+	.mo-order-symbol {
+		font-size: 1rem;
+		font-weight: 800;
+		color: #f1f5f9;
+		letter-spacing: -0.02em;
+	}
+	.mo-order-meta {
+		font-size: 0.65rem;
+		color: rgba(255, 255, 255, 0.35);
+		font-weight: 600;
+		margin-top: 1px;
+	}
+	.mo-order-right {
+		text-align: right;
+	}
+	.mo-order-profit {
+		font-size: 1.05rem;
+		font-weight: 800;
+		letter-spacing: -0.02em;
+	}
+	.mo-order-profit.positive {
+		color: #4ade80;
+		text-shadow: 0 0 16px rgba(74, 222, 128, 0.4);
+	}
+	.mo-order-profit.negative {
+		color: #f87171;
+		text-shadow: 0 0 16px rgba(248, 113, 113, 0.4);
+	}
+	.mo-order-date {
+		font-size: 0.6rem;
+		color: rgba(255, 255, 255, 0.3);
+		font-weight: 500;
+		margin-top: 2px;
+	}
+	.mo-order-times {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		margin-top: 4px;
+	}
+	.mo-order-time {
+		font-size: 0.55rem;
+		color: rgba(255, 255, 255, 0.25);
+		font-weight: 500;
+		display: flex;
+		align-items: center;
+		gap: 4px;
+	}
+	.mo-order-time i {
+		font-size: 0.45rem;
+		opacity: 0.6;
+	}
+	.mo-status-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		font-size: 0.5rem;
+		font-weight: 800;
+		padding: 2px 8px;
+		border-radius: 100px;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		margin-top: 4px;
+	}
+	.mo-status-badge.open {
+		color: #4ade80;
+		background: rgba(74, 222, 128, 0.1);
+		border: 1px solid rgba(74, 222, 128, 0.25);
+		animation: moStatusPulse 2s ease-in-out infinite;
+	}
+	.mo-status-badge.closed {
+		color: rgba(255, 255, 255, 0.4);
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.08);
+	}
+	.mo-status-dot {
+		width: 5px;
+		height: 5px;
+		border-radius: 50%;
+	}
+	.mo-status-badge.open .mo-status-dot {
+		background: #4ade80;
+		box-shadow: 0 0 6px rgba(74, 222, 128, 0.8);
+		animation: moPulse 2s ease-in-out infinite;
+	}
+	.mo-status-badge.closed .mo-status-dot {
+		background: rgba(255, 255, 255, 0.3);
+	}
+	@keyframes moStatusPulse {
+		0,
+		100% {
+			box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
+		}
+		50% {
+			box-shadow: 0 0 12px 2px rgba(74, 222, 128, 0.15);
+		}
+	}
+	.mo-order-item.is-open {
+		background: rgba(74, 222, 128, 0.03);
+		border-left: 2px solid rgba(74, 222, 128, 0.3);
+	}
+	.mo-order-center {
+		flex: 1;
+		padding: 0 12px;
+	}
+	.mo-orders-loading {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 3rem;
+		color: rgba(255, 255, 255, 0.3);
+		font-size: 0.8rem;
+		gap: 10px;
+	}
+	.mo-orders-loading i {
+		animation: spin 1s linear infinite;
+	}
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+	.mo-order-count-badge {
+		background: rgba(74, 222, 128, 0.1);
+		border: 1px solid rgba(74, 222, 128, 0.2);
+		color: #4ade80;
+		font-size: 0.6rem;
+		font-weight: 700;
+		padding: 2px 8px;
+		border-radius: 100px;
+		margin-left: 8px;
+	}
+	/* Search bar */
+	.mo-search-wrap {
+		padding: 1rem 1.5rem;
+		border-top: 1px solid rgba(255, 255, 255, 0.05);
+	}
+	.mo-search {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		background: rgba(255, 255, 255, 0.05);
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		border-radius: 12px;
+		padding: 10px 14px;
+		transition: all 0.3s;
+	}
+	.mo-search:focus-within {
+		border-color: rgba(74, 222, 128, 0.3);
+		background: rgba(255, 255, 255, 0.07);
+		box-shadow: 0 0 20px rgba(74, 222, 128, 0.08);
+	}
+	.mo-search input {
+		flex: 1;
+		background: none;
+		border: none;
+		outline: none;
+		color: #e2e8f0;
+		font-size: 0.82rem;
+		font-weight: 500;
+	}
+	.mo-search input::placeholder {
+		color: rgba(255, 255, 255, 0.25);
+	}
+	.mo-search i {
+		color: rgba(255, 255, 255, 0.3);
+		font-size: 0.85rem;
+	}
+	/* Empty state */
+	.mo-empty {
+		padding: 3rem 1.5rem;
+		text-align: center;
+		color: rgba(255, 255, 255, 0.3);
+		font-size: 0.85rem;
+	}
+
 	/* ── Animations ── */
 	@keyframes fadeInUp {
 		from {
@@ -793,8 +1163,8 @@
 		class="agents-container">
 
 		{# ══════════════════════════════════════
-									   HERO SECTION
-									   ══════════════════════════════════════ #}
+																																			   HERO SECTION
+																																			   ══════════════════════════════════════ #}
 		<div class="agents-hero animate-in">
 			<canvas class="agents-hero-canvas" id="heroParticleCanvas"></canvas>
 			<span class="agents-hero-badge">
@@ -892,8 +1262,8 @@
 		</div>
 
 		{# ══════════════════════════════════════
-											   AVAILABLE AGENTS
-											   ══════════════════════════════════════ #}
+																																					   AVAILABLE AGENTS
+																																					   ══════════════════════════════════════ #}
 		<div class="section-header animate-in animate-in-1">
 			<h2>Verf&uuml;gbare Agents</h2>
 			<span class="section-count">{{ accounts|length }}
@@ -1030,8 +1400,123 @@
 		</div>
 
 		{# ══════════════════════════════════════
-											   SUBSCRIBED AGENTS TABLE
-											   ══════════════════════════════════════ #}
+																												   MASTER ORDERS
+																												   ══════════════════════════════════════ #}
+		<div class="master-orders-section animate-in animate-in-2">
+			<div class="section-header">
+				<h2>Live Master-Trades</h2>
+				<span class="section-count">{{ master_trades_total }}
+					Orders
+					{% set open_count = 0 %}
+					{% for t in master_trades %}
+						{% if t.status != 700 %}
+							{% set open_count = open_count + 1 %}
+						{% endif %}
+					{% endfor %}
+					{% if open_count > 0 %}
+						<span class="mo-order-count-badge">{{ open_count }}
+							Open</span>
+					{% endif %}
+				</span>
+			</div>
+
+			<div class="master-orders-card">
+				<div class="master-orders-inner">
+					<div
+						class="master-orders-layout">
+						{# Left: TradingView Chart #}
+						<div class="mo-chart-side" id="moChartSide">
+							<div class="mo-chart-header">
+								<span class="mo-chart-symbol" id="moChartSymbolLabel">
+									<i class="fas fa-chart-line"></i>
+									<span id="moChartSymbolText">USTEC</span>
+								</span>
+							</div>
+						</div>
+
+						{# Right: Orders list #}
+						<div class="mo-orders-side">
+							<div class="mo-orders-header">
+								<h6>Aktuelle Positionen</h6>
+								<span class="mo-badge-live">
+									<span style="width:5px;height:5px;background:#4ade80;border-radius:50%;box-shadow:0 0 6px rgba(74,222,128,0.6);"></span>
+									LIVE
+								</span>
+							</div>
+
+							<div class="mo-orders-list" id="moOrdersList">
+								{% if master_trades|length > 0 %}
+									{% for trade in master_trades %}
+										{% set is_open = trade.status != 700 %}
+										<div class="mo-order-item{{ is_open ? ' is-open' : '' }}" data-symbol="{{ trade.order_symbol|lower }}">
+											<div class="mo-order-left">
+												<span class="mo-order-type {{ trade.order_type == 'DEAL_TYPE_BUY' ? 'buy' : 'sell' }}">
+													{{ trade.order_type == 'DEAL_TYPE_BUY' ? 'BUY' : 'SELL' }}
+												</span>
+												<div>
+													<div class="mo-order-symbol">{{ trade.order_symbol }}</div>
+													<div class="mo-order-meta">
+														<i class="fas fa-layer-group" style="font-size:0.55rem;margin-right:3px;opacity:0.5;"></i>
+														{{ trade.order_lot }}
+														Lot
+													</div>
+													<span class="mo-status-badge {{ is_open ? 'open' : 'closed' }}">
+														<span class="mo-status-dot"></span>
+														{{ is_open ? 'OPEN' : 'CLOSED' }}
+													</span>
+												</div>
+											</div>
+											<div class="mo-order-center">
+												<div class="mo-order-times">
+													<div class="mo-order-time">
+														<i class="fas fa-arrow-right" style="color:#4ade80;"></i>
+														{{ trade.order_open_at|date('d.m.Y H:i') }}
+													</div>
+													{% if not is_open and trade.order_close_at is defined and trade.order_close_at %}
+														<div class="mo-order-time">
+															<i class="fas fa-arrow-left" style="color:#f87171;"></i>
+															{{ trade.order_close_at|date('d.m.Y H:i') }}
+														</div>
+													{% elseif is_open %}
+														<div class="mo-order-time" style="color:rgba(74,222,128,0.5);">
+															<i class="fas fa-clock" style="color:#4ade80;"></i>
+															Aktiv
+														</div>
+													{% endif %}
+												</div>
+											</div>
+											<div class="mo-order-right">
+												<div class="mo-order-profit {{ trade.order_profit >= 0 ? 'positive' : 'negative' }}">
+													{{ trade.order_profit >= 0 ? '+' : '' }}{{ trade.order_profit|number_format(2, ',', '.') }}
+													&euro;
+												</div>
+												<div class="mo-order-date">#{{ trade.order_ticket }}</div>
+											</div>
+										</div>
+									{% endfor %}
+								{% else %}
+									<div class="mo-empty">
+										<i class="fas fa-satellite-dish" style="font-size:1.5rem;margin-bottom:0.75rem;display:block;opacity:0.4;"></i>
+										Keine Master-Trades vorhanden.
+									</div>
+								{% endif %}
+							</div>
+
+							<div class="mo-search-wrap">
+								<div class="mo-search">
+									<input type="text" id="moSearchInput" placeholder="Search for Gold, Euro, NAS...">
+									<i class="fas fa-search"></i>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		{# ══════════════════════════════════════
+																																					   SUBSCRIBED AGENTS TABLE
+																																					   ══════════════════════════════════════ #}
 		<div class="section-header animate-in animate-in-3">
 			<h2>Abonnierte Agents</h2>
 			<span class="section-count">{{ account_agent_connections|length }}</span>
@@ -1153,492 +1638,5 @@
 	</div>
 </div>
 
-<script>
-	// ═══════════════════════════════════════════════════════
-// LOADING OVERLAY — 1200 Particle Canvas
-// ═══════════════════════════════════════════════════════
-(function () {
-const canvas = document.getElementById('agentsCanvas');
-const ctx = canvas.getContext('2d');
-let W,
-H,
-particles = [],
-gridLines = [],
-animId;
-const PC = 1200,
-GC = 20;
-
-function resize() {
-W = canvas.width = window.innerWidth;
-H = canvas.height = window.innerHeight;
-}
-resize();
-window.addEventListener('resize', resize);
-
-for (let i = 0; i < PC; i++) {
-const s = Math.random() * 3.5 + 0.5,
-sp = Math.random() * 0.8 + 0.1,
-a = Math.random() * Math.PI * 2;
-particles.push({
-x: Math.random() * W,
-y: Math.random() * H,
-size: s,
-baseSize: s,
-vx: Math.cos(a) * sp,
-vy: Math.sin(a) * sp,
-opacity: Math.random() * 0.6 + 0.1,
-pulse: Math.random() * Math.PI * 2,
-pulseSpeed: Math.random() * 0.03 + 0.01,
-hue: Math.random() > 0.6 ? 160 : 142
-});
-}
-for (let i = 0; i < GC; i++) 
-gridLines.push({
-isH: i < GC / 2,
-pos: Math.random() * (i < GC / 2 ? H : W),
-opacity: Math.random() * 0.04 + 0.01
-});
-
-
-function drawLoading() {
-ctx.clearRect(0, 0, W, H);
-ctx.lineWidth = 0.5;
-gridLines.forEach(g => {
-ctx.strokeStyle = `rgba(22,163,74,${
-g.opacity
-})`;
-ctx.beginPath();
-if (g.isH) {
-ctx.moveTo(0, g.pos);
-ctx.lineTo(W, g.pos);
-} else {
-ctx.moveTo(g.pos, 0);
-ctx.lineTo(g.pos, H);
-} ctx.stroke();
-});
-const cx = W / 2,
-cy = H / 2 - H * 0.05;
-particles.forEach(p => {
-p.pulse += p.pulseSpeed;
-p.size = p.baseSize + Math.sin(p.pulse) * 0.8;
-p.x += p.vx;
-p.y += p.vy;
-const dx = cx - p.x,
-dy = cy - p.y,
-dist = Math.sqrt(dx * dx + dy * dy);
-if (dist > 50) {
-p.vx += dx / dist * 0.003;
-p.vy += dy / dist * 0.003;
-}
-const spd = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
-if (spd > 1.5) {
-p.vx *= 0.98;
-p.vy *= 0.98;
-}
-if (p.x<-10)p.x=W+10;if(p.x>W + 10) 
-p.x = -10;
-
-if (p.y<-10)p.y=H+10;if(p.y>H + 10) 
-p.y = -10;
-
-const alpha = p.opacity * (1 - Math.min(dist / (Math.max(W, H) * 0.5), 1) * 0.5);
-ctx.beginPath();
-ctx.arc(p.x, p.y, Math.max(p.size, 0.3), 0, Math.PI * 2);
-ctx.fillStyle = `hsla(${
-p.hue
-},80%,50%,${alpha})`;
-ctx.fill();
-if (p.baseSize > 2.5) {
-ctx.beginPath();
-ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2);
-ctx.fillStyle = `hsla(${
-p.hue
-},80%,50%,${
-alpha * 0.15
-})`;
-ctx.fill();
-}
-});
-for (let i = 0; i < particles.length; i++) {
-const a = particles[i];
-const ad = Math.sqrt((a.x - cx) ** 2 + (a.y - cy) ** 2);
-if (ad > 250) 
-continue;
-
-for (let j = i + 1; j < particles.length; j++) {
-const b = particles[j];
-const d = Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
-if (d < 60) {
-ctx.strokeStyle = `rgba(22,163,74,${
-0.15 * (1 - d / 60)
-})`;
-ctx.lineWidth = 0.5;
-ctx.beginPath();
-ctx.moveTo(a.x, a.y);
-ctx.lineTo(b.x, b.y);
-ctx.stroke();
-}
-}
-}
-animId = requestAnimationFrame(drawLoading);
-}
-drawLoading();
-
-const fill = document.getElementById('agLoadFill'),
-pct = document.getElementById('agLoadPct'),
-sub = document.getElementById('agLoadSub');
-const steps = [
-{
-p: 15,
-t: 'Marktdaten synchronisieren...'
-},
-{
-p: 35,
-t: 'Agenten-Netzwerk verbinden...'
-},
-{
-p: 55,
-t: 'Neuronale Pfade kalibrieren...'
-},
-{
-p: 75,
-t: 'Handelsstrategien laden...'
-}, {
-p: 90,
-t: 'Risikoprofile analysieren...'
-}, {
-p: 100,
-t: 'Bereit!'
-}
-];
-let si = 0;
-function nextStep() {
-if (si >= steps.length) {
-setTimeout(() => {
-const o = document.getElementById('agentsLoadingOverlay');
-o.classList.add('fade-out');
-setTimeout(() => {
-o.style.display = 'none';
-cancelAnimationFrame(animId);
-}, 800);
-}, 400);
-return;
-}
-const s = steps[si];
-fill.style.width = s.p + '%';
-pct.textContent = s.p + '%';
-sub.textContent = s.t;
-si++;
-setTimeout(nextStep, 500 + Math.random() * 400);
-}
-setTimeout(nextStep, 600);
-})();
-
-// ═══════════════════════════════════════════════════════
-// HERO — Canvas Particle Background
-// ═══════════════════════════════════════════════════════
-(function () {
-const canvas = document.getElementById('heroParticleCanvas');
-if (! canvas) 
-return;
-
-const ctx = canvas.getContext('2d'),
-hero = canvas.parentElement;
-let W,
-H,
-particles = [];
-
-function resize() {
-const r = hero.getBoundingClientRect();
-W = canvas.width = r.width;
-H = canvas.height = r.height;
-}
-resize();
-window.addEventListener('resize', resize);
-
-for (let i = 0; i < 200; i++) 
-particles.push({
-x: Math.random() * (W || 800),
-y: Math.random() * (H || 400),
-size: Math.random() * 2.5 + 0.5,
-vx: (Math.random() - 0.5) * 0.4,
-vy: (Math.random() - 0.5) * 0.3,
-opacity: Math.random() * 0.25 + 0.05,
-hue: Math.random() > 0.5 ? 142 : 160
-});
-
-
-function draw() {
-ctx.clearRect(0, 0, W, H);
-particles.forEach(p => {
-p.x += p.vx;
-p.y += p.vy;
-if (p.x < 0) 
-p.x = W;
-
-if (p.x > W) 
-p.x = 0;
-
-if (p.y < 0) 
-p.y = H;
-
-if (p.y > H) 
-p.y = 0;
-
-ctx.beginPath();
-ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-ctx.fillStyle = `hsla(${
-p.hue
-},60%,35%,${
-p.opacity
-})`;
-ctx.fill();
-});
-for (let i = 0; i < particles.length; i++) 
-for (let j = i + 1; j < particles.length; j++) {
-const dx = particles[i].x - particles[j].x,
-dy = particles[i].y - particles[j].y,
-d = Math.sqrt(dx * dx + dy * dy);
-if (d < 80) {
-ctx.strokeStyle = `rgba(22,163,74,${
-0.08 * (1 - d / 80)
-})`;
-ctx.lineWidth = 0.5;
-ctx.beginPath();
-ctx.moveTo(particles[i].x, particles[i].y);
-ctx.lineTo(particles[j].x, particles[j].y);
-ctx.stroke();
-}
-}
-
-requestAnimationFrame(draw);
-}
-draw();
-})();
-
-// ═══════════════════════════════════════════════════════
-// AGENT CARD — AI Neural Network Canvas
-// ═══════════════════════════════════════════════════════
-(function () {
-document.querySelectorAll('.agent-neural-canvas').forEach(function (canvas) {
-const ctx = canvas.getContext('2d');
-const wrap = canvas.parentElement;
-let W,
-H;
-const nodes = [];
-const NODE_COUNT = 28;
-const particles = [];
-const PARTICLE_COUNT = 80;
-let time = 0;
-
-function resize() {
-const r = wrap.getBoundingClientRect();
-W = canvas.width = r.width;
-H = canvas.height = r.height;
-}
-resize();
-window.addEventListener('resize', resize);
-
-// Create neural network nodes in layers
-function initNodes() {
-nodes.length = 0;
-const layers = [
-4,
-6,
-8,
-6,
-4
-]; // 5-layer neural net
-const totalLayers = layers.length;
-for (let l = 0; l < totalLayers; l++) {
-const count = layers[l];
-const lx = (W * 0.1) + (l / (totalLayers - 1)) * (W * 0.8);
-for (let n = 0; n < count; n++) {
-const ny = (H * 0.1) + ((n + 0.5) / count) * (H * 0.8);
-nodes.push({
-x: lx,
-y: ny,
-layer: l,
-baseRadius: 5 + Math.random() * 3,
-pulse: Math.random() * Math.PI * 2,
-pulseSpeed: 0.02 + Math.random() * 0.02,
-hue: l <= 1 ? 142 : (l <= 3 ? 160 : 190), // green → teal → blue
-active: false,
-activeTimer: 0
-});
-}
-}
-}
-initNodes();
-
-// Create traveling particles along connections
-function spawnParticle() {
-if (particles.length >= PARTICLE_COUNT) 
-return;
-
-// Pick a random node, send particle to a node in the next layer
-const srcLayer = Math.floor(Math.random() * 4);
-const srcNodes = nodes.filter(n => n.layer === srcLayer);
-const dstNodes = nodes.filter(n => n.layer === srcLayer + 1);
-if (! srcNodes.length || ! dstNodes.length) 
-return;
-
-const src = srcNodes[Math.floor(Math.random() * srcNodes.length)];
-const dst = dstNodes[Math.floor(Math.random() * dstNodes.length)];
-particles.push({
-x: src.x,
-y: src.y,
-tx: dst.x,
-ty: dst.y,
-progress: 0,
-speed: 0.002 + Math.random() * 0.004,
-hue: src.hue,
-size: 2 + Math.random() * 2
-});
-src.active = true;
-src.activeTimer = 30;
-}
-
-function draw() {
-ctx.clearRect(0, 0, W, H);
-time++;
-
-// Spawn particles
-if (Math.random() < 0.3) 
-spawnParticle();
-
-
-// Draw connections (all layers to next layer)
-for (let l = 0; l < 4; l++) {
-const srcN = nodes.filter(n => n.layer === l);
-const dstN = nodes.filter(n => n.layer === l + 1);
-srcN.forEach(s => {
-dstN.forEach(d => {
-const dist = Math.sqrt((s.x - d.x) ** 2 + (s.y - d.y) ** 2);
-const alpha = s.active ? 0.2 : 0.06;
-ctx.strokeStyle = `rgba(74,222,128,${alpha})`;
-ctx.lineWidth = s.active ? 1 : 0.5;
-ctx.beginPath();
-ctx.moveTo(s.x, s.y);
-ctx.lineTo(d.x, d.y);
-ctx.stroke();
-});
-});
-}
-
-// Draw traveling particles
-for (let i = particles.length - 1; i >= 0; i--) {
-const p = particles[i];
-p.progress += p.speed;
-if (p.progress >= 1) { // Activate destination node
-const dst = nodes.find(n => Math.abs(n.x - p.tx) < 1 && Math.abs(n.y - p.ty) < 1);
-if (dst) {
-dst.active = true;
-dst.activeTimer = 30;
-}
-particles.splice(i, 1);
-continue;
-}
-p.x = p.x + (p.tx - p.x) * p.speed * 1.5;
-p.y = p.y + (p.ty - p.y) * p.speed * 1.5;
-
-// Glow trail
-const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.size * 4);
-gradient.addColorStop(0, `hsla(${
-p.hue
-}, 90%, 65%, 0.8)`);
-gradient.addColorStop(1, `hsla(${
-p.hue
-}, 90%, 65%, 0)`);
-ctx.beginPath();
-ctx.arc(p.x, p.y, p.size * 4, 0, Math.PI * 2);
-ctx.fillStyle = gradient;
-ctx.fill();
-
-// Core
-ctx.beginPath();
-ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-ctx.fillStyle = `hsla(${
-p.hue
-}, 90%, 70%, 0.9)`;
-ctx.fill();
-}
-
-// Draw nodes
-nodes.forEach(n => {
-n.pulse += n.pulseSpeed;
-if (n.activeTimer > 0) 
-n.activeTimer --;
-
-if (n.activeTimer <= 0) 
-n.active = false;
-
-
-const r = n.baseRadius + Math.sin(n.pulse) * 1.5;
-const glow = n.active ? 0.6 : 0.2;
-
-// Outer glow
-const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, r * 3);
-grad.addColorStop(0, `hsla(${
-n.hue
-}, 80%, 60%, ${glow})`);
-grad.addColorStop(1, `hsla(${
-n.hue
-}, 80%, 60%, 0)`);
-ctx.beginPath();
-ctx.arc(n.x, n.y, r * 3, 0, Math.PI * 2);
-ctx.fillStyle = grad;
-ctx.fill();
-
-// Node body
-ctx.beginPath();
-ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
-ctx.fillStyle = n.active ? `hsla(${
-n.hue
-}, 90%, 65%, 0.95)` : `hsla(${
-n.hue
-}, 70%, 55%, 0.7)`;
-ctx.fill();
-
-// White center dot
-ctx.beginPath();
-ctx.arc(n.x, n.y, r * 0.35, 0, Math.PI * 2);
-ctx.fillStyle = `rgba(255,255,255,${
-n.active ? 0.9 : 0.4
-})`;
-ctx.fill();
-});
-
-// "Data flow" wave effect
-const waveX = (time * 2) % (W + 200) - 100;
-const waveGrad = ctx.createLinearGradient(waveX - 60, 0, waveX + 60, 0);
-waveGrad.addColorStop(0, 'rgba(74,222,128,0)');
-waveGrad.addColorStop(0.5, 'rgba(74,222,128,0.04)');
-waveGrad.addColorStop(1, 'rgba(74,222,128,0)');
-ctx.fillStyle = waveGrad;
-ctx.fillRect(waveX - 60, 0, 120, H);
-
-requestAnimationFrame(draw);
-}
-draw();
-});
-})();
-
-// ═══════════════════════════════════════════════════════
-// HERO Toggle
-// ═══════════════════════════════════════════════════════
-document.getElementById('heroToggleBtn').addEventListener('click', function () {
-const content = document.getElementById('heroExpandContent');
-const icon = document.getElementById('heroToggleIcon');
-const text = document.getElementById('heroToggleText');
-if (content.classList.contains('expanded')) {
-content.classList.remove('expanded');
-icon.style.transform = 'rotate(0deg)';
-text.textContent = 'Mehr erfahren';
-} else {
-content.classList.add('expanded');
-icon.style.transform = 'rotate(180deg)';
-text.textContent = 'Weniger anzeigen';
-}
-});
-</script>{% endblock %}
+<script>window.__MASTER_ACCOUNT_LOGIN__ = {{ master_account_login }};</script>
+<script src="/js/agents.js"></script>{% endblock %}

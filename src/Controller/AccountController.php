@@ -585,6 +585,10 @@ class AccountController extends AbstractController
                 $account->setHost('denies');
                 $response = $deniesClient->addAccount($account);
             }
+            elseif($account->getPlatform() == 'mt5') {
+                $account->setHost('denies');
+                $response = $deniesClient->addAccount($account);
+            }
             else {
                 $account->setHost('duplikium');
                 $response = $duplikiumClient->addAccount($account);
@@ -788,6 +792,23 @@ class AccountController extends AbstractController
 
             $agents = $agentRepository->findAll();
 
+            // Get cTrader streaming info for WebSocket
+            $ctraderWs = null;
+            if ($account->getPlatform() === 'ctrader') {
+                try {
+                    $ctraderInfo = $deniesClient->getCtraderInfoByLogin($account->getLogin());
+                    if ($ctraderInfo['accessToken'] && $ctraderInfo['ctid']) {
+                        $ctraderWs = [
+                            'accessToken' => $ctraderInfo['accessToken'],
+                            'ctid' => $ctraderInfo['ctid'],
+                            'isLive' => $ctraderInfo['isLive'],
+                        ];
+                    }
+                } catch (\Exception $e) {}
+            }
+
+            $userAccounts = $accountRepository->findBy(['user' => $account->getUser()]);
+
             return $this->render('account/show_denies.html.twig', [
                 'account' => $account,
                 'apiData' => $apiData,
@@ -798,6 +819,8 @@ class AccountController extends AbstractController
                 'agent' => $agent,
                 'multiplier' => $multiplier,
                 'agents' => $agents,
+                'ctraderWs' => $ctraderWs,
+                'userAccounts' => $userAccounts,
             ]);
         }
 

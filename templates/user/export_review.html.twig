@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+	<meta charset="UTF-8">
+	<title>Prüfbericht - Abgelaufene & Gesperrte User mit Accounts</title>
+	<style>
+		@page {
+			size: A4 landscape;
+			margin: 15mm;
+		}
+		* { box-sizing: border-box; margin: 0; padding: 0; }
+		body {
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+			font-size: 11px;
+			color: #1a1a1a;
+			background: #fff;
+			padding: 20px;
+		}
+
+		/* ── Header ── */
+		.report-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
+			border-bottom: 3px solid #0f172a;
+			padding-bottom: 15px;
+			margin-bottom: 20px;
+		}
+		.report-title {
+			font-size: 20px;
+			font-weight: 800;
+			color: #0f172a;
+		}
+		.report-subtitle {
+			font-size: 12px;
+			color: #64748b;
+			margin-top: 4px;
+		}
+		.report-meta {
+			text-align: right;
+			font-size: 11px;
+			color: #64748b;
+		}
+		.report-meta strong { color: #0f172a; }
+
+		/* ── Summary ── */
+		.summary {
+			display: flex;
+			gap: 15px;
+			margin-bottom: 20px;
+		}
+		.summary-box {
+			flex: 1;
+			border: 1px solid #e2e8f0;
+			border-radius: 8px;
+			padding: 12px 15px;
+			background: #f8fafc;
+		}
+		.summary-box .label {
+			font-size: 10px;
+			font-weight: 600;
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+			color: #64748b;
+		}
+		.summary-box .value {
+			font-size: 22px;
+			font-weight: 800;
+			color: #0f172a;
+			margin-top: 2px;
+		}
+		.summary-box.warn .value { color: #ef4444; }
+
+		/* ── Table ── */
+		.data-table {
+			width: 100%;
+			border-collapse: collapse;
+			margin-bottom: 20px;
+		}
+		.data-table thead th {
+			background: #0f172a;
+			color: #fff;
+			font-size: 9px;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+			padding: 8px 10px;
+			text-align: left;
+			white-space: nowrap;
+		}
+		.data-table thead th:first-child { border-radius: 6px 0 0 0; }
+		.data-table thead th:last-child { border-radius: 0 6px 0 0; }
+		.data-table tbody tr {
+			border-bottom: 1px solid #e2e8f0;
+		}
+		.data-table tbody tr:nth-child(even) {
+			background: #f8fafc;
+		}
+		.data-table tbody td {
+			padding: 7px 10px;
+			font-size: 10.5px;
+			vertical-align: top;
+		}
+
+		/* Status */
+		.status-tag {
+			display: inline-block;
+			font-size: 9px;
+			font-weight: 700;
+			padding: 2px 8px;
+			border-radius: 4px;
+		}
+		.status-tag.expired {
+			background: #fef2f2;
+			color: #dc2626;
+			border: 1px solid #fecaca;
+		}
+		.status-tag.deactivated {
+			background: #dc2626;
+			color: #fff;
+		}
+		.status-tag.both {
+			background: #7f1d1d;
+			color: #fff;
+		}
+
+		.acc-list {
+			font-size: 10px;
+			color: #374151;
+		}
+		.acc-item {
+			margin-bottom: 2px;
+		}
+		.acc-platform {
+			display: inline-block;
+			font-size: 9px;
+			font-weight: 600;
+			background: #e0e7ff;
+			color: #3730a3;
+			padding: 1px 5px;
+			border-radius: 3px;
+			margin-left: 4px;
+		}
+		.days-overdue {
+			font-weight: 700;
+			color: #dc2626;
+		}
+
+		/* ── Footer ── */
+		.report-footer {
+			border-top: 1px solid #e2e8f0;
+			padding-top: 12px;
+			font-size: 10px;
+			color: #94a3b8;
+			display: flex;
+			justify-content: space-between;
+		}
+
+		/* ── Action needed marker ── */
+		.action-needed {
+			display: inline-block;
+			width: 8px;
+			height: 8px;
+			border-radius: 50%;
+			background: #ef4444;
+			margin-right: 4px;
+		}
+
+		/* ── Print button (hidden in print) ── */
+		.print-bar {
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			background: #0f172a;
+			padding: 12px 24px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			z-index: 9999;
+			gap: 12px;
+		}
+		.print-bar-title {
+			color: #fff;
+			font-size: 14px;
+			font-weight: 700;
+		}
+		.print-bar-actions {
+			display: flex;
+			gap: 8px;
+		}
+		.print-btn {
+			padding: 8px 20px;
+			border: none;
+			border-radius: 8px;
+			font-size: 13px;
+			font-weight: 600;
+			cursor: pointer;
+			transition: all 0.2s;
+		}
+		.print-btn.primary {
+			background: linear-gradient(135deg, #16a34a, #22c55e);
+			color: #fff;
+		}
+		.print-btn.primary:hover {
+			box-shadow: 0 4px 14px rgba(22,163,74,0.3);
+			transform: translateY(-1px);
+		}
+		.print-btn.secondary {
+			background: rgba(255,255,255,0.1);
+			color: #fff;
+			border: 1px solid rgba(255,255,255,0.2);
+		}
+		.print-btn.secondary:hover { background: rgba(255,255,255,0.15); }
+
+		@media print {
+			.print-bar { display: none !important; }
+			body { padding: 0; }
+		}
+		@media screen {
+			body { padding-top: 70px; }
+		}
+	</style>
+</head>
+<body>
+
+{# ═══ PRINT BAR (only visible on screen) ═══ #}
+<div class="print-bar">
+	<span class="print-bar-title">
+		Prüfbericht &mdash; {{ reviewUsers|length }} User zur Prüfung
+	</span>
+	<div class="print-bar-actions">
+		<button class="print-btn secondary" onclick="window.history.back()">
+			&larr; Zurück
+		</button>
+		<button class="print-btn primary" onclick="window.print()">
+			&#128438; Als PDF drucken / speichern
+		</button>
+	</div>
+</div>
+
+{# ═══ REPORT HEADER ═══ #}
+<div class="report-header">
+	<div>
+		<div class="report-title">Prüfbericht: Abgelaufene & Gesperrte Accounts</div>
+		<div class="report-subtitle">User mit abgelaufener/gesperrter Subscription die noch aktive Trading-Accounts besitzen</div>
+	</div>
+	<div class="report-meta">
+		<strong>ELVTD Finance</strong><br>
+		Erstellt: {{ exportDate|date('d.m.Y H:i') }} Uhr<br>
+		Seite 1 von 1
+	</div>
+</div>
+
+{# ═══ SUMMARY ═══ #}
+{% set expired_count = 0 %}
+{% set deactivated_count = 0 %}
+{% set total_accounts = 0 %}
+{% for item in reviewUsers %}
+	{% if item.is_expired %}{% set expired_count = expired_count + 1 %}{% endif %}
+	{% if item.is_deactivated %}{% set deactivated_count = deactivated_count + 1 %}{% endif %}
+	{% set total_accounts = total_accounts + item.user.accounts|length %}
+{% endfor %}
+
+<div class="summary">
+	<div class="summary-box warn">
+		<div class="label">User zur Prüfung</div>
+		<div class="value">{{ reviewUsers|length }}</div>
+	</div>
+	<div class="summary-box">
+		<div class="label">Davon abgelaufen</div>
+		<div class="value">{{ expired_count }}</div>
+	</div>
+	<div class="summary-box">
+		<div class="label">Davon gesperrt</div>
+		<div class="value">{{ deactivated_count }}</div>
+	</div>
+	<div class="summary-box">
+		<div class="label">Betroffene Accounts</div>
+		<div class="value">{{ total_accounts }}</div>
+	</div>
+</div>
+
+{# ═══ DATA TABLE ═══ #}
+<table class="data-table">
+	<thead>
+		<tr>
+			<th>#</th>
+			<th>User</th>
+			<th>Email</th>
+			<th>Status</th>
+			<th>Sub Ende</th>
+			<th>Tage überfällig</th>
+			<th>Accounts</th>
+			<th>Registriert</th>
+			<th>Letzter Login</th>
+		</tr>
+	</thead>
+	<tbody>
+		{% for i, item in reviewUsers %}
+			<tr>
+				<td>{{ i + 1 }}</td>
+				<td>
+					<strong>{{ item.user.firstname }} {{ item.user.lastname }}</strong><br>
+					<span style="color:#64748b;">{{ item.user.username }}</span>
+					<span style="color:#94a3b8;font-size:9px;"> (ID: {{ item.user.id }})</span>
+				</td>
+				<td>{{ item.user.email }}</td>
+				<td>
+					{% if item.is_deactivated and item.is_expired %}
+						<span class="status-tag both">Gesperrt + Abgelaufen</span>
+					{% elseif item.is_deactivated %}
+						<span class="status-tag deactivated">Gesperrt</span>
+					{% else %}
+						<span class="status-tag expired">Abgelaufen</span>
+					{% endif %}
+				</td>
+				<td>
+					{% if item.end_date %}
+						{{ item.end_date|date('d.m.Y') }}
+					{% else %}
+						-
+					{% endif %}
+				</td>
+				<td>
+					{% if item.days_remaining is not null %}
+						<span class="days-overdue">{{ item.days_remaining|abs }} Tage</span>
+					{% elseif item.is_deactivated %}
+						<span style="color:#64748b;">Manuell gesperrt</span>
+					{% else %}
+						-
+					{% endif %}
+				</td>
+				<td>
+					<div class="acc-list">
+						{% for acc in item.user.accounts %}
+							<div class="acc-item">
+								<span class="action-needed"></span>
+								{{ acc.login }}
+								<span class="acc-platform">{{ acc.platform }}</span>
+								<span style="color:#94a3b8;"> {{ acc.host }}</span>
+							</div>
+						{% endfor %}
+					</div>
+				</td>
+				<td>{{ item.user.createdAt ? item.user.createdAt|date('d.m.Y') : '-' }}</td>
+				<td>{{ item.user.lastLogin ? item.user.lastLogin|date('d.m.Y') : 'Nie' }}</td>
+			</tr>
+		{% endfor %}
+	</tbody>
+</table>
+
+{# ═══ FOOTER ═══ #}
+<div class="report-footer">
+	<span>ELVTD Finance &mdash; Internes Dokument, vertraulich</span>
+	<span>Generiert am {{ exportDate|date('d.m.Y') }} um {{ exportDate|date('H:i') }} Uhr</span>
+</div>
+
+</body>
+</html>

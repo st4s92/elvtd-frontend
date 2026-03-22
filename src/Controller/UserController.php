@@ -50,6 +50,68 @@ class UserController extends AbstractController
     }
 
     /**
+     * @Route("/export-review", name="app_user_export_review", methods={"GET"})
+     */
+    public function exportReview(UserRepository $userRepository, SubscriptionRepository $subscriptionRepository): Response
+    {
+        if (!$this->isGranted('ROLE_ADMIN')) {
+            return $this->redirectToRoute('app_default');
+        }
+
+        $users = $userRepository->findAll();
+        $subscriptions = $subscriptionRepository->findAll();
+        $now = new \DateTime();
+        $reviewUsers = [];
+
+        foreach ($users as $user) {
+            if (count($user->getAccounts()) === 0) {
+                continue;
+            }
+
+            $isDeactivated = $user->getSubscriptionStatus() === 'deactivated';
+            $isExpired = false;
+            $endDate = null;
+            $daysRemaining = null;
+            $userSubscription = null;
+
+            foreach ($subscriptions as $sub) {
+                if ($sub->getUser()->getId() === $user->getId()) {
+                    $userSubscription = $sub;
+                    break;
+                }
+            }
+
+            if ($userSubscription) {
+                $endDate = $userSubscription->getCurrentPeriodEnd();
+                $trialEnd = $userSubscription->getTrialEnd();
+                if ($trialEnd && (!$endDate || $trialEnd > $endDate)) {
+                    $endDate = $trialEnd;
+                }
+                if ($endDate && $endDate < $now) {
+                    $isExpired = true;
+                    $daysRemaining = (int) $now->diff($endDate)->format('%r%a');
+                }
+            }
+
+            if ($isExpired || $isDeactivated) {
+                $reviewUsers[] = [
+                    'user' => $user,
+                    'subscription' => $userSubscription,
+                    'is_expired' => $isExpired,
+                    'is_deactivated' => $isDeactivated,
+                    'end_date' => $endDate,
+                    'days_remaining' => $daysRemaining,
+                ];
+            }
+        }
+
+        return $this->render('user/export_review.html.twig', [
+            'reviewUsers' => $reviewUsers,
+            'exportDate' => $now,
+        ]);
+    }
+
+    /**
      * @Route("/new", name="app_user_new", methods={"GET", "POST"})
      */
     public function new(Request $request, UserRepository $userRepository): Response
@@ -121,25 +183,54 @@ class UserController extends AbstractController
     /**
      * @Route("/{id}/edit", name="app_user_edit", methods={"GET", "POST"})
      */
-    public function edit(Request $request, User $user, UserRepository $userRepository): Response
+    public function edit(Request $request, User $user, EntityManagerInterface $em, SubscriptionRepository $subscriptionRepository): Response
     {
-        // Prüfen, ob der Benutzer ein Admin ist
         if (!$this->isGranted('ROLE_ADMIN')) {
             return $this->redirectToRoute('app_default');
         }
 
-        $form = $this->createForm(UserType::class, $user);
-        $form->handleRequest($request);
+        if ($request->isMethod('POST')) {
+            $user->setUsername($request->request->get('username', $user->getUsername()));
+            $user->setFirstname($request->request->get('firstname', $user->getFirstname()));
+            $user->setLastname($request->request->get('lastname', $user->getLastname()));
+            $user->setEmail($request->request->get('email', $user->getEmail()));
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $userRepository->add($user, true);
+            $newPassword = $request->request->get('new_password', '');
+            if (!empty($newPassword)) {
+                $user->setPassword($this->passwordHasher->hashPassword($user, $newPassword));
+            }
 
-            return $this->redirectToRoute('app_user_index', [], Response::HTTP_SEE_OTHER);
+            $roles = $request->request->all('roles') ?: [];
+            $user->setRoles($roles);
+
+            $user->setMaxAccounts((int) $request->request->get('max_accounts', $user->getMaxAccounts()));
+            $user->setSubscriptionStatus($request->request->get('subscription_status', $user->getSubscriptionStatus()));
+            $user->setAffiliateCode($request->request->get('affiliate_code', $user->getAffiliateCode()));
+            $user->setLanguage($request->request->get('language', $user->getLanguage()));
+            $user->setDarkmode((int) $request->request->get('darkmode', $user->getDarkmode()));
+            $user->setEmailVerified((int) $request->request->get('email_verified', $user->getEmailVerified()));
+
+            $subEndAt = $request->request->get('subscription_end_at');
+            if ($subEndAt) {
+                try {
+                    $user->setSubscriptionEndAt(new \DateTime($subEndAt));
+                } catch (\Exception $e) {}
+            } else {
+                $user->setSubscriptionEndAt(null);
+            }
+
+            $user->setUpdatedAt(new \DateTime());
+            $em->flush();
+
+            $this->addFlash('success', 'User erfolgreich aktualisiert.');
+            return $this->redirectToRoute('app_user_edit', ['id' => $user->getId()]);
         }
 
-        return $this->renderForm('user/edit.html.twig', [
+        $subscription = $subscriptionRepository->findOneBy(['user' => $user]);
+
+        return $this->render('user/edit.html.twig', [
             'user' => $user,
-            'form' => $form,
+            'subscription' => $subscription,
         ]);
     }
 

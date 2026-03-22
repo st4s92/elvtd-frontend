@@ -3,71 +3,271 @@
 {% block title %}FAQ - {{ category.title }}{% endblock %}
 
 {% block body %}
-    <style>
-        .accordion-button {
-            font-size: 18px !important;
-            font-weight: bold !important;
-            color: #111011 !important;
-        }
-        .accordion-body  {
-            padding-left: 25px !important;
-        }
-        .accordion-body h1 {
-            font-size: 18px !important;
-        }
-        .accordion-body h2 {
-            font-size: 16px !important;
-        }
-        .accordion-body p, .accordion-body span, .accordion-body a, .accordion-body li {
-            color: #111011 !important;
-        }
-        .accordion-body img {
-            max-width: 100%;
-            margin: 15px 0;
-        }
-        .accordion-item:first-of-type {
-            border-top-left-radius: 15px;
-            border-top-right-radius: 15px;
-        }
-        .accordion-item:last-of-type {
-            border-bottom-left-radius: 15px;
-            border-bottom-right-radius: 15px;
-        }
-    </style>
-    <div class="container">
-        <h3 class="mt-4 mb-4">{{ category.title }}</h3>
-        <div class="accordion" id="faqAccordion">
-            {% for post in posts %}
-                <div class="accordion-item card">
-                    <h2 class="accordion-header card-header" id="heading{{ post.id }}">
-                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ post.id }}" aria-expanded="true" aria-controls="collapse{{ post.id }}">
-                            {{ post.title }}
-                        </button>
-                    </h2>
-                    <div id="collapse{{ post.id }}" class="accordion-collapse collapse card-body" aria-labelledby="heading{{ post.id }}" data-bs-parent="#faqAccordion">
-                        <div class="accordion-body">
-                            {{ post.content|raw }}
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-    </div>
-    <hr>
-    <div class="container">
-        <h3 class="mt-4 mb-4">Help Center</h3>
-        <div class="row">
-            {% for category in categories %}
-                <div class="col-md-4 mb-4">
-                    <div class="card text-center" style="height: 250px;">
-                        <div class="card-body d-flex flex-column justify-content-center">
-                            <i class="material-symbols-rounded mt-5 mb-3" style="font-size: 40px;">{{ category.logo ?: 'help' }}</i>
-                            <h5 class="card-title mt-2">{{ category.title }}</h5>
-                            <a href="{{ path('app_helpdesk_faq_category', {'id': category.id}) }}" class="btn btn-primary mt-auto">Zur Anleitung</a>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-    </div>
+<style>
+	:root {
+		--hd-bg: #f5f2ed;
+		--hd-card: #ffffff;
+		--hd-dark: #0f172a;
+		--hd-dim: #64748b;
+		--hd-border: rgba(0,0,0,0.06);
+		--hd-green: #16a34a;
+		--hd-purple: #8b5cf6;
+		--hd-radius: 16px;
+	}
+	.hd-wrap {
+		max-width: 900px;
+		margin: 0 auto;
+		padding: 2rem 1.5rem 4rem;
+	}
+
+	/* ── Breadcrumb ── */
+	.hd-breadcrumb {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-bottom: 1.5rem;
+		font-size: 0.85rem;
+	}
+	.hd-breadcrumb a {
+		color: var(--hd-dim);
+		text-decoration: none;
+		transition: color 0.2s;
+	}
+	.hd-breadcrumb a:hover { color: var(--hd-green); }
+	.hd-breadcrumb .sep { color: var(--hd-dim); opacity: 0.4; }
+	.hd-breadcrumb .current { color: var(--hd-dark); font-weight: 600; }
+
+	/* ── Category Header ── */
+	.hd-cat-header {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		margin-bottom: 2rem;
+	}
+	.hd-cat-header-icon {
+		width: 56px;
+		height: 56px;
+		border-radius: 14px;
+		background: linear-gradient(135deg, rgba(22,163,74,0.08), rgba(139,92,246,0.08));
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 26px;
+		color: var(--hd-green);
+		flex-shrink: 0;
+	}
+	.hd-cat-header h1 {
+		font-size: 1.8rem;
+		font-weight: 800;
+		color: var(--hd-dark);
+		margin: 0;
+	}
+	.hd-cat-header .hd-count {
+		font-size: 0.75rem;
+		font-weight: 600;
+		background: rgba(22,163,74,0.1);
+		color: var(--hd-green);
+		padding: 0.2rem 0.6rem;
+		border-radius: 12px;
+	}
+
+	/* ── FAQ Accordion ── */
+	.hd-faq-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.8rem;
+		margin-bottom: 3rem;
+	}
+	.hd-faq-item {
+		background: var(--hd-card);
+		border: 1px solid var(--hd-border);
+		border-radius: var(--hd-radius);
+		overflow: hidden;
+		transition: box-shadow 0.3s, border-color 0.3s;
+	}
+	.hd-faq-item:hover {
+		box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+	}
+	.hd-faq-item.active {
+		border-color: rgba(22,163,74,0.2);
+		box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+	}
+	.hd-faq-toggle {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		width: 100%;
+		padding: 1.1rem 1.5rem;
+		background: none;
+		border: none;
+		cursor: pointer;
+		text-align: left;
+		gap: 1rem;
+	}
+	.hd-faq-toggle-title {
+		font-size: 1rem;
+		font-weight: 700;
+		color: var(--hd-dark);
+		flex: 1;
+	}
+	.hd-faq-toggle-icon {
+		width: 28px;
+		height: 28px;
+		border-radius: 8px;
+		background: rgba(0,0,0,0.04);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		transition: transform 0.3s, background 0.3s;
+		font-size: 0.75rem;
+		color: var(--hd-dim);
+	}
+	.hd-faq-item.active .hd-faq-toggle-icon {
+		transform: rotate(180deg);
+		background: rgba(22,163,74,0.1);
+		color: var(--hd-green);
+	}
+	.hd-faq-body {
+		max-height: 0;
+		overflow: hidden;
+		transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1);
+	}
+	.hd-faq-body-inner {
+		padding: 0 1.5rem 1.5rem;
+		border-top: 1px solid var(--hd-border);
+		color: var(--hd-dark);
+		font-size: 0.92rem;
+		line-height: 1.7;
+	}
+	.hd-faq-body-inner h1 { font-size: 1.1rem; font-weight: 700; margin: 1rem 0 0.5rem; }
+	.hd-faq-body-inner h2 { font-size: 1rem; font-weight: 600; margin: 1rem 0 0.5rem; }
+	.hd-faq-body-inner p, .hd-faq-body-inner span, .hd-faq-body-inner li { color: #374151; }
+	.hd-faq-body-inner img {
+		max-width: 100%;
+		border-radius: 10px;
+		margin: 1rem 0;
+		box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+	}
+	.hd-faq-body-inner a { color: var(--hd-green); }
+
+	/* ── Other Categories ── */
+	.hd-other-title {
+		font-size: 1.3rem;
+		font-weight: 800;
+		color: var(--hd-dark);
+		margin-bottom: 1.2rem;
+	}
+	.hd-other-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+		gap: 1rem;
+	}
+	.hd-other-card {
+		background: var(--hd-card);
+		border: 1px solid var(--hd-border);
+		border-radius: 12px;
+		padding: 1.2rem 1rem;
+		text-align: center;
+		text-decoration: none;
+		transition: all 0.25s;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.5rem;
+	}
+	.hd-other-card:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+		border-color: rgba(22,163,74,0.15);
+	}
+	.hd-other-card i {
+		font-size: 24px;
+		color: var(--hd-green);
+		opacity: 0.7;
+	}
+	.hd-other-card span {
+		font-size: 0.85rem;
+		font-weight: 600;
+		color: var(--hd-dark);
+	}
+
+	@media(max-width: 640px) {
+		.hd-cat-header h1 { font-size: 1.4rem; }
+		.hd-faq-toggle { padding: 0.9rem 1rem; }
+		.hd-faq-body-inner { padding: 0 1rem 1rem; }
+	}
+</style>
+
+<div class="hd-wrap">
+	{# ═══ BREADCRUMB ═══ #}
+	<div class="hd-breadcrumb">
+		<a href="{{ path('app_helpdesk_faq') }}"><i class="fas fa-home"></i> Help Center</a>
+		<span class="sep">/</span>
+		<span class="current">{{ category.title }}</span>
+	</div>
+
+	{# ═══ CATEGORY HEADER ═══ #}
+	<div class="hd-cat-header">
+		<div class="hd-cat-header-icon">
+			<i class="material-symbols-rounded">{{ category.logo ?: 'help' }}</i>
+		</div>
+		<div>
+			<h1>{{ category.title }}</h1>
+		</div>
+		<span class="hd-count">{{ posts|length }} Artikel</span>
+	</div>
+
+	{# ═══ FAQ ACCORDION ═══ #}
+	<div class="hd-faq-list">
+		{% for post in posts %}
+			<div class="hd-faq-item" data-faq>
+				<button class="hd-faq-toggle" type="button">
+					<span class="hd-faq-toggle-title">{{ post.title }}</span>
+					<span class="hd-faq-toggle-icon"><i class="fas fa-chevron-down"></i></span>
+				</button>
+				<div class="hd-faq-body">
+					<div class="hd-faq-body-inner">
+						{{ post.content|raw }}
+					</div>
+				</div>
+			</div>
+		{% endfor %}
+	</div>
+
+	{# ═══ OTHER CATEGORIES ═══ #}
+	{% if categories|length > 1 %}
+		<div class="hd-other-title">Weitere Kategorien</div>
+		<div class="hd-other-grid">
+			{% for cat in categories %}
+				{% if cat.id != category.id %}
+					<a href="{{ path('app_helpdesk_faq_category', {'id': cat.id}) }}" class="hd-other-card">
+						<i class="material-symbols-rounded">{{ cat.logo ?: 'help' }}</i>
+						<span>{{ cat.title }}</span>
+					</a>
+				{% endif %}
+			{% endfor %}
+		</div>
+	{% endif %}
+</div>
+
+<script>
+document.querySelectorAll('[data-faq]').forEach(function(item) {
+	var toggle = item.querySelector('.hd-faq-toggle');
+	var body = item.querySelector('.hd-faq-body');
+	toggle.addEventListener('click', function() {
+		var isActive = item.classList.contains('active');
+		// Close all
+		document.querySelectorAll('[data-faq].active').forEach(function(other) {
+			other.classList.remove('active');
+			other.querySelector('.hd-faq-body').style.maxHeight = '0';
+		});
+		// Open clicked (if was closed)
+		if (!isActive) {
+			item.classList.add('active');
+			body.style.maxHeight = body.scrollHeight + 'px';
+		}
+	});
+});
+</script>
 {% endblock %}

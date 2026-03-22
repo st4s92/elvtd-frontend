@@ -1,108 +1,526 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Helpdesk - Ticket #{{ ticket.id }}
-{% endblock %}
+{% block title %}Ticket #{{ ticket.id }} - {{ ticket.title }}{% endblock %}
 
 {% block body %}
-	<div class="container">
-		<h3 class="mt-4 mb-4">Help Center</h3>
-		<div class="card">
-			<div class="card-header">
-				<h4 class="float-start">
-					Ticket #{{ ticket.id }}:
-					{{ ticket.title }}<br>
-					<small>{{ ticket.user.firstname }}
-						{{ ticket.user.lastname }}
-						({{ ticket.user.username }})</small><br>
-					<span style="font-size: 14px; font-weight: normal">{{ ticket.createdAt|date('d.m.Y H:i:s') }}</span>
-				</h4>
-				<span class="float-end badge badge-sm bg-gradient-success">
-					{{ ticket.status }}</span>
-				{% if is_granted('ROLE_ADMIN') %}
-					<form action="{{ path('app_helpdesk_change_state', {'id': ticket.id}) }}" method="POST" class="float-end me-3">
-						<select name="state" onchange="this.form.submit()" class="form-select form-select-sm">
-							<option value="open" {% if ticket.status == 'open' %} selected {% endif %}>offen</option>
-							<option value="in_progress" {% if ticket.status == 'in_progress' %} selected {% endif %}>wird bearbeitet</option>
-							<option value="closed" {% if ticket.status == 'closed' %} selected {% endif %}>geschlossen</option>
-						</select>
-					</form>
-				{% endif %}
+<style>
+	:root {
+		--hd-card: #ffffff;
+		--hd-dark: #0f172a;
+		--hd-dim: #64748b;
+		--hd-border: rgba(0,0,0,0.06);
+		--hd-green: #16a34a;
+		--hd-blue: #3b82f6;
+		--hd-amber: #f59e0b;
+		--hd-red: #ef4444;
+		--hd-purple: #8b5cf6;
+		--hd-radius: 16px;
+	}
+	.tk-wrap {
+		max-width: 900px;
+		margin: 0 auto;
+		padding: 2rem 1.5rem 4rem;
+	}
+
+	/* ── Breadcrumb ── */
+	.tk-breadcrumb {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-bottom: 1.5rem;
+		font-size: 0.85rem;
+	}
+	.tk-breadcrumb a { color: var(--hd-dim); text-decoration: none; transition: color 0.2s; }
+	.tk-breadcrumb a:hover { color: var(--hd-green); }
+	.tk-breadcrumb .sep { color: var(--hd-dim); opacity: 0.4; }
+	.tk-breadcrumb .current { color: var(--hd-dark); font-weight: 600; }
+
+	/* ── Ticket Header ── */
+	.tk-header {
+		background: var(--hd-card);
+		border: 1px solid var(--hd-border);
+		border-radius: var(--hd-radius);
+		padding: 1.5rem 2rem;
+		margin-bottom: 1.5rem;
+	}
+	.tk-header-top {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 1rem;
+		margin-bottom: 1rem;
+		flex-wrap: wrap;
+	}
+	.tk-title {
+		font-size: 1.4rem;
+		font-weight: 800;
+		color: var(--hd-dark);
+		margin: 0;
+	}
+	.tk-id-badge {
+		font-size: 0.72rem;
+		font-weight: 700;
+		color: var(--hd-dim);
+		background: rgba(0,0,0,0.04);
+		padding: 0.2rem 0.6rem;
+		border-radius: 6px;
+	}
+	.tk-status-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.78rem;
+		font-weight: 700;
+		padding: 0.3rem 0.8rem;
+		border-radius: 8px;
+	}
+	.tk-status-badge .dot {
+		width: 8px; height: 8px; border-radius: 50%;
+	}
+	.tk-status-badge.open { background: rgba(22,163,74,0.1); color: var(--hd-green); }
+	.tk-status-badge.open .dot { background: var(--hd-green); box-shadow: 0 0 6px rgba(22,163,74,0.5); }
+	.tk-status-badge.in_progress { background: rgba(245,158,11,0.1); color: var(--hd-amber); }
+	.tk-status-badge.in_progress .dot { background: var(--hd-amber); }
+	.tk-status-badge.closed { background: rgba(100,116,139,0.08); color: var(--hd-dim); }
+	.tk-status-badge.closed .dot { background: var(--hd-dim); }
+
+	.tk-meta {
+		display: flex;
+		gap: 1.5rem;
+		font-size: 0.8rem;
+		color: var(--hd-dim);
+		flex-wrap: wrap;
+	}
+	.tk-meta-item {
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+	}
+	.tk-meta-item i { font-size: 0.75rem; opacity: 0.5; }
+
+	/* Admin controls */
+	.tk-admin-bar {
+		display: flex;
+		align-items: center;
+		gap: 0.8rem;
+		margin-top: 1rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--hd-border);
+	}
+	.tk-admin-bar label {
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--hd-dim);
+	}
+	.tk-admin-select {
+		font-size: 0.8rem;
+		padding: 0.4rem 0.6rem;
+		border: 1px solid var(--hd-border);
+		border-radius: 8px;
+		background: #fff;
+		cursor: pointer;
+	}
+
+	/* ── Description Card ── */
+	.tk-desc {
+		background: var(--hd-card);
+		border: 1px solid var(--hd-border);
+		border-radius: var(--hd-radius);
+		padding: 1.5rem 2rem;
+		margin-bottom: 1.5rem;
+		line-height: 1.7;
+		color: #374151;
+		font-size: 0.92rem;
+	}
+
+	/* ── Admin Account Table ── */
+	.tk-accounts {
+		background: var(--hd-card);
+		border: 1px solid var(--hd-border);
+		border-radius: var(--hd-radius);
+		overflow: hidden;
+		margin-bottom: 1.5rem;
+	}
+	.tk-accounts-header {
+		padding: 1rem 1.5rem;
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--hd-dark);
+		border-bottom: 1px solid var(--hd-border);
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+	.tk-accounts-header i { color: var(--hd-purple); }
+	.tk-acc-table {
+		width: 100%;
+		border-collapse: collapse;
+	}
+	.tk-acc-table th {
+		font-size: 0.7rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		color: var(--hd-dim);
+		padding: 0.7rem 1.2rem;
+		border-bottom: 1px solid var(--hd-border);
+		text-align: left;
+	}
+	.tk-acc-table td {
+		padding: 0.7rem 1.2rem;
+		font-size: 0.82rem;
+		border-bottom: 1px solid var(--hd-border);
+	}
+	.tk-acc-table tr:last-child td { border-bottom: none; }
+	.tk-acc-table .platform-badge {
+		font-size: 0.7rem;
+		font-weight: 600;
+		padding: 0.2rem 0.5rem;
+		border-radius: 5px;
+		background: rgba(59,130,246,0.1);
+		color: var(--hd-blue);
+	}
+	.tk-acc-btn {
+		font-size: 0.72rem;
+		padding: 0.3rem 0.7rem;
+		background: var(--hd-dark);
+		color: #fff;
+		border: none;
+		border-radius: 6px;
+		text-decoration: none;
+		transition: opacity 0.2s;
+	}
+	.tk-acc-btn:hover { opacity: 0.85; color: #fff; }
+
+	/* ── Comments / Chat ── */
+	.tk-comments-title {
+		font-size: 1rem;
+		font-weight: 700;
+		color: var(--hd-dark);
+		margin-bottom: 1rem;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+	.tk-comments-title .count {
+		font-size: 0.7rem;
+		font-weight: 600;
+		background: rgba(22,163,74,0.1);
+		color: var(--hd-green);
+		padding: 0.15rem 0.5rem;
+		border-radius: 10px;
+	}
+
+	.tk-comment {
+		display: flex;
+		gap: 1rem;
+		margin-bottom: 1.2rem;
+	}
+	.tk-comment-avatar {
+		width: 36px;
+		height: 36px;
+		border-radius: 10px;
+		background: linear-gradient(135deg, rgba(22,163,74,0.1), rgba(59,130,246,0.1));
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 0.75rem;
+		font-weight: 700;
+		color: var(--hd-green);
+		flex-shrink: 0;
+	}
+	.tk-comment.admin .tk-comment-avatar {
+		background: linear-gradient(135deg, rgba(139,92,246,0.1), rgba(59,130,246,0.1));
+		color: var(--hd-purple);
+	}
+	.tk-comment-bubble {
+		flex: 1;
+		background: var(--hd-card);
+		border: 1px solid var(--hd-border);
+		border-radius: 12px;
+		padding: 1rem 1.3rem;
+	}
+	.tk-comment.admin .tk-comment-bubble {
+		background: rgba(139,92,246,0.03);
+		border-color: rgba(139,92,246,0.1);
+	}
+	.tk-comment-header {
+		display: flex;
+		justify-content: space-between;
+		margin-bottom: 0.5rem;
+		font-size: 0.8rem;
+	}
+	.tk-comment-author { font-weight: 700; color: var(--hd-dark); }
+	.tk-comment.admin .tk-comment-author::after {
+		content: 'Support';
+		margin-left: 0.4rem;
+		font-size: 0.65rem;
+		font-weight: 600;
+		background: rgba(139,92,246,0.1);
+		color: var(--hd-purple);
+		padding: 0.1rem 0.4rem;
+		border-radius: 4px;
+	}
+	.tk-comment-time { color: var(--hd-dim); font-size: 0.75rem; }
+	.tk-comment-body {
+		font-size: 0.88rem;
+		line-height: 1.7;
+		color: #374151;
+	}
+
+	.tk-no-comments {
+		background: var(--hd-card);
+		border: 1px solid var(--hd-border);
+		border-radius: 12px;
+		padding: 2rem;
+		text-align: center;
+		color: var(--hd-dim);
+		font-size: 0.88rem;
+		margin-bottom: 1.5rem;
+	}
+	.tk-no-comments i { display: block; font-size: 1.5rem; opacity: 0.2; margin-bottom: 0.5rem; }
+
+	/* ── Reply Form ── */
+	.tk-reply {
+		background: var(--hd-card);
+		border: 1px solid var(--hd-border);
+		border-radius: var(--hd-radius);
+		padding: 1.5rem 2rem;
+		margin-top: 1.5rem;
+	}
+	.tk-reply-title {
+		font-size: 0.9rem;
+		font-weight: 700;
+		color: var(--hd-dark);
+		margin-bottom: 0.8rem;
+	}
+	.tk-reply textarea {
+		width: 100%;
+		min-height: 100px;
+		border: 1px solid var(--hd-border);
+		border-radius: 10px;
+		padding: 0.8rem 1rem;
+		font-size: 0.88rem;
+		font-family: inherit;
+		resize: vertical;
+		transition: border-color 0.2s, box-shadow 0.2s;
+		box-sizing: border-box;
+	}
+	.tk-reply textarea:focus {
+		outline: none;
+		border-color: var(--hd-green);
+		box-shadow: 0 0 0 3px rgba(22,163,74,0.1);
+	}
+	.tk-reply-actions {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-top: 0.8rem;
+	}
+	.tk-btn-submit {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.6rem 1.3rem;
+		background: linear-gradient(135deg, #16a34a, #22c55e);
+		color: #fff;
+		border: none;
+		border-radius: 10px;
+		font-size: 0.85rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.25s;
+	}
+	.tk-btn-submit:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 6px 20px rgba(22,163,74,0.3);
+	}
+	.tk-btn-back {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		font-size: 0.82rem;
+		color: var(--hd-dim);
+		text-decoration: none;
+		transition: color 0.2s;
+	}
+	.tk-btn-back:hover { color: var(--hd-dark); }
+
+	.tk-closed-notice {
+		background: rgba(100,116,139,0.05);
+		border: 1px solid var(--hd-border);
+		border-radius: 12px;
+		padding: 1.2rem 1.5rem;
+		text-align: center;
+		color: var(--hd-dim);
+		font-size: 0.88rem;
+		margin-top: 1.5rem;
+	}
+	.tk-closed-notice i { margin-right: 0.3rem; }
+
+	@media(max-width: 640px) {
+		.tk-header { padding: 1.2rem; }
+		.tk-title { font-size: 1.1rem; }
+		.tk-desc { padding: 1.2rem; }
+		.tk-reply { padding: 1.2rem; }
+	}
+</style>
+
+<div class="tk-wrap">
+	{# ═══ BREADCRUMB ═══ #}
+	<div class="tk-breadcrumb">
+		<a href="{{ path('app_helpdesk_faq') }}"><i class="fas fa-home"></i> Help Center</a>
+		<span class="sep">/</span>
+		{% if is_granted('ROLE_ADMIN') %}
+			<a href="{{ path('app_admin_helpdesk_index') }}">Tickets</a>
+			<span class="sep">/</span>
+		{% endif %}
+		<span class="current">#{{ ticket.id }}</span>
+	</div>
+
+	{# ═══ TICKET HEADER ═══ #}
+	<div class="tk-header">
+		<div class="tk-header-top">
+			<div>
+				<h1 class="tk-title">{{ ticket.title }}</h1>
+				<span class="tk-id-badge">#{{ ticket.id }}</span>
 			</div>
-			<div class="card-body">
-				<div class="card">
-					<div class="card-body">
-						{{ ticket.description|nl2br }}
-					</div>
-				</div>
-
-				{% if is_granted('ROLE_ADMIN') and ticket.user.accounts|length > 0 %}
-					<h6 class="mt-5">Kunden-Accounts (Admin Ansicht)</h6>
-					<div class="table-responsive">
-						<table class="table table-sm text-sm">
-							<thead>
-								<tr>
-									<th>Host</th>
-									<th>Account Nummer</th>
-									<th>Server</th>
-									<th>Plattform</th>
-									<th>Action</th>
-								</tr>
-							</thead>
-							<tbody>
-								{% for acc in ticket.user.accounts %}
-									<tr>
-										<td>{{ acc.host }}</td>
-										<td>{{ acc.login }}</td>
-										<td>{{ acc.tradeServer }}</td>
-										<td>
-											<span class="badge badge-sm bg-gradient-info">{{ acc.platform }}</span>
-										</td>
-										<td>
-											<a href="{{ path('app_account_show', {'meta_id': acc.metaId}) }}" class="btn btn-sm btn-outline-dark mb-0" target="_blank">Open Account</a>
-										</td>
-									</tr>
-								{% endfor %}
-							</tbody>
-						</table>
-					</div>
-				{% endif %}
-
-				<h6 class="mt-5">Antworten</h6>
-				{% if ticket.comments|length > 0 %}
-					{% for comment in ticket.comments %}
-						<div class="card mb-3">
-							<div class="card-header">
-								<strong>{{ comment.user.firstname }}
-									{{ comment.user.lastname }}</strong>
-								-
-								<span style="font-size: 14px; font-weight: normal">{{ comment.createdAt|date('d.m.Y H:i:s') }}</span>
-							</div>
-							<div class="card-body">
-								{{ comment.content|nl2br }}
-							</div>
-						</div>
-					{% endfor %}
-				{% else %}
-					<p>Ihr Ticket befindet sich derzeit in der Warteschlange. Die Antwortzeit beträgt in der Regel ca. 24 Stunden.</p>
-				{% endif %}
-
-				{% if ticket.status != 'closed' %}
-					<h6 class="mt-5">Antwort hinzufügen</h6>
-					<form method="post" action="{{ path('app_helpdesk_comment', {'id': ticket.id}) }}">
-						<div class="form-group">
-							<label for="content">Antwort</label>
-							<textarea name="content" id="content" class="form-control" rows="3" required></textarea>
-						</div>
-						<button type="submit" class="btn btn-primary mt-2">Antwort hinzufügen</button>
-					</form>
-				{% else %}
-					<div class="alert alert-info mt-5">
-						Dieses Ticket wurde geschlossen. Falls Sie weitere Fragen oder neue Anliegen haben, erstellen Sie bitte ein neues Ticket.
-					</div>
-				{% endif %}
-
-				<a href="{{ path('app_helpdesk_index') }}" class="btn btn-outline-none mt-3">Zurück zur Übersicht</a>
+			<span class="tk-status-badge {{ ticket.status }}">
+				<span class="dot"></span>
+				{% if ticket.status == 'open' %}Offen{% elseif ticket.status == 'in_progress' %}In Bearbeitung{% else %}Geschlossen{% endif %}
+			</span>
+		</div>
+		<div class="tk-meta">
+			<div class="tk-meta-item">
+				<i class="fas fa-user"></i>
+				{{ ticket.user.firstname }} {{ ticket.user.lastname }}
+			</div>
+			<div class="tk-meta-item">
+				<i class="fas fa-at"></i>
+				{{ ticket.user.username }}
+			</div>
+			<div class="tk-meta-item">
+				<i class="fas fa-calendar"></i>
+				{{ ticket.createdAt|date('d.m.Y H:i') }}
+			</div>
+			<div class="tk-meta-item">
+				<i class="fas fa-comment"></i>
+				{{ ticket.comments|length }} Antworten
 			</div>
 		</div>
+
+		{% if is_granted('ROLE_ADMIN') %}
+			<div class="tk-admin-bar">
+				<label><i class="fas fa-cog"></i> Status:</label>
+				<form action="{{ path('app_helpdesk_change_state', {'id': ticket.id}) }}" method="POST" style="display:inline;">
+					<select name="state" onchange="this.form.submit()" class="tk-admin-select">
+						<option value="open" {% if ticket.status == 'open' %}selected{% endif %}>Offen</option>
+						<option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>In Bearbeitung</option>
+						<option value="closed" {% if ticket.status == 'closed' %}selected{% endif %}>Geschlossen</option>
+					</select>
+				</form>
+			</div>
+		{% endif %}
 	</div>
+
+	{# ═══ DESCRIPTION ═══ #}
+	<div class="tk-desc">
+		{{ ticket.description|nl2br }}
+	</div>
+
+	{# ═══ ADMIN: CUSTOMER ACCOUNTS ═══ #}
+	{% if is_granted('ROLE_ADMIN') and ticket.user.accounts|length > 0 %}
+		<div class="tk-accounts">
+			<div class="tk-accounts-header">
+				<i class="fas fa-server"></i> Kunden-Accounts
+			</div>
+			<table class="tk-acc-table">
+				<thead>
+					<tr>
+						<th>Host</th>
+						<th>Account</th>
+						<th>Server</th>
+						<th>Plattform</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for acc in ticket.user.accounts %}
+						<tr>
+							<td>{{ acc.host }}</td>
+							<td style="font-weight:600;">{{ acc.login }}</td>
+							<td style="font-size:0.78rem;color:var(--hd-dim);">{{ acc.tradeServer }}</td>
+							<td><span class="platform-badge">{{ acc.platform }}</span></td>
+							<td>
+								<a href="{{ path('app_account_show', {'meta_id': acc.metaId}) }}" class="tk-acc-btn" target="_blank">
+									<i class="fas fa-external-link-alt"></i> Open
+								</a>
+							</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	{% endif %}
+
+	{# ═══ COMMENTS ═══ #}
+	<div class="tk-comments-title">
+		Antworten
+		{% if ticket.comments|length > 0 %}
+			<span class="count">{{ ticket.comments|length }}</span>
+		{% endif %}
+	</div>
+
+	{% if ticket.comments|length > 0 %}
+		{% for comment in ticket.comments %}
+			<div class="tk-comment {% if comment.user != ticket.user %}admin{% endif %}">
+				<div class="tk-comment-avatar">
+					{{ comment.user.firstname|first|upper }}{{ comment.user.lastname|first|upper }}
+				</div>
+				<div class="tk-comment-bubble">
+					<div class="tk-comment-header">
+						<span class="tk-comment-author">{{ comment.user.firstname }} {{ comment.user.lastname }}</span>
+						<span class="tk-comment-time">{{ comment.createdAt|date('d.m.Y H:i') }}</span>
+					</div>
+					<div class="tk-comment-body">
+						{{ comment.content|nl2br }}
+					</div>
+				</div>
+			</div>
+		{% endfor %}
+	{% else %}
+		<div class="tk-no-comments">
+			<i class="fas fa-comments"></i>
+			Ihr Ticket befindet sich in der Warteschlange. Antwortzeit ca. 24 Stunden.
+		</div>
+	{% endif %}
+
+	{# ═══ REPLY FORM ═══ #}
+	{% if ticket.status != 'closed' %}
+		<div class="tk-reply">
+			<div class="tk-reply-title"><i class="fas fa-reply"></i> Antwort hinzufügen</div>
+			<form method="post" action="{{ path('app_helpdesk_comment', {'id': ticket.id}) }}">
+				<textarea name="content" placeholder="Schreibe deine Antwort..." required></textarea>
+				<div class="tk-reply-actions">
+					<a href="{{ path('app_helpdesk_faq') }}" class="tk-btn-back">
+						<i class="fas fa-arrow-left"></i> Zurück
+					</a>
+					<button type="submit" class="tk-btn-submit">
+						<i class="fas fa-paper-plane"></i> Absenden
+					</button>
+				</div>
+			</form>
+		</div>
+	{% else %}
+		<div class="tk-closed-notice">
+			<i class="fas fa-lock"></i>
+			Dieses Ticket wurde geschlossen. Für neue Anliegen erstellen Sie bitte ein neues Ticket.
+		</div>
+		<div style="text-align:center;margin-top:1rem;">
+			<a href="{{ path('app_helpdesk_faq') }}" class="tk-btn-back">
+				<i class="fas fa-arrow-left"></i> Zurück zum Help Center
+			</a>
+		</div>
+	{% endif %}
+</div>
 {% endblock %}

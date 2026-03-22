@@ -253,6 +253,621 @@
 			color: var(--txt);
 		}
 
+		/* ── Day Trades Panel ── */
+		.dn .day-trades-panel {
+			max-height: 0;
+			overflow: hidden;
+			transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+			opacity: 0;
+		}
+		.dn .day-trades-panel.open {
+			max-height: 800px;
+			opacity: 1;
+		}
+		.dn .day-trades-inner {
+			padding: 1rem 0 0.5rem;
+		}
+		.dn .day-trades-header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			margin-bottom: 0.6rem;
+		}
+		.dn .day-trades-header h4 {
+			font-size: 0.85rem;
+			font-weight: 700;
+			margin: 0;
+			display: flex;
+			align-items: center;
+			gap: 0.4rem;
+		}
+		.dn .day-trades-header .close-btn {
+			background: none;
+			border: none;
+			cursor: pointer;
+			color: var(--txt2);
+			font-size: 0.9rem;
+			padding: 4px 8px;
+			border-radius: 6px;
+			transition: background 0.15s;
+		}
+		.dn .day-trades-header .close-btn:hover {
+			background: rgba(0, 0, 0, 0.06);
+		}
+		.dn .trade-row {
+			display: flex;
+			align-items: center;
+			gap: 0.7rem;
+			padding: 0.55rem 0.7rem;
+			border-radius: 8px;
+			cursor: pointer;
+			transition: background 0.15s, transform 0.15s;
+			border: 1px solid transparent;
+		}
+		.dn .trade-row:hover {
+			background: rgba(0, 0, 0, 0.03);
+			border-color: var(--border);
+			transform: translateX(3px);
+		}
+		.dn .trade-row .tr-symbol {
+			font-weight: 700;
+			font-size: 0.82rem;
+			min-width: 80px;
+		}
+		.dn .trade-row .tr-meta {
+			font-size: 0.7rem;
+			color: var(--txt2);
+			display: flex;
+			gap: 0.6rem;
+			align-items: center;
+		}
+		.dn .trade-row .tr-pnl {
+			margin-left: auto;
+			font-weight: 800;
+			font-size: 0.85rem;
+		}
+		.dn .trade-row .tr-arrow {
+			color: var(--txt2);
+			opacity: 0.3;
+			font-size: 0.7rem;
+			transition: opacity 0.15s, transform 0.15s;
+		}
+		.dn .trade-row:hover .tr-arrow {
+			opacity: 0.7;
+			transform: translateX(3px);
+		}
+		.dn .cal-day.has-trades {
+			cursor: pointer;
+		}
+		.dn .cal-day.has-trades:hover {
+			background: rgba(0, 0, 0, 0.06);
+			transform: scale(1.04);
+			transition: transform 0.15s, background 0.15s;
+		}
+		.dn .cal-day.selected {
+			border: 2px solid var(--g);
+			background: rgba(22, 163, 74, 0.04);
+		}
+
+		/* ── Fullscreen Chart Modal ── */
+		.chart-overlay {
+			position: fixed;
+			inset: 0;
+			z-index: 99999;
+			background: rgba(0, 0, 0, 0.7);
+			backdrop-filter: blur(8px);
+			-webkit-backdrop-filter: blur(8px);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			opacity: 0;
+			pointer-events: none;
+			transition: opacity 0.3s ease;
+		}
+		.chart-overlay.active {
+			opacity: 1;
+			pointer-events: all;
+		}
+		.chart-modal {
+			width: 96vw;
+			height: 92vh;
+			background: #fff;
+			border-radius: 16px;
+			overflow: hidden;
+			display: flex;
+			flex-direction: column;
+			transform: scale(0.95) translateY(20px);
+			transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+			box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+		}
+		.chart-overlay.active .chart-modal {
+			transform: scale(1) translateY(0);
+		}
+		.chart-modal-header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 0.8rem 1.2rem;
+			border-bottom: 1px solid var(--border);
+			background: var(--bg2);
+			flex-shrink: 0;
+		}
+		.chart-modal-header .cm-title {
+			display: flex;
+			align-items: center;
+			gap: 0.6rem;
+			font-weight: 700;
+			font-size: 0.95rem;
+		}
+		.chart-modal-header .cm-info {
+			display: flex;
+			align-items: center;
+			gap: 0.5rem;
+			font-size: 0.8rem;
+			color: var(--txt);
+		}
+		.cm-info-item {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			padding: 0.25rem 0.75rem;
+			border-radius: 8px;
+			min-width: 60px;
+		}
+		.cm-info-label {
+			font-size: 0.55rem;
+			text-transform: uppercase;
+			letter-spacing: 0.08em;
+			color: var(--txt2);
+			font-weight: 600;
+			line-height: 1;
+			margin-bottom: 1px;
+		}
+		.cm-info-item strong {
+			font-size: 0.82rem;
+			font-weight: 700;
+			letter-spacing: -0.01em;
+		}
+		.cm-header-stats { display:none; }
+		.chart-modal-header .cm-close {
+			background: none;
+			border: 1px solid var(--border);
+			border-radius: 8px;
+			cursor: pointer;
+			font-size: 0.85rem;
+			padding: 0.35rem 0.7rem;
+			color: var(--txt);
+			transition: background 0.15s;
+			display: flex;
+			align-items: center;
+			gap: 0.3rem;
+		}
+		.chart-modal-header .cm-close:hover {
+			background: rgba(0, 0, 0, 0.05);
+		}
+		.cm-close-position {
+			background: #dc2626;
+			color: #fff;
+			border: none;
+			border-radius: 8px;
+			cursor: pointer;
+			font-size: 0.78rem;
+			font-weight: 600;
+			padding: 0.4rem 1rem;
+			display: flex;
+			align-items: center;
+			gap: 0.4rem;
+			transition: background 0.15s, transform 0.1s;
+		}
+		.cm-close-position:hover {
+			background: #b91c1c;
+			transform: scale(1.02);
+		}
+		.chart-modal-body {
+			flex: 1;
+			position: relative;
+			min-height: 0;
+			overflow: hidden;
+		}
+		/* ── Order Panel — flat, minimal, 1:1 match ── */
+		.cm-chart-wrapper { display:flex; flex:1; min-height:0; flex-wrap:wrap; }
+		.cm-bottom-area { display:contents; }
+		.cm-order-panel {
+			width:300px; flex-shrink:0; border-left:1px solid #eee;
+			background:#fff; display:flex; flex-direction:column; padding:24px 20px; gap:14px; overflow-y:auto;
+		}
+		.op-head { font-size:1.05rem; font-weight:600; color:#2d3748; padding-bottom:10px; border-bottom:1px solid #eee; }
+		.op-types { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+		.op-type-btn {
+			padding:9px 0; border:1px solid #ddd; border-radius:22px; background:#fff;
+			font-size:.82rem; font-weight:500; color:#4a5568; cursor:pointer; text-align:center; transition:all .15s;
+		}
+		.op-type-btn:hover { background:#f7f7f7; }
+		.op-type-btn.active { background:#4a6cf7; border-color:#4a6cf7; color:#fff; font-weight:600; }
+		.op-sides { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:2px; }
+		.op-side-btn {
+			padding:11px 0; border-radius:10px; border:1px solid #ddd; font-size:.88rem; font-weight:600;
+			cursor:pointer; text-align:center; transition:all .12s; background:#fff; color:#4a5568;
+		}
+		.op-side-btn.active-buy { background:#48bb78; border-color:#48bb78; color:#fff; }
+		.op-side-btn.active-sell { background:#fff; border-color:#ddd; color:#4a5568; }
+		.op-side-btn.sell-active { background:#fc8181; border-color:#fc8181; color:#fff; }
+		.op-side-btn.buy-inactive { background:#fff; border-color:#ddd; color:#4a5568; }
+		.op-side-btn:hover { border-color:#a0aec0; }
+		.op-qlabel { font-size:.82rem; color:#718096; font-weight:400; }
+		.op-qty-wrap { display:flex; align-items:stretch; border:1px solid #ddd; border-radius:10px; overflow:hidden; }
+		.op-qty-btn {
+			width:44px; border:none; background:#f7fafc; cursor:pointer;
+			font-size:1.15rem; color:#718096; display:flex; align-items:center; justify-content:center; transition:background .1s;
+		}
+		.op-qty-btn:hover { background:#edf2f7; }
+		.op-qty-input {
+			flex:1; border:none; border-left:1px solid #ddd; border-right:1px solid #ddd;
+			text-align:center; font-size:1.05rem; font-weight:600; color:#2d3748;
+			outline:none; background:#fff; padding:10px 0; -moz-appearance:textfield;
+		}
+		.op-qty-input::-webkit-inner-spin-button { -webkit-appearance:none; }
+		.op-presets { display:flex; gap:6px; }
+		.op-preset-btn {
+			flex:1; padding:7px 0; border:1px solid #ddd; border-radius:10px; background:#fff;
+			font-size:.78rem; font-weight:500; color:#718096; cursor:pointer; text-align:center; transition:all .1s;
+		}
+		.op-preset-btn:hover { background:#f7fafc; }
+		.op-preset-btn.active { border-color:#4a6cf7; color:#4a6cf7; font-weight:600; }
+		.op-submit {
+			padding:14px 0; border:none; border-radius:12px; font-size:.92rem; font-weight:600;
+			cursor:pointer; text-align:center; transition:all .15s; color:#fff; margin-top:6px;
+		}
+		.op-submit.buy { background:#38a89d; }
+		.op-submit.buy:hover { background:#2f8f85; }
+		.op-submit.sell { background:#e53e3e; }
+		.op-submit.sell:hover { background:#c53030; }
+		.op-status { font-size:.75rem; color:#a0aec0; text-align:center; min-height:16px; }
+		.op-mobile-row { display:none; }
+		/* ── Study Toggles ── */
+		.cm-study-list { display:flex; flex-direction:column; gap:6px; }
+		.cm-study-toggle {
+			display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:8px;
+			cursor:pointer; transition:background .15s; font-size:.75rem; margin:0;
+		}
+		.cm-study-toggle:hover { background:rgba(0,0,0,0.03); }
+		.cm-study-toggle input[type=checkbox] {
+			width:32px; height:18px; appearance:none; -webkit-appearance:none;
+			background:#cbd5e1; border-radius:10px; position:relative; cursor:pointer;
+			transition:background .2s; flex-shrink:0;
+		}
+		.cm-study-toggle input[type=checkbox]::after {
+			content:''; position:absolute; top:2px; left:2px; width:14px; height:14px;
+			background:#fff; border-radius:50%; transition:transform .2s;
+		}
+		.cm-study-toggle input[type=checkbox]:checked { background:#3b82f6; }
+		.cm-study-toggle input[type=checkbox]:checked::after { transform:translateX(14px); }
+		.cm-study-name { font-weight:600; color:#1e293b; }
+		.cm-study-desc { color:#94a3b8; font-size:.65rem; }
+		@media (max-width:768px) {
+			.cm-chart-wrapper { flex-direction:column; overflow:hidden; flex:1; min-height:0; }
+			.chart-modal-body { flex:7.5; min-height:0; width:100%; max-width:100%; }
+			.chart-modal-body iframe,
+			.chart-modal-body > div { width:100% !important; max-width:100% !important; }
+			.cm-bottom-area {
+				display:flex; flex-direction:column; flex:2.5; min-height:0;
+				border-top:1px solid #e2e8f0;
+			}
+			.cm-order-panel {
+				width:100% !important; flex-shrink:0;
+				padding:6px 0; border-left:none; border-bottom:1px solid #e2e8f0;
+				display:block !important; text-align:center;
+			}
+			.cm-order-panel > *:not(.op-mobile-row) { display:none !important; }
+			.op-mobile-row {
+				display:inline-flex !important; align-items:center; justify-content:center; gap:4px;
+				margin:0 auto;
+			}
+			.op-mobile-sell, .op-mobile-buy {
+				flex:0 1 auto; padding:6px 12px; font-size:.7rem; border-radius:6px; white-space:nowrap; text-align:center;
+			}
+			.op-mobile-qty {
+				flex:0 0 auto; border-radius:6px;
+			}
+			.op-mobile-qty .op-qty-btn { width:26px; font-size:.8rem; }
+			.op-mobile-qty .op-qty-input { width:32px; font-size:16px; padding:4px 0; }
+		}
+		/* ── Positions Panel ── */
+		.cm-positions-panel {
+			background: #ffffff;
+			border-top: 1px solid #e2e8f0;
+			font-size: .7rem;
+			color: #64748b;
+			max-height: 180px;
+			height: 180px;
+			overflow-y: auto;
+			width: 100%;
+			flex-shrink: 0;
+		}
+		.cm-positions-tabs {
+			display: flex;
+			align-items: center;
+			padding: 0 12px;
+			border-bottom: 1px solid #e2e8f0;
+			gap: 0;
+		}
+		.cm-positions-tab {
+			padding: 5px 10px;
+			cursor: pointer;
+			color: #94a3b8;
+			border-bottom: 2px solid transparent;
+			font-weight: 500;
+			font-size: .72rem;
+			transition: color .15s;
+		}
+		.cm-positions-tab.active {
+			color: #1e293b;
+			border-bottom-color: #3b82f6;
+		}
+		.cm-positions-tab .tab-count {
+			background: #f1f5f9;
+			color: #64748b;
+			padding: 1px 6px;
+			border-radius: 8px;
+			font-size: .7rem;
+			margin-left: 4px;
+		}
+		.cm-positions-tab.active .tab-count {
+			background: #dbeafe;
+			color: #1e40af;
+		}
+		.cm-positions-summary {
+			margin-left: auto;
+			display: flex;
+			gap: 12px;
+			font-size: .72rem;
+			padding-right: 4px;
+		}
+		.cm-pos-table {
+			width: 100%;
+			border-collapse: collapse;
+		}
+		.cm-pos-table th {
+			text-align: left;
+			padding: 4px 10px;
+			color: #94a3b8;
+			font-weight: 500;
+			font-size: .72rem;
+			text-transform: uppercase;
+			letter-spacing: .04em;
+			border-bottom: 1px solid #e2e8f0;
+		}
+		.cm-pos-table td {
+			padding: 5px 10px;
+			border-bottom: 1px solid #f1f5f9;
+			color: #334155;
+			font-size: .68rem;
+		}
+		.cm-pos-table tr:hover td {
+			background: #f8fafc;
+		}
+		.cm-pos-close-btn {
+			padding: 3px 12px;
+			border: 1px solid #cbd5e1;
+			border-radius: 4px;
+			background: transparent;
+			color: #64748b;
+			font-size: .72rem;
+			cursor: pointer;
+			transition: all .15s;
+		}
+		.cm-pos-close-btn:hover {
+			border-color: #ef4444;
+			color: #ef4444;
+		}
+		.pnl-pos { color: #22c55e; }
+		.pnl-neg { color: #ef4444; }
+		.side-long { color: #22c55e; }
+		.side-short { color: #ef4444; }
+		.cm-live-badge {
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
+			background: rgba(22, 163, 74, 0.1);
+			color: #16a34a;
+			font-size: 0.7rem;
+			font-weight: 700;
+			padding: 2px 10px;
+			border-radius: 20px;
+			letter-spacing: 0.5px;
+			text-transform: uppercase;
+		}
+		.cm-live-dot {
+			width: 7px; height: 7px;
+			background: #16a34a;
+			border-radius: 50%;
+			animation: cm-pulse 1.5s ease-in-out infinite;
+		}
+		@keyframes cm-pulse {
+			0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.5); }
+			50% { opacity: .6; box-shadow: 0 0 0 5px rgba(22, 163, 74, 0); }
+		}
+		@media(max-width: 768px) {
+			.chart-overlay {
+				touch-action: manipulation;
+			}
+			.chart-modal {
+				width: 100vw;
+				height: 100dvh;
+				max-height: -webkit-fill-available;
+				border-radius: 0;
+				display: flex;
+				flex-direction: column;
+				overflow: hidden;
+				touch-action: manipulation;
+			}
+			.chart-modal-header {
+				flex: 0 0 auto;
+				padding: 0.3rem 0.8rem;
+				display: flex;
+				align-items: center;
+			}
+			.chart-modal-header .cm-info {
+				display: none;
+			}
+			.chart-modal-header .cm-title {
+				font-size: 0.85rem;
+			}
+			.cm-header-stats {
+				display:flex; gap:10px; margin-left:auto; margin-right:8px;
+				font-size:.68rem; color:#64748b; white-space:nowrap;
+			}
+			.cm-positions-panel {
+				max-height: none;
+				overflow: visible;
+				width: 100%;
+				display: flex;
+				flex-direction: column;
+				flex: 1;
+				min-height: 0;
+			}
+			.cm-positions-tabs {
+				flex-shrink: 0;
+				flex-wrap: nowrap;
+				gap: 0;
+				background: #fff;
+				z-index: 1;
+			}
+			.cm-positions-summary {
+				display: none !important;
+			}
+			.cm-positions-panel .cm-pos-table-wrap {
+				flex: 1;
+				min-height: 0;
+				overflow: scroll;
+				-webkit-overflow-scrolling: touch;
+			}
+			.cm-positions-panel .cm-pos-table {
+				min-width: 500px;
+			}
+		}
+
+		/* ── Live Button ── */
+		#autoUpdateBtn {
+			position: relative;
+			overflow: hidden;
+			background: linear-gradient(135deg, #1e293b, #334155) !important;
+			border: 1px solid rgba(255,255,255,0.1) !important;
+			color: #94a3b8 !important;
+			font-weight: 700;
+			letter-spacing: 0.05em;
+			text-transform: uppercase;
+			font-size: 0.7rem;
+			padding: 0.4rem 1rem;
+			border-radius: 8px;
+			transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		}
+		#autoUpdateBtn:hover {
+			background: linear-gradient(135deg, #1e3a2f, #16503a) !important;
+			border-color: rgba(22, 163, 74, 0.4) !important;
+			color: #4ade80 !important;
+			transform: translateY(-1px);
+			box-shadow: 0 4px 12px rgba(22, 163, 74, 0.15);
+		}
+		#autoUpdateBtn .live-dot {
+			width: 8px; height: 8px;
+			border-radius: 50%;
+			background: #64748b;
+			display: inline-block;
+			margin-right: 6px;
+			transition: background 0.3s;
+		}
+		#autoUpdateBtn.active {
+			background: linear-gradient(135deg, #052e16, #14532d) !important;
+			border-color: #16a34a !important;
+			color: #4ade80 !important;
+			box-shadow: 0 0 20px rgba(22, 163, 74, 0.25), inset 0 0 20px rgba(22, 163, 74, 0.05);
+			animation: live-glow 2s ease-in-out infinite;
+		}
+		#autoUpdateBtn.active .live-dot {
+			background: #4ade80;
+			animation: live-dot-pulse 1.4s ease-in-out infinite;
+		}
+		#autoUpdateBtn.active::after {
+			content: '';
+			position: absolute;
+			top: 0; left: -100%;
+			width: 200%; height: 100%;
+			background: linear-gradient(90deg, transparent, rgba(74, 222, 128, 0.08), transparent);
+			animation: live-sweep 3s linear infinite;
+		}
+		@keyframes live-glow {
+			0%, 100% { box-shadow: 0 0 15px rgba(22, 163, 74, 0.2), inset 0 0 15px rgba(22, 163, 74, 0.03); }
+			50% { box-shadow: 0 0 25px rgba(22, 163, 74, 0.35), inset 0 0 25px rgba(22, 163, 74, 0.06); }
+		}
+		@keyframes live-dot-pulse {
+			0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.6); }
+			50% { opacity: 0.7; box-shadow: 0 0 0 5px rgba(74, 222, 128, 0); }
+		}
+		@keyframes live-sweep {
+			from { transform: translateX(-50%); }
+			to { transform: translateX(50%); }
+		}
+
+		/* ── Chart Button ── */
+		.open-chart-btn {
+			display: inline-flex;
+			align-items: center;
+			gap: 4px;
+			margin-left: 8px !important;
+			padding: 2px 8px;
+			border-radius: 6px;
+			background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.08));
+			border: 1px solid rgba(99, 102, 241, 0.15);
+			color: #6366f1 !important;
+			font-size: 0.72rem !important;
+			font-weight: 600;
+			text-decoration: none !important;
+			opacity: 1 !important;
+			transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+			vertical-align: middle;
+		}
+		.open-chart-btn:hover {
+			background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.18)) !important;
+			border-color: rgba(99, 102, 241, 0.35) !important;
+			color: #4f46e5 !important;
+			transform: translateY(-1px);
+			box-shadow: 0 3px 10px rgba(99, 102, 241, 0.15);
+		}
+		.open-chart-btn:active {
+			transform: translateY(0) scale(0.97);
+		}
+		.open-chart-btn i {
+			font-size: 0.65rem;
+		}
+
+		/* ── Close Buttons (disabled for cTrader until Live) ── */
+		.close-btn-disabled {
+			opacity: 0.3 !important;
+			cursor: not-allowed !important;
+			pointer-events: auto !important;
+		}
+		.close-btn-disabled:hover {
+			opacity: 0.4 !important;
+		}
+		.close-all-disabled {
+			background: #94a3b8 !important;
+			cursor: not-allowed !important;
+			opacity: 0.5;
+		}
+		.close-all-disabled:hover {
+			background: #94a3b8 !important;
+			transform: none !important;
+		}
+
+		.ws-update-flash {
+			animation: ws-flash 0.4s ease;
+		}
+		@keyframes ws-flash {
+			0% { background: rgba(22, 163, 74, 0.08); }
+			100% { background: transparent; }
+		}
+
 		/* ── Animations ── */
 		@keyframes fu {
 			from {
@@ -544,13 +1159,21 @@
 										<i class="fas fa-server" style="font-size:.55rem;opacity:.4;"></i>
 										{{ account.tradeServer ?? '-' }}</span>
 								</div>
-								<div style="font-size:.7rem;color:var(--txt2);margin-top:.4rem;">
+								<div style="font-size:.7rem;color:var(--txt2);margin-top:.4rem;" id="liveUpdatedAt">
 									<i class="fas fa-clock" style="font-size:.55rem;"></i>
 									Aktualisiert:
-									{{ apiUpdatedAt ? apiUpdatedAt|date('d.m.Y H:i:s') : (account.lastUpdate ? account.lastUpdate|date('d.m.Y H:i:s') : '-') }}
+									<span id="liveUpdatedAtTime">{{ apiUpdatedAt ? apiUpdatedAt|date('d.m.Y H:i:s') : (account.lastUpdate ? account.lastUpdate|date('d.m.Y H:i:s') : '-') }}</span>
 								</div>
 							</div>
 							<div class="d-flex gap-2 header-actions">
+								{% if ctraderWs %}
+								<button id="autoUpdateBtn" class="btn btn-sm mb-0" title="Live Auto-Update via WebSocket">
+									<span class="live-dot"></span><span>LIVE</span>
+								</button>
+								<button id="openStandaloneChart" class="btn btn-sm mb-0" title="USTEC Chart öffnen" style="background:linear-gradient(135deg,#312e81,#4338ca);color:#fff;border:none;font-size:.75rem;letter-spacing:.02em;">
+									<i class="fas fa-chart-area me-1"></i>Chart
+								</button>
+								{% endif %}
 								<a href="{{ path('app_account_update', {'meta_id': account.login}) }}" class="btn btn-sm btn-dark mb-0">
 									<i class="fas fa-sync-alt me-1"></i>Update</a>
 								<a href="{{ path('app_account_edit', {'meta_id': account.metaId}) }}" class="btn btn-sm btn-outline-secondary mb-0">
@@ -646,48 +1269,55 @@
 					{% endif %}
 
 					{# ═══ STATS ═══ #}
-					<div class="row g-3 mb-3">
+					<div class="row g-3 mb-3" id="liveStatsRow">
 						<div class="col-6 col-lg-3 fu d1">
 							<div class="card-d p-3 h-100 accent-top">
 								<div class="lbl mb-1">Balance</div>
-								<div class="val">${{ bal|number_format(2, ',', '.') }}</div>
+								<div class="val" id="liveBalance">${{ bal|number_format(2, ',', '.') }}</div>
 							</div>
 						</div>
 						<div class="col-6 col-lg-3 fu d2">
 							<div class="card-d p-3 h-100 accent-top">
 								<div class="lbl mb-1">Equity</div>
-								<div class="val">${{ eq|number_format(2, ',', '.') }}</div>
+								<div class="val" id="liveEquity">${{ eq|number_format(2, ',', '.') }}</div>
 							</div>
 						</div>
 						<div class="col-6 col-lg-3 fu d3">
-							<div class="card-d p-3 h-100 {{ op >= 0 ? 'accent-top' : 'accent-top-r' }}">
+							<div class="card-d p-3 h-100 {{ op >= 0 ? 'accent-top' : 'accent-top-r' }}" id="liveOpenProfitCard">
 								<div class="lbl mb-1">Open Profit</div>
-								<div class="val {{ op >= 0 ? 'tg' : 'tr' }}">{{ op >= 0 ? '+' : '' }}${{ op|number_format(2, ',', '.') }}</div>
-								<div style="font-size:.72rem;color:var(--txt2);">{{ opPct|number_format(2) }}%</div>
+								<div class="val {{ op >= 0 ? 'tg' : 'tr' }}" id="liveOpenProfit">{{ op >= 0 ? '+' : '' }}${{ op|number_format(2, ',', '.') }}</div>
+								<div style="font-size:.72rem;color:var(--txt2);" id="liveOpenProfitPct">{{ opPct|number_format(2) }}%</div>
 							</div>
 						</div>
 						<div class="col-6 col-lg-3 fu d4">
 							<div class="card-d p-3 h-100 accent-top">
 								<div class="lbl mb-1">Positions</div>
-								<div class="val">{{ orders|length }}</div>
+								<div class="val" id="livePositionCount">{{ orders|length }}</div>
 							</div>
 						</div>
 					</div>
 
 					{# ═══ OPEN POSITIONS ═══ #}
-					<div class="card-d p-4 mb-3 fu d4">
+					<div class="card-d p-4 mb-3 fu d4" id="livePositionsCard">
 						<div class="d-flex justify-content-between align-items-center mb-3">
 							<div class="sec-t mb-0">
 								<i class="fas fa-chart-line"></i>
 								Open Positions
+								<span id="liveIndicator" class="pill ms-2" style="display:none;color:var(--g);"><span class="dot dot-on" style="width:6px;height:6px;"></span> Live</span>
 							</div>
 							{% if orders|length > 0 %}
-								<form method="post" action="{{ path('app_account_flush_positions', {'meta_id': account.metaId}) }}" style="display:inline;" onsubmit="return confirm('Alle {{ orders|length }} Positionen schließen?');">
-									<input type="hidden" name="_token" value="{{ csrf_token('flush' ~ account.metaId) }}">
-									<button type="submit" class="btn btn-sm" style="background:var(--r);color:#fff;border:none;border-radius:8px;font-size:.75rem;padding:.35rem .8rem;">
+								{% if account.platform == 'ctrader' %}
+									<button type="button" id="closeAllBtn" class="btn btn-sm close-all-disabled" style="background:var(--r);color:#fff;border:none;border-radius:8px;font-size:.75rem;padding:.35rem .8rem;">
 										<i class="fas fa-times-circle me-1"></i>Alle schließen
 									</button>
-								</form>
+								{% else %}
+									<form method="post" action="{{ path('app_account_flush_positions', {'meta_id': account.metaId}) }}" style="display:inline;" onsubmit="return confirm('Alle {{ orders|length }} Positionen schließen?');">
+										<input type="hidden" name="_token" value="{{ csrf_token('flush' ~ account.metaId) }}">
+										<button type="submit" class="btn btn-sm" style="background:var(--r);color:#fff;border:none;border-radius:8px;font-size:.75rem;padding:.35rem .8rem;">
+											<i class="fas fa-times-circle me-1"></i>Alle schließen
+										</button>
+									</form>
+								{% endif %}
 							{% endif %}
 						</div>
 						{% if orders|length > 0 %}
@@ -715,6 +1345,22 @@
 												<td style="opacity:.6; font-size: 0.72rem;">{{ o.OrderOpenAt ?? o.orderOpenAt ?? o.order_open_at ?? o.OpenTime ?? o.openTime ?? o.open_time ?? o.CreatedAt ?? o.createdAt ?? o.created_at ?? '-' }}</td>
 												<td>
 													<strong>{{ o.OrderSymbol ?? o.orderSymbol ?? o.order_symbol ?? '-' }}</strong>
+													{% if account.platform == 'ctrader' %}
+														{% set sym = o.OrderSymbol ?? o.orderSymbol ?? o.order_symbol ?? '' %}
+														<a href="#" class="open-chart-btn"
+														   data-symbol="{{ sym }}"
+														   data-account="{{ account.login }}"
+														   data-order-id="{{ oid }}"
+														   data-meta-id="{{ account.metaId }}"
+														   data-entry="{{ o.OrderPrice ?? o.orderPrice ?? o.order_price ?? 0 }}"
+														   data-lot="{{ o.OrderLot ?? o.orderLot ?? o.order_lot ?? 0 }}"
+														   data-pnl="{{ pnl }}"
+														   data-type="{{ buy ? 'BUY' : 'SELL' }}"
+														   data-csrf="{{ csrf_token('close' ~ oid) }}"
+														   title="Chart öffnen">
+															<i class="fas fa-chart-area"></i> Chart
+														</a>
+													{% endif %}
 												</td>
 												<td>
 													<span class="{{ buy ? 'b-buy' : 'b-sell' }}">{{ buy ? 'BUY' : 'SELL' }}</span>
@@ -724,12 +1370,22 @@
 												<td style="text-align:right;font-weight:700" class="{{ pnl >= 0 ? 'tg' : 'tr' }}">{{ pnl >= 0 ? '+' : '' }}{{ pnl|number_format(2) }}</td>
 												<td style="text-align:center;">
 													{% if oid > 0 %}
-														<form method="post" action="{{ path('app_account_close_order', {'meta_id': account.metaId, 'orderId': oid}) }}" style="display:inline;" onsubmit="return confirm('Position schließen?');">
-															<input type="hidden" name="_token" value="{{ csrf_token('close' ~ oid) }}">
-															<button type="submit" style="background:none;border:none;cursor:pointer;color:var(--r);font-size:.85rem;padding:2px 6px;" title="Position schließen">
+														{% if account.platform == 'ctrader' %}
+															<button type="button" class="ws-close-btn close-btn-disabled"
+																data-position-id="{{ oid }}"
+																data-raw-volume="{{ ((o.OrderLot ?? o.orderLot ?? o.order_lot ?? 0) * 10000)|round }}"
+																style="background:none;border:none;color:var(--r);font-size:.85rem;padding:2px 6px;"
+																title="Position schließen (Live Modus erforderlich)">
 																<i class="fas fa-times"></i>
 															</button>
-														</form>
+														{% else %}
+															<form method="post" action="{{ path('app_account_close_order', {'meta_id': account.metaId, 'orderId': oid}) }}" style="display:inline;" onsubmit="return confirm('Position schließen?');">
+																<input type="hidden" name="_token" value="{{ csrf_token('close' ~ oid) }}">
+																<button type="submit" style="background:none;border:none;cursor:pointer;color:var(--r);font-size:.85rem;padding:2px 6px;" title="Position schließen">
+																	<i class="fas fa-times"></i>
+																</button>
+															</form>
+														{% endif %}
 													{% endif %}
 												</td>
 											</tr>
@@ -752,6 +1408,20 @@
 							<i class="fas fa-calendar-alt"></i>
 							Trade Calendar</div>
 						<div id="tradeCalendar"></div>
+						<div id="dayTradesPanel" class="day-trades-panel">
+							<div class="day-trades-inner">
+								<div class="day-trades-header">
+									<h4>
+										<i class="fas fa-list-ul" style="opacity:.35;font-size:.75rem;"></i>
+										<span id="dayTradesTitle"></span>
+									</h4>
+									<button class="close-btn" id="closeDayTrades">
+										<i class="fas fa-times"></i>
+									</button>
+								</div>
+								<div id="dayTradesList"></div>
+							</div>
+						</div>
 					</div>
 
 					{# ═══ DAILY P/L CHART ═══ #}
@@ -834,10 +1504,261 @@
 		</div>
 	</div>
 
-	{# ═══ DATA + EXTERNAL SCRIPT (separate JS file to prevent linter damage) ═══ #}
+	{# ═══ FULLSCREEN CHART MODAL ═══ #}
+	<div class="chart-overlay" id="chartOverlay">
+		<div class="chart-modal">
+			<div class="chart-modal-header">
+				<div class="cm-title">
+					<span id="cmSymbol" style="font-size:1.05rem;letter-spacing:-.02em;">-</span>
+					<span id="cmBadge" class="b-buy">BUY</span>
+					<span id="cmLiveBadge" class="cm-live-badge" style="display:none;">
+						<span class="cm-live-dot"></span>LIVE
+					</span>
+				</div>
+				<div class="cm-info">
+					<span class="cm-info-item">
+						<span class="cm-info-label">Entry</span>
+						<strong id="cmEntry">-</strong>
+					</span>
+					<span class="cm-info-item">
+						<span class="cm-info-label">Exit</span>
+						<strong id="cmExit">-</strong>
+					</span>
+					<span class="cm-info-item">
+						<span class="cm-info-label">Lot</span>
+						<strong id="cmLot">-</strong>
+					</span>
+					<span id="cmPnlWrap" class="cm-info-item">
+						<span class="cm-info-label">P/L</span>
+						<strong id="cmPnl">-</strong>
+					</span>
+				</div>
+				<div class="cm-header-stats">
+					<span>P&L: <strong id="cmHeaderPnl" class="pnl-pos">$0.00</strong></span>
+					<span>Bal: <strong id="cmHeaderBalance">-</strong></span>
+				</div>
+				<button class="cm-close-position" id="cmClosePosition" style="display:none;">
+					<i class="fas fa-times-circle"></i>
+					Close Position</button>
+				<button class="cm-close" id="cmClose">
+					<i class="fas fa-times"></i>
+					ESC</button>
+			</div>
+			<div class="cm-chart-wrapper">
+				<div class="chart-modal-body" id="chartContainer"></div>
+				<div class="cm-bottom-area">
+					<div class="cm-order-panel" id="cmOrderPanel" style="display:none;">
+						<div class="op-head">Order Entry</div>
+						<div class="op-types">
+							<button class="op-type-btn active" data-type="market">Market</button>
+							<button class="op-type-btn" data-type="limit">Limit</button>
+							<button class="op-type-btn" data-type="stop">Stop</button>
+							<button class="op-type-btn" data-type="stoplimit">Stop Limit</button>
+						</div>
+						<div class="op-sides">
+							<button class="op-side-btn active-buy" id="cmSideBuy">Buy</button>
+							<button class="op-side-btn active-sell" id="cmSideSell">Sell</button>
+						</div>
+						<div class="op-qlabel">Quantity</div>
+						<div class="op-qty-wrap">
+							<button class="op-qty-btn" id="cmQtyMinus">&minus;</button>
+							<input type="number" class="op-qty-input" id="cmQtyInput" value="1" min="0.01" step="1">
+							<button class="op-qty-btn" id="cmQtyPlus">+</button>
+						</div>
+						<div class="op-presets">
+							<button class="op-preset-btn active" data-qty="1">1</button>
+							<button class="op-preset-btn" data-qty="2">2</button>
+							<button class="op-preset-btn" data-qty="3">3</button>
+							<button class="op-preset-btn" data-qty="5">5</button>
+							<button class="op-preset-btn" data-qty="10">10</button>
+						</div>
+						<button class="op-submit buy" id="cmSubmitOrder">Buy 1 Market</button>
+						<div class="op-mobile-row">
+							<button class="op-submit sell op-mobile-sell" id="cmMobileSell">Sell <span class="op-mob-qty">1</span></button>
+							<div class="op-qty-wrap op-mobile-qty">
+								<button class="op-qty-btn" onclick="document.getElementById('cmQtyInput').stepDown();document.getElementById('cmQtyInput').dispatchEvent(new Event('input'));">&minus;</button>
+								<input type="number" class="op-qty-input" value="1" min="0.01" step="1" id="cmQtyInputMobile" style="font-size:16px;">
+								<button class="op-qty-btn" onclick="document.getElementById('cmQtyInput').stepUp();document.getElementById('cmQtyInput').dispatchEvent(new Event('input'));">+</button>
+							</div>
+							<button class="op-submit buy op-mobile-buy" id="cmMobileBuy">Buy <span class="op-mob-qty">1</span></button>
+						</div>
+						<div class="op-status" id="cmOrderStatus"></div>
+					</div>
+					<div class="cm-positions-panel" id="cmPositionsPanel" style="display:none;">
+						<div class="cm-positions-tabs">
+							<div class="cm-positions-tab active" data-panel-tab="positions">Positions <span class="tab-count" id="cmPosCount">0</span></div>
+							<div class="cm-positions-tab" data-panel-tab="accounts">Accounts <span class="tab-count">{{ userAccounts|length }}</span></div>
+							<div class="cm-positions-tab" data-panel-tab="studies">Studies <span class="tab-count">2</span></div>
+							<div class="cm-positions-summary">
+								<span>P&L: <strong id="cmPosPnl" class="pnl-pos">$0.00</strong></span>
+								<span>Balance: <strong id="cmPosBalance">-</strong></span>
+							</div>
+						</div>
+						<div class="cm-pos-table-wrap" id="cmTabPositions">
+							<table class="cm-pos-table">
+								<thead>
+									<tr>
+										<th>Symbol</th>
+										<th>Side</th>
+										<th>Qty</th>
+										<th>Entry</th>
+										<th>P&L</th>
+										<th>Time</th>
+										<th>Action</th>
+									</tr>
+								</thead>
+								<tbody id="cmPosBody"></tbody>
+							</table>
+						</div>
+						<div class="cm-pos-table-wrap" id="cmTabAccounts" style="display:none;">
+							<table class="cm-pos-table">
+								<thead>
+									<tr>
+										<th>Account</th>
+										<th>Platform</th>
+										<th>Balance</th>
+										<th>Equity</th>
+										<th>Profit</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody>
+									{% for ua in userAccounts %}
+										<tr{% if ua.metaId == account.metaId %} style="background:rgba(59,130,246,0.06);"{% endif %}>
+											<td>
+												<strong>{{ ua.name }}</strong><br>
+												<span style="opacity:.5;">{{ ua.login }}</span>
+											</td>
+											<td><span style="text-transform:uppercase;font-weight:600;">{{ ua.platform }}</span></td>
+											<td>{{ ua.balance|number_format(2, ',', '.') }}</td>
+											<td>{{ ua.equity|number_format(2, ',', '.') }}</td>
+											<td class="{{ (ua.equity - ua.balance) >= 0 ? 'pnl-pos' : 'pnl-neg' }}" style="font-weight:700;">
+												{{ (ua.equity - ua.balance) >= 0 ? '+' : '' }}{{ (ua.equity - ua.balance)|number_format(2, ',', '.') }}
+											</td>
+											<td>
+												{% if ua.metaId != account.metaId %}
+													<a href="{{ path('app_account_show', {meta_id: ua.metaId}) }}" style="color:#3b82f6;text-decoration:none;font-weight:600;font-size:.7rem;">View</a>
+												{% else %}
+													<span style="color:#94a3b8;font-size:.65rem;">current</span>
+												{% endif %}
+											</td>
+										</tr>
+									{% endfor %}
+								</tbody>
+							</table>
+						</div>
+						<div class="cm-pos-table-wrap" id="cmTabStudies" style="display:none;padding:8px 12px;">
+							<div class="cm-study-list">
+								<label class="cm-study-toggle">
+									<input type="checkbox" checked data-study="killzones">
+									<span class="cm-study-name">ELVTD Killzones</span>
+									<span class="cm-study-desc">ICT Session High/Low</span>
+								</label>
+								<label class="cm-study-toggle">
+									<input type="checkbox" checked data-study="depthZones">
+									<span class="cm-study-name">ELVTD Depth Zones</span>
+									<span class="cm-study-desc">Price depth rectangles</span>
+								</label>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	{# ═══ DATA + EXTERNAL SCRIPT ═══ #}
 	<script>
 		window.__DENIES_TRADES__ = {{ trades|json_encode|raw }};
+window.__ACCOUNT_LOGIN__ = {{ account.login }};
+window.__ACCOUNT_PLATFORM__ = '{{ account.platform }}';
+window.__ACCOUNT_META_ID__ = '{{ account.metaId }}';
+{% if ctraderWs %}
+window.__CTRADER_WS__ = {{ ctraderWs|json_encode|raw }};
+{% endif %}
+{% if apiData is defined and apiData and apiData.orders is defined %}
+window.__OPEN_POSITIONS__ = {{ apiData.orders|json_encode|raw }};
+{% endif %}
+{% if apiData is defined and apiData %}
+window.__ACCOUNT_BALANCE__ = {{ apiData.balance|default(0) }};
+window.__ACCOUNT_EQUITY__ = {{ apiData.equity|default(0) }};
+{% endif %}
 	</script>
-	<script src="/assets/js/denies-account.js"></script>
+	<script src="/assets/js/denies-account.js?v={{ "now"|date('U') }}"></script>
+	<script>
+	document.querySelectorAll('.cm-positions-tab[data-panel-tab]').forEach(function(tab) {
+		tab.addEventListener('click', function() {
+			document.querySelectorAll('.cm-positions-tab[data-panel-tab]').forEach(function(t) { t.classList.remove('active'); });
+			tab.classList.add('active');
+			var target = tab.getAttribute('data-panel-tab');
+			document.getElementById('cmTabPositions').style.display = target === 'positions' ? '' : 'none';
+			document.getElementById('cmTabAccounts').style.display = target === 'accounts' ? '' : 'none';
+			document.getElementById('cmTabStudies').style.display = target === 'studies' ? '' : 'none';
+		});
+	});
+	// Prevent pinch-zoom inside chart modal
+	document.getElementById('chartOverlay').addEventListener('touchmove', function(e) {
+		if (e.touches.length > 1) e.preventDefault();
+	}, { passive: false });
+	// Prevent iOS zoom on input focus
+	document.querySelectorAll('.chart-modal input, .chart-modal select').forEach(function(el) {
+		el.addEventListener('focus', function() { document.querySelector('meta[name=viewport]').setAttribute('content', 'width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no'); });
+	});
+	// Sync mobile qty input with main qty input
+	var mainQty = document.getElementById('cmQtyInput');
+	var mobQty = document.getElementById('cmQtyInputMobile');
+	var mobQtySpans = document.querySelectorAll('.op-mob-qty');
+	function syncQty(src) {
+		var v = src.value;
+		mainQty.value = v;
+		if (mobQty) mobQty.value = v;
+		mobQtySpans.forEach(function(s) { s.textContent = v; });
+		var sub = document.getElementById('cmSubmitOrder');
+		if (sub) sub.textContent = sub.textContent.replace(/\d+/, v);
+	}
+	if (mainQty) mainQty.addEventListener('input', function() { syncQty(mainQty); });
+	if (mobQty) {
+		mobQty.addEventListener('input', function() { syncQty(mobQty); });
+		mobQty.addEventListener('change', function() { syncQty(mobQty); });
+	}
+	// Mobile buy/sell buttons trigger the main submit
+	var mobileSell = document.getElementById('cmMobileSell');
+	var mobileBuy = document.getElementById('cmMobileBuy');
+	if (mobileSell) mobileSell.addEventListener('click', function() {
+		var sellBtn = document.getElementById('cmSideSell');
+		if (sellBtn) sellBtn.click();
+		setTimeout(function() { document.getElementById('cmSubmitOrder').click(); }, 50);
+	});
+	if (mobileBuy) mobileBuy.addEventListener('click', function() {
+		var buyBtn = document.getElementById('cmSideBuy');
+		if (buyBtn) buyBtn.click();
+		setTimeout(function() { document.getElementById('cmSubmitOrder').click(); }, 50);
+	});
+	// Study toggles — remove + re-draw shapes
+	document.querySelectorAll('.cm-study-toggle input[data-study]').forEach(function(cb) {
+		cb.addEventListener('change', function() {
+			var study = cb.getAttribute('data-study');
+			var w = window._tvWidgetInstance;
+			if (!w) return;
+			try {
+				var chart = w.activeChart();
+				if (!cb.checked) {
+					// Remove all shapes for this study
+					var shapes = window._studyShapes[study] || [];
+					shapes.forEach(function(id) { try { chart.removeEntity(id); } catch(e) {} });
+					window._studyShapes[study] = [];
+				} else {
+					// Re-draw from saved data
+					var data = window._studyData[study] || [];
+					window._studyShapes[study] = [];
+					data.forEach(function(d) {
+						var id = chart.createMultipointShape(d.pts, d.opts);
+						if (id) window._studyShapes[study].push(id);
+					});
+				}
+			} catch(e) { console.warn('[Studies] Toggle error:', e); }
+		});
+	});
+	</script>
 {% endblock %}
 {# END — old inline JS removed, now in /assets/js/denies-account.js #}

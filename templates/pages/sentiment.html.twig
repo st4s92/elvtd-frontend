@@ -1,251 +1,237 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Sentiment - Community Outlook{% endblock %}
+{% block title %}Sentiment Analysis - ELVTD Finance
+{% endblock %}
 
 {% block body %}
-    <div class="container-fluid py-4" style="background: #0a0e17; color: #e0e0e0; min-height: 100vh;">
-        <style>
-            body {
-                font-family: 'Inter', system-ui, -apple-system, sans-serif;
-                background: #0a0e17;
-                color: #e0e0e0;
-                margin: 0;
-                padding: 0;
-            }
-            .container-fluid {
-                max-width: 1400px;
-                padding: 1.5rem;
-            }
-            .card {
-                background: #111827;
-                border: 1px solid #1f2937;
-                border-radius: 10px;
-                overflow: hidden;
-            }
-            .card-header {
-                background: #1f2937;
-                border-bottom: 1px solid #374151;
-                padding: 1rem 1.5rem;
-                font-weight: 600;
-                color: #f3f4f6;
-            }
-            .sentiment-badge {
-                font-size: 0.8rem;
-                padding: 0.4em 0.85em;
-                border-radius: 1rem;
-                font-weight: 600;
-                white-space: nowrap;
-            }
-            .short-badge   { background: #991b1b; color: white; }
-            .long-badge    { background: #166534;  color: white; }
-            .balanced-badge{ background: #854d0e; color: white; }
+	<!-- ── Custom Sentiment Styles ── -->
+	<style>:root
+	{
+		--glass-bg: rgba(255, 255, 255, 0.03);
+		--glass-border: rgba(255, 255, 255, 0.08);
+		--neon-blue: #3b82f6;
+		--neon-indigo: #6366f1;
+		--neon-green: #10b981;
+		--neon-red: #ef4444;
+	}
 
-            .progress {
-                height: 10px;
-                background: #1f2937;
-                border-radius: 5px;
-                overflow: hidden;
-            }
-            .progress-short  { background: linear-gradient(90deg, #dc2626, #f87171); }
-            .progress-long   { background: linear-gradient(90deg, #16a34a, #4ade80); }
+	.sentiment-container {
+		max-width: 1200px;
+		margin: 0 auto;
+		padding-bottom: 50px;
+	}
 
-            tr.symbol-row:hover {
-                background: #1f2937 !important;
-                transition: background 0.15s;
-            }
-            .symbol-name {
-                font-weight: 600;
-                color: #60a5fa;
-            }
-            .text-red    { color: #ef4444 !important; }
-            .text-green  { color: #22c55e !important; }
-            .text-orange { color: #f59e0b !important; }
+	/* Glass Card Base */
+	.glass-card-premium {
+		background: #0f172a !important;
+		border: 1px solid var(--glass-border);
+		border-radius: 24px;
+		backdrop-filter: blur(12px);
+		padding: 2rem;
+		transition: all 0.3s ease;
+		position: relative;
+		overflow: hidden;
+		color: white !important;
+	}
 
-            .last-sync {
-                font-size: 0.85rem;
-                color: #9ca3af;
-            }
-            #loading, #error {
-                min-height: 400px;
-                display: flex;
-                flex-direction: column;
-                justify-content: center;
-                align-items: center;
-            }
-        </style>
+	/* Global Gauge Section */
+	.global-sentiment-wrap {
+		margin-bottom: 3rem;
+	}
 
-        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-            <h3 class="mb-0">Sentiments</h3>
-            <div class="d-flex align-items-center gap-3">
-                <div class="last-sync">
-                    Last synced: <span id="last-sync-time">loading...</span>
-                    <button class="btn btn-sm btn-outline-light ms-2" onclick="window.loadData && window.loadData(true)" title="Refresh now">
-                        <i class="bi bi-arrow-repeat"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
+	.sentiment-bar-main {
+		height: 60px;
+		background: rgba(255, 255, 255, 0.02);
+		border-radius: 30px;
+		position: relative;
+		overflow: hidden;
+		border: 1px solid rgba(255, 255, 255, 0.05);
+		box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
+	}
 
-        <ul class="nav nav-tabs mb-4 border-bottom-0">
-            <li class="nav-item">
-                <a class="nav-link active" href="#">Overview</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link disabled" href="#">Listing</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link disabled" href="#">Brokers</a>
-            </li>
-        </ul>
+	.sentiment-fill-long {
+		height: 100%;
+		background: linear-gradient(90deg, #059669, #10b981);
+		box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+		transition: width 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+	}
 
-        <div id="loading" class="text-center my-5">
-            <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;"></div>
-            <p class="lead">Lade Community Outlook von Myfxbook...</p>
-        </div>
+	.sentiment-fill-short {
+		height: 100%;
+		background: linear-gradient(90deg, #ef4444, #dc2626);
+		box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+		transition: width 1.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+	}
 
-        <div id="error" class="alert alert-danger d-none my-4" role="alert"></div>
+	.sentiment-label-wrap {
+		display: flex;
+		justify-content: space-between;
+		margin-bottom: 12px;
+		padding: 0 10px;
+	}
 
-        <div class="card d-none" id="outlook-card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <div>News & Positioning Feed · Market</div>
-                <i class="bi bi-info-circle" title="Community sentiment based on Myfxbook traders"></i>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-dark table-hover mb-0">
-                    <thead>
-                    <tr>
-                        <th>Symbol</th>
-                        <th>Community Trend</th>
-                        <th>Open Interest / Positions</th>
-                        <th>Avg Short</th>
-                        <th>Avg Long</th>
-                        <th>Current</th>
-                    </tr>
-                    </thead>
-                    <tbody id="outlook-table"></tbody>
-                </table>
-            </div>
-        </div>
+	.label-premium {
+		font-size: 0.7rem;
+		font-weight: 900;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		opacity: 0.9;
+	}
 
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                const loading = document.getElementById('loading');
-                const errorEl = document.getElementById('error');
-                const card = document.getElementById('outlook-card');
-                const tbody = document.getElementById('outlook-table');
-                const syncEl = document.getElementById('last-sync-time');
+	.text-success {
+		color: #10b981 !important;
+	}
+	.text-danger {
+		color: #ef4444 !important;
+	}
+	.text-primary {
+		color: #6366f1 !important;
+	}
 
-                if (!loading || !errorEl || !card || !tbody || !syncEl) {
-                    console.error('Fehlende DOM-Elemente');
-                    if (errorEl) {
-                        errorEl.innerHTML = 'Interner Fehler: Fehlende Elemente. Bitte neu laden.';
-                        errorEl.classList.remove('d-none');
-                    }
-                    return;
-                }
+	/* Symbol Grid */
+	.symbol-sentiment-item {
+		background: #0f172a !important; /* Force dark navy */
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 20px;
+		padding: 1.5rem;
+		margin-bottom: 1.5rem;
+		transition: all 0.3s ease;
+		color: white !important;
+		box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+	}
 
-                let lastSyncTime = Date.now();
+	.symbol-sentiment-item:hover {
+		background: #1e293b !important;
+		border-color: rgba(99, 102, 241, 0.5);
+		transform: translateY(-5px);
+	}
 
-                async function loadData(silent = false) {
-                    if (!silent) {
-                        loading.classList.remove("d-none");
-                        card.classList.add("d-none");
-                        errorEl.classList.add("d-none");
-                        tbody.innerHTML = "";
-                    }
+	.symbol-badge {
+		font-size: 1.25rem;
+		font-weight: 950;
+		letter-spacing: -0.01em;
+		color: #fff !important;
+		text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+	}
 
-                    try {
-                        const res = await fetch('/api/myfxbook/outlook');
-                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+	.sentiment-mini-bar {
+		height: 10px;
+		background: rgba(255, 255, 255, 0.05);
+		border-radius: 6px;
+		overflow: hidden;
+		margin-top: 12px;
+	}
 
-                        const json = await res.json();
+	.mini-fill-long {
+		background: linear-gradient(90deg, #10b981, #34d399);
+		box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+	}
+	.mini-fill-short {
+		background: linear-gradient(90deg, #ef4444, #f87171);
+		box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+	}
 
-                        if (json.error) {
-                            throw new Error(json.message || "API-Fehler");
-                        }
+	.stat-val {
+		font-size: 0.9rem;
+		font-weight: 850;
+		color: white !important;
+	}
+	.stat-label {
+		font-size: 0.65rem;
+		opacity: 0.6;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		margin-top: 2px;
+		color: #94a3b8 !important;
+	}
 
-                        lastSyncTime = Date.now();
-                        updateSyncTime();
+	/* Animations */
+	.stagger-item {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+	.fade-up-anim {
+		animation: fadeUp 0.6s forwards;
+	}
 
-                        renderOutlook(json.symbols || []);
+	@keyframes fadeUp {
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
 
-                        loading.classList.add("d-none");
-                        card.classList.remove("d-none");
+	/* Hero Text */
+	.hero-title {
+		font-size: 2.5rem;
+		font-weight: 950;
+		color: #0f172a !important; /* Dark text for light backgrounds */
+		letter-spacing: -0.02em;
+		margin-bottom: 0.5rem;
+	}
 
-                    } catch (err) {
-                        console.error(err);
-                        errorEl.textContent = "Daten konnten nicht geladen werden: " + err.message;
-                        errorEl.classList.remove("d-none");
-                        loading.classList.add("d-none");
-                    }
-                }
+	.hero-subtitle {
+		color: #334155 !important;
+		font-weight: 600;
+		letter-spacing: 0.02em;
+		font-size: 0.95rem;
+	}
 
-                function updateSyncTime() {
-                    const elapsed = Math.round((Date.now() - lastSyncTime) / 1000);
-                    syncEl.textContent = `${elapsed}s ago`;
-                }
+	.glow-dot {
+		display: inline-block;
+		width: 8px;
+		height: 8px;
+		background: var(--neon-blue);
+		border-radius: 50%;
+		margin-right: 8px;
+		box-shadow: 0 0 12px var(--neon-blue);
+	}
+</style>
 
-                function renderOutlook(symbols) {
-                    tbody.innerHTML = "";
+<div
+	class="sentiment-container mt-4">
+	<!-- ── Header Section ── -->
+	<div class="mb-5 stagger-item fade-up-anim" style="animation-delay: 0.1s">
+		<h1 class="hero-title">Sentiment Analysis</h1>
+		<div class="d-flex align-items-center">
+			<span class="glow-dot"></span>
+			<span class="hero-subtitle">Globale Community-Analyse ({{ symbols|length }}
+				Symbole)</span>
+		</div>
+	</div>
 
-                    symbols.forEach(item => {
-                        const shortPct = Math.round(item.shortPercentage || 0);
-                        const longPct  = Math.round(item.longPercentage  || 0);
 
-                        let trendText = `${shortPct}% Short`;
-                        let trendClass = "short-badge";
+	<!-- ── Per Symbol Sentiment ── -->
+	<div class="row">
+		<div class="col-12">
+			<h4 class="mb-4 fw-900 text-white text-opacity-80 ps-2" style="letter-spacing: 0.05em; font-size: 0.9rem;">TOP SYMBOLS BY EXPOSURE</h4>
 
-                        if (longPct > shortPct + 5) {
-                            trendText = `${longPct}% Long`;
-                            trendClass = "long-badge";
-                        } else if (Math.abs(shortPct - longPct) <= 10) {
-                            trendText = "Balanced";
-                            trendClass = "balanced-badge";
-                        }
+			{% if symbols is empty %}
+				<div class="glass-card-premium text-center py-5">
+					<i class="fas fa-box-open text-white text-opacity-10 mb-3" style="font-size: 3rem;"></i>
+					<p class="text-white text-opacity-40 fw-700">Keine aktiven Positionen gefunden.</p>
+				</div>
+			{% else %}
+				<div class="row">
+					{% for item in symbols %}
+						<div class="col-md-6 col-lg-4 stagger-item fade-up-anim" style="animation-delay: {{ 0.4 + loop.index0 * 0.05 }}s">
+							<div class="symbol-sentiment-item text-center">
+								<div class="symbol-badge mb-3">{{ item.symbol }}</div>
 
-                        // Check if it's an index (simple heuristic for now)
-                        const isIndex = ['US30', 'US100', 'GER40', 'JP225', 'UK100'].includes(item.name);
-                        const symbolBadge = isIndex 
-                            ? `<span class="badge bg-secondary ms-2" style="font-size: 0.65rem;">INDEX</span>` 
-                            : '';
+								<div class="d-flex justify-content-between mb-2" style="font-size: 0.8rem; font-weight: 850;">
+									<span class="text-success">{{ item.buy_pct }}% BUY</span>
+									<span class="text-danger">{{ item.sell_pct }}% SELL</span>
+								</div>
 
-                        const row = document.createElement("tr");
-                        row.className = "symbol-row";
-                        row.innerHTML = `
-                    <td class="symbol-name">
-                        <div class="d-flex align-items-center">
-                            ${item.name || '—'}
-                            ${symbolBadge}
-                        </div>
-                    </td>
-                    <td>
-                        <span class="sentiment-badge ${trendClass}">${trendText}</span>
-                    </td>
-                    <td>
-                        <div class="d-flex align-items-center gap-2">
-                            <div class="progress flex-grow-1" style="width:140px;" title="Short: ${shortPct}% / Long: ${longPct}%">
-                                <div class="progress-bar progress-bar-short" style="width:${shortPct}%"></div>
-                                <div class="progress-bar progress-bar-long" style="width:${longPct}%"></div>
-                            </div>
-                            <small class="text-muted" title="Total Positions">${(item.totalPositions || 0).toLocaleString()}</small>
-                        </div>
-                    </td>
-                    <td class="text-red">${(item.avgShortPrice || 0).toFixed(4)}</td>
-                    <td class="text-green">${(item.avgLongPrice || 0).toFixed(4)}</td>
-                    <td class="fw-bold">—</td>
-                `;
-                        tbody.appendChild(row);
-                    });
-                }
-
-                window.loadData = loadData;
-
-                loadData();
-
-                setInterval(() => loadData(true), 60000);
-                setInterval(updateSyncTime, 1000);
-            });
-        </script>
-
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-{% endblock %}
+								<div class="sentiment-mini-bar d-flex">
+									<div class="mini-fill-long h-100" style="width: {{ item.buy_pct }}%"></div>
+									<div class="mini-fill-short h-100" style="width: {{ item.sell_pct }}%"></div>
+								</div>
+							</div>
+						</div>
+					{% endfor %}
+				</div>
+			{% endif %}
+		</div>
+	</div>
+</div>{% endblock %}

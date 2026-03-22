@@ -59,11 +59,50 @@ class TicketController extends AbstractController
             return $this->redirectToRoute('app_account_index', [], Response::HTTP_SEE_OTHER);
         }
 
-        //  $tickets = $ticketRepository->findAll();
         $tickets = $ticketRepository->findAllWithLatestComment();
 
-        return $this->render('HelpdeskBundle/helpdesk/index.html.twig', [
+        // Compute stats
+        $totalTickets = count($tickets);
+        $openCount = 0;
+        $progressCount = 0;
+        $closedCount = 0;
+        $todayCount = 0;
+        $avgResponseHours = 0;
+        $responseCount = 0;
+        $today = new \DateTime('today');
+
+        foreach ($tickets as $ticket) {
+            $status = $ticket->getStatus();
+            if ($status === 'open') $openCount++;
+            elseif ($status === 'in_progress') $progressCount++;
+            elseif ($status === 'closed') $closedCount++;
+
+            if ($ticket->getCreatedAt() >= $today) $todayCount++;
+
+            // Average response time (first comment after creation)
+            $comments = $ticket->getComments();
+            if ($comments && count($comments) > 0) {
+                $firstComment = $comments[0];
+                $diff = $firstComment->getCreatedAt()->getTimestamp() - $ticket->getCreatedAt()->getTimestamp();
+                if ($diff > 0) {
+                    $avgResponseHours += $diff / 3600;
+                    $responseCount++;
+                }
+            }
+        }
+
+        $avgResponseHours = $responseCount > 0 ? round($avgResponseHours / $responseCount, 1) : 0;
+
+        return $this->render('HelpdeskBundle/helpdesk/admin_index.html.twig', [
             'tickets' => $tickets,
+            'stats' => [
+                'total' => $totalTickets,
+                'open' => $openCount,
+                'in_progress' => $progressCount,
+                'closed' => $closedCount,
+                'today' => $todayCount,
+                'avg_response_hours' => $avgResponseHours,
+            ],
         ]);
     }
 

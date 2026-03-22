@@ -1,27 +1,553 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Edit User{% endblock %}
+{% block title %}User #{{ user.id }} bearbeiten{% endblock %}
 
 {% block body %}
+<style>
+	:root {
+		--ue-card: #ffffff;
+		--ue-dark: #0f172a;
+		--ue-dim: #64748b;
+		--ue-border: rgba(0,0,0,0.06);
+		--ue-green: #16a34a;
+		--ue-blue: #3b82f6;
+		--ue-purple: #8b5cf6;
+		--ue-amber: #f59e0b;
+		--ue-red: #ef4444;
+		--ue-radius: 16px;
+	}
+	.ue-wrap {
+		max-width: 900px;
+		margin: 0 auto;
+		padding: 1.5rem 1.5rem 4rem;
+	}
 
-    <style>
-        .profile .btn {
-            color: #fff;
-            box-shadow: 0 2px 2px 0 rgba(38, 38, 38, 0.1), 0 3px 1px -2px rgba(38, 38, 38, 0.18), 0 1px 5px 0 rgba(38, 38, 38, 0.15);
-            background-image: linear-gradient(195deg, #42424a 0%, #191919 100%);
-            margin: 15px 0;
-            float: right;
-            margin-left: 15px;
-        }
-    </style>
+	/* ── Breadcrumb ── */
+	.ue-breadcrumb {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-bottom: 1.5rem;
+		font-size: 0.85rem;
+	}
+	.ue-breadcrumb a { color: var(--ue-dim); text-decoration: none; }
+	.ue-breadcrumb a:hover { color: var(--ue-purple); }
+	.ue-breadcrumb .sep { color: var(--ue-dim); opacity: 0.4; }
+	.ue-breadcrumb .current { color: var(--ue-dark); font-weight: 600; }
 
-    <div class="container card p-3 profile">
-        <div class="card-header">
-            <h6 class="float-start w-100">User Information</h6>
-            <p class="float-start w-100">{{ 'account_index_title'|trans }}</p>
-        </div>
-        <div class="card-body px-0 table-responsive">
-            {{ include('user/_form.html.twig', {'button_label': 'Update', 'attr' : {'class':'btn bg-gradient-dark w-100'}}) }}
-        </div>
-    </div>
+	/* ── User Header ── */
+	.ue-header {
+		background: var(--ue-card);
+		border: 1px solid var(--ue-border);
+		border-radius: var(--ue-radius);
+		padding: 1.5rem 2rem;
+		margin-bottom: 1.5rem;
+		display: flex;
+		align-items: center;
+		gap: 1.2rem;
+	}
+	.ue-avatar {
+		width: 56px; height: 56px;
+		border-radius: 14px;
+		background: linear-gradient(135deg, rgba(139,92,246,0.12), rgba(59,130,246,0.12));
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1.2rem;
+		font-weight: 800;
+		color: var(--ue-purple);
+		flex-shrink: 0;
+	}
+	.ue-header-info h1 {
+		font-size: 1.4rem;
+		font-weight: 800;
+		color: var(--ue-dark);
+		margin: 0;
+	}
+	.ue-header-meta {
+		font-size: 0.8rem;
+		color: var(--ue-dim);
+		display: flex;
+		gap: 1rem;
+		margin-top: 0.2rem;
+		flex-wrap: wrap;
+	}
+	.ue-header-meta span { display: flex; align-items: center; gap: 0.3rem; }
+	.ue-header-meta i { font-size: 0.7rem; opacity: 0.5; }
+
+	/* ── Flash ── */
+	.ue-flash {
+		padding: 0.8rem 1.2rem;
+		border-radius: 10px;
+		margin-bottom: 1.2rem;
+		font-size: 0.85rem;
+		font-weight: 600;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+	.ue-flash.success {
+		background: rgba(22,163,74,0.08);
+		color: var(--ue-green);
+		border: 1px solid rgba(22,163,74,0.15);
+	}
+
+	/* ── Section Card ── */
+	.ue-section {
+		background: var(--ue-card);
+		border: 1px solid var(--ue-border);
+		border-radius: var(--ue-radius);
+		margin-bottom: 1.2rem;
+		overflow: hidden;
+	}
+	.ue-section-header {
+		padding: 1rem 1.5rem;
+		border-bottom: 1px solid var(--ue-border);
+		font-size: 0.9rem;
+		font-weight: 700;
+		color: var(--ue-dark);
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		background: rgba(0,0,0,0.01);
+	}
+	.ue-section-header i {
+		font-size: 0.85rem;
+		opacity: 0.5;
+	}
+	.ue-section-body {
+		padding: 1.5rem;
+	}
+
+	/* ── Form Grid ── */
+	.ue-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 1.2rem;
+	}
+	.ue-grid.cols-3 {
+		grid-template-columns: 1fr 1fr 1fr;
+	}
+	.ue-field {
+		display: flex;
+		flex-direction: column;
+	}
+	.ue-field.full { grid-column: 1 / -1; }
+	.ue-label {
+		font-size: 0.72rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		color: var(--ue-dim);
+		margin-bottom: 0.4rem;
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+	}
+	.ue-label .db-col {
+		font-size: 0.6rem;
+		font-weight: 500;
+		color: rgba(100,116,139,0.5);
+		font-style: italic;
+	}
+	.ue-input {
+		padding: 0.55rem 0.9rem;
+		border: 1px solid var(--ue-border);
+		border-radius: 8px;
+		font-size: 0.85rem;
+		font-family: inherit;
+		color: var(--ue-dark);
+		transition: border-color 0.2s, box-shadow 0.2s;
+		background: #fff;
+	}
+	.ue-input:focus {
+		outline: none;
+		border-color: var(--ue-purple);
+		box-shadow: 0 0 0 3px rgba(139,92,246,0.08);
+	}
+	.ue-input[readonly] {
+		background: #f8fafc;
+		color: var(--ue-dim);
+		cursor: not-allowed;
+	}
+	select.ue-input {
+		cursor: pointer;
+	}
+
+	/* ── Status indicators ── */
+	.ue-status-dot {
+		display: inline-block;
+		width: 8px; height: 8px;
+		border-radius: 50%;
+		margin-right: 0.3rem;
+	}
+
+	/* ── Accounts list ── */
+	.ue-acc-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+	.ue-acc-item {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.6rem 1rem;
+		border: 1px solid var(--ue-border);
+		border-radius: 8px;
+		font-size: 0.82rem;
+		transition: background 0.15s;
+	}
+	.ue-acc-item:hover { background: rgba(0,0,0,0.01); }
+	.ue-acc-info { display: flex; align-items: center; gap: 0.8rem; }
+	.ue-acc-login { font-weight: 700; }
+	.ue-acc-badge {
+		font-size: 0.68rem;
+		font-weight: 600;
+		padding: 0.15rem 0.5rem;
+		border-radius: 4px;
+		background: rgba(59,130,246,0.1);
+		color: var(--ue-blue);
+	}
+	.ue-acc-host { font-size: 0.72rem; color: var(--ue-dim); }
+	.ue-acc-btn {
+		font-size: 0.72rem;
+		padding: 0.3rem 0.7rem;
+		background: var(--ue-dark);
+		color: #fff;
+		border: none;
+		border-radius: 6px;
+		text-decoration: none;
+		transition: opacity 0.2s;
+	}
+	.ue-acc-btn:hover { opacity: 0.85; color: #fff; }
+
+	/* ── Buttons ── */
+	.ue-actions {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-top: 1rem;
+	}
+	.ue-btn-save {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.65rem 2rem;
+		background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+		color: #fff;
+		border: none;
+		border-radius: 10px;
+		font-size: 0.9rem;
+		font-weight: 700;
+		cursor: pointer;
+		transition: all 0.25s;
+	}
+	.ue-btn-save:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 8px 24px rgba(139,92,246,0.3);
+	}
+	.ue-btn-back {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		font-size: 0.85rem;
+		color: var(--ue-dim);
+		text-decoration: none;
+	}
+	.ue-btn-back:hover { color: var(--ue-dark); }
+
+	.ue-danger-zone {
+		border-color: rgba(239,68,68,0.15);
+	}
+	.ue-danger-zone .ue-section-header {
+		color: var(--ue-red);
+	}
+	.ue-danger-actions {
+		display: flex;
+		gap: 0.6rem;
+		flex-wrap: wrap;
+	}
+	.ue-btn-danger {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		padding: 0.5rem 1rem;
+		border: 1px solid rgba(239,68,68,0.2);
+		border-radius: 8px;
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: var(--ue-red);
+		text-decoration: none;
+		background: none;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+	.ue-btn-danger:hover {
+		background: rgba(239,68,68,0.05);
+		border-color: var(--ue-red);
+		color: var(--ue-red);
+	}
+	.ue-btn-success {
+		border-color: rgba(22,163,74,0.2);
+		color: var(--ue-green);
+	}
+	.ue-btn-success:hover {
+		background: rgba(22,163,74,0.05);
+		border-color: var(--ue-green);
+		color: var(--ue-green);
+	}
+
+	@media(max-width: 640px) {
+		.ue-grid { grid-template-columns: 1fr; }
+		.ue-grid.cols-3 { grid-template-columns: 1fr; }
+		.ue-header { flex-direction: column; text-align: center; }
+	}
+</style>
+
+<div class="ue-wrap">
+	{# ═══ BREADCRUMB ═══ #}
+	<div class="ue-breadcrumb">
+		<a href="{{ path('app_user_index') }}"><i class="fas fa-users"></i> User Management</a>
+		<span class="sep">/</span>
+		<span class="current">#{{ user.id }} {{ user.firstname }} {{ user.lastname }}</span>
+	</div>
+
+	{# ═══ FLASH MESSAGES ═══ #}
+	{% for message in app.flashes('success') %}
+		<div class="ue-flash success">
+			<i class="fas fa-check-circle"></i> {{ message }}
+		</div>
+	{% endfor %}
+
+	{# ═══ USER HEADER ═══ #}
+	<div class="ue-header">
+		<div class="ue-avatar">{{ user.firstname|first|upper }}{{ user.lastname|first|upper }}</div>
+		<div class="ue-header-info">
+			<h1>{{ user.firstname }} {{ user.lastname }}</h1>
+			<div class="ue-header-meta">
+				<span><i class="fas fa-hashtag"></i> ID {{ user.id }}</span>
+				<span><i class="fas fa-at"></i> {{ user.username }}</span>
+				<span><i class="fas fa-envelope"></i> {{ user.email }}</span>
+				<span><i class="fas fa-calendar"></i> Seit {{ user.createdAt ? user.createdAt|date('d.m.Y') : '-' }}</span>
+			</div>
+		</div>
+	</div>
+
+	<form method="post" action="{{ path('app_user_edit', {'id': user.id}) }}">
+		{# ═══ PERSÖNLICHE DATEN ═══ #}
+		<div class="ue-section">
+			<div class="ue-section-header"><i class="fas fa-user"></i> Persönliche Daten</div>
+			<div class="ue-section-body">
+				<div class="ue-grid">
+					<div class="ue-field">
+						<label class="ue-label">Vorname <span class="db-col">firstname</span></label>
+						<input type="text" name="firstname" value="{{ user.firstname }}" class="ue-input" required>
+					</div>
+					<div class="ue-field">
+						<label class="ue-label">Nachname <span class="db-col">lastname</span></label>
+						<input type="text" name="lastname" value="{{ user.lastname }}" class="ue-input" required>
+					</div>
+					<div class="ue-field">
+						<label class="ue-label">Username <span class="db-col">username</span></label>
+						<input type="text" name="username" value="{{ user.username }}" class="ue-input" required>
+					</div>
+					<div class="ue-field">
+						<label class="ue-label">Email <span class="db-col">email</span></label>
+						<input type="email" name="email" value="{{ user.email }}" class="ue-input" required>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		{# ═══ SICHERHEIT ═══ #}
+		<div class="ue-section">
+			<div class="ue-section-header"><i class="fas fa-shield-alt"></i> Sicherheit & Zugang</div>
+			<div class="ue-section-body">
+				<div class="ue-grid">
+					<div class="ue-field">
+						<label class="ue-label">Neues Passwort <span class="db-col">password</span></label>
+						<input type="password" name="new_password" placeholder="Leer lassen = unverändert" class="ue-input" autocomplete="new-password">
+					</div>
+					<div class="ue-field">
+						<label class="ue-label">Email verifiziert <span class="db-col">email_verified</span></label>
+						<select name="email_verified" class="ue-input">
+							<option value="1" {% if user.emailVerified %}selected{% endif %}>Ja</option>
+							<option value="0" {% if not user.emailVerified %}selected{% endif %}>Nein</option>
+						</select>
+					</div>
+					<div class="ue-field full">
+						<label class="ue-label">Rollen <span class="db-col">roles (JSON)</span></label>
+						<div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.3rem;">
+							<label style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;cursor:pointer;">
+								<input type="checkbox" name="roles[]" value="ROLE_USER" {% if 'ROLE_USER' in user.roles %}checked{% endif %}> ROLE_USER
+							</label>
+							<label style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;cursor:pointer;">
+								<input type="checkbox" name="roles[]" value="ROLE_ADMIN" {% if 'ROLE_ADMIN' in user.roles %}checked{% endif %}> ROLE_ADMIN
+							</label>
+							<label style="display:flex;align-items:center;gap:0.4rem;font-size:0.82rem;cursor:pointer;">
+								<input type="checkbox" name="roles[]" value="ROLE_MODERATOR" {% if 'ROLE_MODERATOR' in user.roles %}checked{% endif %}> ROLE_MODERATOR
+							</label>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		{# ═══ SUBSCRIPTION ═══ #}
+		<div class="ue-section">
+			<div class="ue-section-header"><i class="fas fa-credit-card"></i> Subscription & Limits</div>
+			<div class="ue-section-body">
+				<div class="ue-grid cols-3">
+					<div class="ue-field">
+						<label class="ue-label">Status <span class="db-col">subscription_status</span></label>
+						<select name="subscription_status" class="ue-input">
+							<option value="inactive" {% if user.subscriptionStatus == 'inactive' %}selected{% endif %}>Inactive</option>
+							<option value="active" {% if user.subscriptionStatus == 'active' %}selected{% endif %}>Active</option>
+							<option value="trial" {% if user.subscriptionStatus == 'trial' %}selected{% endif %}>Trial</option>
+							<option value="deactivated" {% if user.subscriptionStatus == 'deactivated' %}selected{% endif %}>Deactivated</option>
+							<option value="cancelled" {% if user.subscriptionStatus == 'cancelled' %}selected{% endif %}>Cancelled</option>
+						</select>
+					</div>
+					<div class="ue-field">
+						<label class="ue-label">Sub Ende <span class="db-col">subscription_end_at</span></label>
+						<input type="datetime-local" name="subscription_end_at" value="{{ user.subscriptionEndAt ? user.subscriptionEndAt|date('Y-m-d\\TH:i') : '' }}" class="ue-input">
+					</div>
+					<div class="ue-field">
+						<label class="ue-label">Max Accounts <span class="db-col">max_accounts</span></label>
+						<input type="number" name="max_accounts" value="{{ user.maxAccounts }}" class="ue-input" min="0">
+					</div>
+					<div class="ue-field">
+						<label class="ue-label">Stripe Customer ID <span class="db-col">stripe_customer_id</span></label>
+						<input type="text" value="{{ user.stripeCustomerId }}" class="ue-input" readonly>
+					</div>
+					<div class="ue-field">
+						<label class="ue-label">Affiliate Code <span class="db-col">affiliate_code</span></label>
+						<input type="text" name="affiliate_code" value="{{ user.affiliateCode }}" class="ue-input">
+					</div>
+				</div>
+
+				{% if subscription is defined and subscription %}
+					<div style="margin-top:1.2rem;padding-top:1rem;border-top:1px solid var(--ue-border);">
+						<div class="ue-label" style="margin-bottom:0.6rem;">Subscription Details (aus Subscription-Tabelle)</div>
+						<div class="ue-grid cols-3">
+							<div style="font-size:0.8rem;">
+								<span style="color:var(--ue-dim);">Period Start:</span><br>
+								<strong>{{ subscription.currentPeriodStart ? subscription.currentPeriodStart|date('d.m.Y H:i') : '-' }}</strong>
+							</div>
+							<div style="font-size:0.8rem;">
+								<span style="color:var(--ue-dim);">Period End:</span><br>
+								<strong>{{ subscription.currentPeriodEnd ? subscription.currentPeriodEnd|date('d.m.Y H:i') : '-' }}</strong>
+							</div>
+							<div style="font-size:0.8rem;">
+								<span style="color:var(--ue-dim);">Trial End:</span><br>
+								<strong>{{ subscription.trialEnd ? subscription.trialEnd|date('d.m.Y H:i') : '-' }}</strong>
+							</div>
+						</div>
+					</div>
+				{% endif %}
+			</div>
+		</div>
+
+		{# ═══ EINSTELLUNGEN ═══ #}
+		<div class="ue-section">
+			<div class="ue-section-header"><i class="fas fa-cog"></i> Einstellungen</div>
+			<div class="ue-section-body">
+				<div class="ue-grid cols-3">
+					<div class="ue-field">
+						<label class="ue-label">Sprache <span class="db-col">language</span></label>
+						<select name="language" class="ue-input">
+							<option value="de" {% if user.language == 'de' %}selected{% endif %}>Deutsch</option>
+							<option value="en" {% if user.language == 'en' %}selected{% endif %}>English</option>
+						</select>
+					</div>
+					<div class="ue-field">
+						<label class="ue-label">Theme <span class="db-col">darkmode</span></label>
+						<select name="darkmode" class="ue-input">
+							<option value="0" {% if not user.darkmode %}selected{% endif %}>Lightmode</option>
+							<option value="1" {% if user.darkmode %}selected{% endif %}>Darkmode</option>
+						</select>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		{# ═══ TIMESTAMPS (readonly) ═══ #}
+		<div class="ue-section">
+			<div class="ue-section-header"><i class="fas fa-clock"></i> Timestamps</div>
+			<div class="ue-section-body">
+				<div class="ue-grid cols-3">
+					<div class="ue-field">
+						<label class="ue-label">Erstellt <span class="db-col">created_at</span></label>
+						<input type="text" value="{{ user.createdAt ? user.createdAt|date('d.m.Y H:i:s') : '-' }}" class="ue-input" readonly>
+					</div>
+					<div class="ue-field">
+						<label class="ue-label">Aktualisiert <span class="db-col">updated_at</span></label>
+						<input type="text" value="{{ user.updatedAt ? user.updatedAt|date('d.m.Y H:i:s') : '-' }}" class="ue-input" readonly>
+					</div>
+					<div class="ue-field">
+						<label class="ue-label">Letzter Login <span class="db-col">last_login</span></label>
+						<input type="text" value="{{ user.lastLogin ? user.lastLogin|date('d.m.Y H:i:s') : 'Nie' }}" class="ue-input" readonly>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		{# ═══ SAVE ═══ #}
+		<div class="ue-actions">
+			<a href="{{ path('app_user_index') }}" class="ue-btn-back"><i class="fas fa-arrow-left"></i> Zurück</a>
+			<button type="submit" class="ue-btn-save"><i class="fas fa-save"></i> Änderungen speichern</button>
+		</div>
+	</form>
+
+	{# ═══ ACCOUNTS ═══ #}
+	{% if user.accounts|length > 0 %}
+		<div class="ue-section" style="margin-top:1.5rem;">
+			<div class="ue-section-header"><i class="fas fa-server"></i> Trading Accounts ({{ user.accounts|length }}/{{ user.maxAccounts }})</div>
+			<div class="ue-section-body">
+				<div class="ue-acc-list">
+					{% for acc in user.accounts %}
+						<div class="ue-acc-item">
+							<div class="ue-acc-info">
+								<span class="ue-acc-login">{{ acc.login }}</span>
+								<span class="ue-acc-badge">{{ acc.platform }}</span>
+								<span class="ue-acc-host">{{ acc.host }}</span>
+								{% if acc.tradeServer %}
+									<span style="font-size:0.7rem;color:var(--ue-dim);">{{ acc.tradeServer }}</span>
+								{% endif %}
+								{% if acc.error %}
+									<span style="font-size:0.7rem;color:var(--ue-red);">{{ acc.error }}</span>
+								{% endif %}
+							</div>
+							<a href="/account/{{ acc.metaId }}" target="_blank" class="ue-acc-btn">
+								<i class="fas fa-external-link-alt"></i> Open
+							</a>
+						</div>
+					{% endfor %}
+				</div>
+			</div>
+		</div>
+	{% endif %}
+
+	{# ═══ DANGER ZONE ═══ #}
+	<div class="ue-section ue-danger-zone" style="margin-top:1.5rem;">
+		<div class="ue-section-header"><i class="fas fa-exclamation-triangle"></i> Danger Zone</div>
+		<div class="ue-section-body">
+			<div class="ue-danger-actions">
+				<a href="{{ path('app_user_reset_password', {'id': user.id}) }}" class="ue-btn-danger">
+					<i class="fas fa-key"></i> Passwort zurücksetzen
+				</a>
+				{% if user.subscriptionStatus == 'deactivated' %}
+					<a href="{{ path('app_user_activate', {'id': user.id}) }}" class="ue-btn-danger ue-btn-success">
+						<i class="fas fa-play"></i> Trading aktivieren
+					</a>
+				{% else %}
+					<a href="{{ path('app_user_deactivate', {'id': user.id}) }}" class="ue-btn-danger">
+						<i class="fas fa-ban"></i> Trading sperren
+					</a>
+				{% endif %}
+			</div>
+		</div>
+	</div>
+</div>
 {% endblock %}

@@ -1,0 +1,439 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Admin Helpdesk{% endblock %}
+
+{% block body %}
+<style>
+	:root {
+		--hd-card: #ffffff;
+		--hd-dark: #0f172a;
+		--hd-dim: #64748b;
+		--hd-border: rgba(0,0,0,0.06);
+		--hd-green: #16a34a;
+		--hd-blue: #3b82f6;
+		--hd-purple: #8b5cf6;
+		--hd-amber: #f59e0b;
+		--hd-red: #ef4444;
+		--hd-cyan: #06b6d4;
+		--hd-radius: 16px;
+	}
+	.adm-wrap {
+		max-width: 1200px;
+		margin: 0 auto;
+		padding: 2rem 1.5rem 4rem;
+	}
+
+	/* ── Header ── */
+	.adm-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 2rem;
+		flex-wrap: wrap;
+		gap: 1rem;
+	}
+	.adm-header h1 {
+		font-size: 1.8rem;
+		font-weight: 800;
+		color: var(--hd-dark);
+		margin: 0;
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+	}
+	.adm-header h1 i { color: var(--hd-green); font-size: 1.4rem; }
+
+	/* ── Stats Grid ── */
+	.adm-stats {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+		gap: 1rem;
+		margin-bottom: 2rem;
+	}
+	.adm-stat {
+		background: var(--hd-card);
+		border: 1px solid var(--hd-border);
+		border-radius: 14px;
+		padding: 1.2rem 1.3rem;
+		position: relative;
+		overflow: hidden;
+	}
+	.adm-stat::after {
+		content: '';
+		position: absolute;
+		top: 0; left: 0;
+		width: 4px;
+		height: 100%;
+		border-radius: 4px 0 0 4px;
+	}
+	.adm-stat.s-total::after { background: var(--hd-blue); }
+	.adm-stat.s-open::after { background: var(--hd-green); }
+	.adm-stat.s-progress::after { background: var(--hd-amber); }
+	.adm-stat.s-closed::after { background: var(--hd-dim); }
+	.adm-stat.s-today::after { background: var(--hd-purple); }
+	.adm-stat.s-response::after { background: var(--hd-cyan); }
+
+	.adm-stat-label {
+		font-size: 0.72rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		color: var(--hd-dim);
+		margin-bottom: 0.4rem;
+	}
+	.adm-stat-value {
+		font-size: 1.8rem;
+		font-weight: 800;
+		color: var(--hd-dark);
+		line-height: 1;
+	}
+	.adm-stat-icon {
+		position: absolute;
+		top: 1rem;
+		right: 1rem;
+		font-size: 1.2rem;
+		opacity: 0.15;
+		color: var(--hd-dark);
+	}
+
+	/* ── Filter Tabs ── */
+	.adm-filters {
+		display: flex;
+		gap: 0.5rem;
+		margin-bottom: 1.2rem;
+		flex-wrap: wrap;
+	}
+	.adm-filter-btn {
+		padding: 0.45rem 1rem;
+		border: 1px solid var(--hd-border);
+		border-radius: 8px;
+		background: var(--hd-card);
+		color: var(--hd-dim);
+		font-size: 0.8rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: all 0.2s;
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+	.adm-filter-btn:hover { border-color: var(--hd-green); color: var(--hd-green); }
+	.adm-filter-btn.active {
+		background: var(--hd-dark);
+		color: #fff;
+		border-color: var(--hd-dark);
+	}
+	.adm-filter-badge {
+		font-size: 0.65rem;
+		background: rgba(0,0,0,0.08);
+		padding: 0.1rem 0.4rem;
+		border-radius: 4px;
+	}
+	.adm-filter-btn.active .adm-filter-badge {
+		background: rgba(255,255,255,0.2);
+	}
+
+	/* ── Ticket Table ── */
+	.adm-table-wrap {
+		background: var(--hd-card);
+		border: 1px solid var(--hd-border);
+		border-radius: var(--hd-radius);
+		overflow: hidden;
+	}
+	.adm-table {
+		width: 100%;
+		border-collapse: collapse;
+	}
+	.adm-table thead th {
+		font-size: 0.7rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+		color: var(--hd-dim);
+		padding: 0.9rem 1.2rem;
+		border-bottom: 1px solid var(--hd-border);
+		text-align: left;
+		white-space: nowrap;
+	}
+	.adm-table tbody tr {
+		transition: background 0.15s;
+		border-bottom: 1px solid var(--hd-border);
+	}
+	.adm-table tbody tr:last-child { border-bottom: none; }
+	.adm-table tbody tr:hover { background: rgba(0,0,0,0.015); }
+	.adm-table tbody td {
+		padding: 0.85rem 1.2rem;
+		font-size: 0.85rem;
+		color: var(--hd-dark);
+		vertical-align: middle;
+	}
+
+	/* Status dots */
+	.adm-status {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.75rem;
+		font-weight: 600;
+		padding: 0.25rem 0.7rem;
+		border-radius: 6px;
+	}
+	.adm-status .dot {
+		width: 7px;
+		height: 7px;
+		border-radius: 50%;
+	}
+	.adm-status.open { background: rgba(22,163,74,0.1); color: var(--hd-green); }
+	.adm-status.open .dot { background: var(--hd-green); box-shadow: 0 0 6px rgba(22,163,74,0.5); }
+	.adm-status.in_progress { background: rgba(245,158,11,0.1); color: var(--hd-amber); }
+	.adm-status.in_progress .dot { background: var(--hd-amber); }
+	.adm-status.closed { background: rgba(100,116,139,0.08); color: var(--hd-dim); }
+	.adm-status.closed .dot { background: var(--hd-dim); }
+
+	.adm-user-cell {
+		display: flex;
+		flex-direction: column;
+	}
+	.adm-user-name { font-weight: 600; font-size: 0.85rem; }
+	.adm-user-email { font-size: 0.72rem; color: var(--hd-dim); }
+
+	.adm-ticket-title {
+		font-weight: 600;
+		color: var(--hd-dark);
+		max-width: 250px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		display: block;
+	}
+	.adm-ticket-id { font-size: 0.7rem; color: var(--hd-dim); }
+
+	.adm-last-reply {
+		font-size: 0.78rem;
+		color: var(--hd-dim);
+	}
+	.adm-last-reply strong { color: var(--hd-dark); font-weight: 600; font-size: 0.8rem; }
+
+	.adm-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+	.adm-select {
+		font-size: 0.72rem;
+		padding: 0.3rem 0.5rem;
+		border: 1px solid var(--hd-border);
+		border-radius: 6px;
+		background: #fff;
+		cursor: pointer;
+	}
+	.adm-btn-view {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		padding: 0.35rem 0.8rem;
+		background: var(--hd-dark);
+		color: #fff;
+		border: none;
+		border-radius: 7px;
+		font-size: 0.72rem;
+		font-weight: 600;
+		text-decoration: none;
+		transition: opacity 0.2s;
+	}
+	.adm-btn-view:hover { opacity: 0.85; color: #fff; }
+	.adm-btn-del {
+		background: none;
+		border: 1px solid rgba(239,68,68,0.15);
+		color: var(--hd-red);
+		border-radius: 6px;
+		padding: 0.3rem 0.5rem;
+		font-size: 0.68rem;
+		cursor: pointer;
+		transition: all 0.2s;
+	}
+	.adm-btn-del:hover { background: rgba(239,68,68,0.05); }
+
+	.adm-priority-dot {
+		display: inline-block;
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		margin-right: 0.3rem;
+	}
+
+	.adm-empty {
+		text-align: center;
+		padding: 3rem;
+		color: var(--hd-dim);
+	}
+
+	@media(max-width: 900px) {
+		.adm-table thead { display: none; }
+		.adm-table tbody tr {
+			display: block;
+			padding: 1rem;
+			border-bottom: 1px solid var(--hd-border);
+		}
+		.adm-table tbody td {
+			display: flex;
+			justify-content: space-between;
+			padding: 0.3rem 0;
+			border: none;
+		}
+		.adm-table tbody td::before {
+			content: attr(data-label);
+			font-weight: 600;
+			font-size: 0.72rem;
+			color: var(--hd-dim);
+			text-transform: uppercase;
+		}
+	}
+</style>
+
+<div class="adm-wrap">
+	{# ═══ HEADER ═══ #}
+	<div class="adm-header">
+		<h1><i class="fas fa-headset"></i> Admin Helpdesk</h1>
+	</div>
+
+	{# ═══ STATS ═══ #}
+	<div class="adm-stats">
+		<div class="adm-stat s-total">
+			<div class="adm-stat-label">Gesamt Tickets</div>
+			<div class="adm-stat-value">{{ stats.total }}</div>
+			<div class="adm-stat-icon"><i class="fas fa-ticket-alt"></i></div>
+		</div>
+		<div class="adm-stat s-open">
+			<div class="adm-stat-label">Offen</div>
+			<div class="adm-stat-value">{{ stats.open }}</div>
+			<div class="adm-stat-icon"><i class="fas fa-envelope-open"></i></div>
+		</div>
+		<div class="adm-stat s-progress">
+			<div class="adm-stat-label">In Bearbeitung</div>
+			<div class="adm-stat-value">{{ stats.in_progress }}</div>
+			<div class="adm-stat-icon"><i class="fas fa-spinner"></i></div>
+		</div>
+		<div class="adm-stat s-closed">
+			<div class="adm-stat-label">Geschlossen</div>
+			<div class="adm-stat-value">{{ stats.closed }}</div>
+			<div class="adm-stat-icon"><i class="fas fa-check-circle"></i></div>
+		</div>
+		<div class="adm-stat s-today">
+			<div class="adm-stat-label">Heute neu</div>
+			<div class="adm-stat-value">{{ stats.today }}</div>
+			<div class="adm-stat-icon"><i class="fas fa-calendar-day"></i></div>
+		</div>
+		<div class="adm-stat s-response">
+			<div class="adm-stat-label">&empty; Antwortzeit</div>
+			<div class="adm-stat-value">{{ stats.avg_response_hours }}h</div>
+			<div class="adm-stat-icon"><i class="fas fa-clock"></i></div>
+		</div>
+	</div>
+
+	{# ═══ FILTERS ═══ #}
+	<div class="adm-filters">
+		<button class="adm-filter-btn active" data-filter="all">
+			Alle <span class="adm-filter-badge">{{ stats.total }}</span>
+		</button>
+		<button class="adm-filter-btn" data-filter="open">
+			<span class="adm-priority-dot" style="background:var(--hd-green);"></span>
+			Offen <span class="adm-filter-badge">{{ stats.open }}</span>
+		</button>
+		<button class="adm-filter-btn" data-filter="in_progress">
+			<span class="adm-priority-dot" style="background:var(--hd-amber);"></span>
+			In Bearbeitung <span class="adm-filter-badge">{{ stats.in_progress }}</span>
+		</button>
+		<button class="adm-filter-btn" data-filter="closed">
+			<span class="adm-priority-dot" style="background:var(--hd-dim);"></span>
+			Geschlossen <span class="adm-filter-badge">{{ stats.closed }}</span>
+		</button>
+	</div>
+
+	{# ═══ TICKET TABLE ═══ #}
+	<div class="adm-table-wrap">
+		<table class="adm-table">
+			<thead>
+				<tr>
+					<th>Ticket</th>
+					<th>Kunde</th>
+					<th>Status</th>
+					<th>Erstellt</th>
+					<th>Letzte Antwort</th>
+					<th>Aktionen</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for ticket in tickets %}
+					<tr data-status="{{ ticket.status }}">
+						<td data-label="Ticket">
+							<span class="adm-ticket-title">{{ ticket.title }}</span>
+							<span class="adm-ticket-id">#{{ ticket.id }}</span>
+						</td>
+						<td data-label="Kunde">
+							<div class="adm-user-cell">
+								<span class="adm-user-name">{{ ticket.user.firstname }} {{ ticket.user.lastname }}</span>
+								<span class="adm-user-email">{{ ticket.user.username }}</span>
+							</div>
+						</td>
+						<td data-label="Status">
+							<span class="adm-status {{ ticket.status }}">
+								<span class="dot"></span>
+								{% if ticket.status == 'open' %}Offen{% elseif ticket.status == 'in_progress' %}In Bearbeitung{% else %}Geschlossen{% endif %}
+							</span>
+						</td>
+						<td data-label="Erstellt">
+							{{ ticket.createdAt|date('d.m.Y') }}<br>
+							<span style="font-size:0.7rem;color:var(--hd-dim);">{{ ticket.createdAt|date('H:i') }}</span>
+						</td>
+						<td data-label="Letzte Antwort">
+							{% if ticket.latestComment %}
+								<div class="adm-last-reply">
+									<strong>{{ ticket.latestComment.user.firstname }}</strong><br>
+									{{ ticket.latestComment.createdAt|date('d.m.Y H:i') }}
+								</div>
+							{% else %}
+								<span style="font-size:0.75rem;color:var(--hd-red);font-weight:600;">Keine Antwort</span>
+							{% endif %}
+						</td>
+						<td data-label="Aktionen">
+							<div class="adm-actions">
+								<form action="{{ path('app_helpdesk_change_state', {'id': ticket.id}) }}" method="POST" style="display:inline;">
+									<select name="state" onchange="this.form.submit()" class="adm-select">
+										<option value="open" {% if ticket.status == 'open' %}selected{% endif %}>Offen</option>
+										<option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>In Bearbeitung</option>
+										<option value="closed" {% if ticket.status == 'closed' %}selected{% endif %}>Geschlossen</option>
+									</select>
+								</form>
+								<a href="{{ path('app_helpdesk_show', {'id': ticket.id}) }}" class="adm-btn-view">
+									<i class="fas fa-eye"></i> Ansehen
+								</a>
+								<form action="{{ path('app_helpdesk_delete', {'id': ticket.id}) }}" method="POST" style="display:inline;" onsubmit="return confirm('Ticket #{{ ticket.id }} wirklich löschen?');">
+									<button type="submit" class="adm-btn-del"><i class="fas fa-trash-alt"></i></button>
+								</form>
+							</div>
+						</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+</div>
+
+<script>
+document.querySelectorAll('.adm-filter-btn').forEach(function(btn) {
+	btn.addEventListener('click', function() {
+		document.querySelectorAll('.adm-filter-btn').forEach(function(b) { b.classList.remove('active'); });
+		btn.classList.add('active');
+		var filter = btn.getAttribute('data-filter');
+		document.querySelectorAll('.adm-table tbody tr').forEach(function(row) {
+			if (filter === 'all' || row.getAttribute('data-status') === filter) {
+				row.style.display = '';
+			} else {
+				row.style.display = 'none';
+			}
+		});
+	});
+});
+</script>
+{% endblock %}

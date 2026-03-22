@@ -1,0 +1,18 @@
+{
+  "name": "elvtd",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "ws": "node ws-server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@himalaya-quant/ctrader-x": "^0.0.24",
+    "protobufjs": "^8.0.0",
+    "ws": "^8.19.0"
+  }
+}

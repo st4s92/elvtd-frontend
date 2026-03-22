@@ -20,19 +20,23 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Session\Flash\FlashBagInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Core\Security;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class AgentController extends AbstractController
 {
     private FlashBagInterface $flashBag;
     private UrlGeneratorInterface $urlGenerator;
+    private HttpClientInterface $httpClient;
 
     public function __construct(MetaApiClient $metaApiClient,
                                 FlashBagInterface $flashBag,
-                                UrlGeneratorInterface $urlGenerator
+                                UrlGeneratorInterface $urlGenerator,
+                                HttpClientInterface $httpClient
     )
     {
         $this->flashBag = $flashBag;
         $this->urlGenerator = $urlGenerator;
+        $this->httpClient = $httpClient;
     }
 
     /**
@@ -113,11 +117,31 @@ class AgentController extends AbstractController
                 ];
             }
         }
+        // Master Trades abrufen (Account ID 120) — alle Orders
+        $masterTrades = [];
+        $masterTradesTotal = 0;
+        try {
+            $apiUrl = 'http://65.108.60.88:5021/api/trader/orders/paginated?PerPage=1000&Page=1&SortBy=order_open_at&SortOrder=desc&AccountId=120';
+            $response = $this->httpClient->request('GET', $apiUrl);
+            if ($response->getStatusCode() === 200) {
+                $content = $response->toArray();
+                if (isset($content['data']['data'])) {
+                    $masterTrades = $content['data']['data'];
+                    $masterTradesTotal = $content['data']['total'] ?? count($masterTrades);
+                }
+            }
+        } catch (\Exception $e) {
+            // Silently handle
+        }
+
         return $this->render('agent/index.html.twig', [
             'accounts' => $accounts,
             'agents' => $agents,
             'user_accounts' => $userAccounts,
             'account_agent_connections' => $accountAgentConnections,
+            'master_trades' => $masterTrades,
+            'master_trades_total' => $masterTradesTotal,
+            'master_account_login' => !empty($masterTrades[0]['account']['account_number']) ? $masterTrades[0]['account']['account_number'] : 0,
         ]);
     }
 
@@ -356,7 +380,7 @@ class AgentController extends AbstractController
                 }
             }
             elseif ($account->getHost() == 'denies') {
-                $masterId = ($account->getPlatform() === 'ctrader') ? 120 : 27;
+                $masterId = ($account->getPlatform() === 'ctrader') ? 120 : 120; // 27;
                 $deniesClient->updateSubscriber($account, $agent, $multiplier, $masterId);
             }
             else {

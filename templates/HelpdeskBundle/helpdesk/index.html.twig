@@ -1,68 +1,179 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Helpdesk - Tickets{% endblock %}
+{% block title %}Meine Tickets{% endblock %}
 
 {% block body %}
-    <div class="container">
-        <h3 class="mt-4 mb-4">Help Center</h3>
-        <div class="card">
-            <div class="card-header">
-                <h6 class="float-start">Deine Tickets</h6>
-                <a href="{{ path('app_helpdesk_new') }}" class="btn btn-primary float-end">Neues Ticket</a>
-            </div>
-            <table class="table table-responsive">
-                <thead>
-                <tr>
-                    <th>Titel</th>
-                    <th>Status</th>
-                    <th>Erstellt am</th>
-                    <th>Letzte Antwort von</th>
-                    <th></th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for ticket in tickets %}
-                    {% if ticket.status == 'closed' %}
-                    {% else %}
-                    <tr {% if ticket.status == 'closed' %}style="opacity: 0.2"{% endif %} {% if ticket.status == 'in_progress' %}style="opacity: 0.8"{% endif %}>
-                        <td>
-                            <strong>{{ ticket.title }}</strong><br>
-                            <small>{{ ticket.user.firstname }} {{ ticket.user.lastname }} ({{ ticket.user.username }})</small>
-                        </td>
-                        <td>
-                            {% if ticket.status == 'open' %}offen{% endif %}
-                            {% if ticket.status == 'in_progress' %}wird bearbeitet{% endif %}
-                            {% if ticket.status == 'closed' %}geschlossen{% endif %}
-                        </td>
-                        <td>{{ ticket.createdAt|date('d.m.Y H:i:s') }}</td>
-                        <td>
-                            {% if ticket.latestComment %} {# Use camelCase to match getLatestComment() #}
-                                {{ ticket.latestComment.user.firstname }} {{ ticket.latestComment.user.lastname }}<br>
-                            <small>{{ ticket.latestComment.createdAt|date('d.m.Y H:i:s') }}</small>
-                            {% else %}
-                                Keine Antwort
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if is_granted('ROLE_ADMIN') %}
-                                <form action="{{ path('app_helpdesk_change_state', {'id': ticket.id}) }}" method="POST" style="display:inline;">
-                                    <select name="state" onchange="this.form.submit()">
-                                        <option value="open" {% if ticket.status == 'open' %}selected{% endif %}>offen</option>
-                                        <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>wird bearbeitet</option>
-                                        <option value="closed" {% if ticket.status == 'closed' %}selected{% endif %}>geschlossen</option>
-                                    </select>
-                                </form>
-                                <form action="{{ path('app_helpdesk_delete', {'id': ticket.id}) }}" method="POST" style="display:inline;" onsubmit="return confirm('Bist du sicher, dass du dieses Ticket löschen möchtest?');">
-                                    <button type="submit" class="btn btn-sm btn-outline-none text-dark px-3 mb-0">Löschen</button>
-                                </form>
-                            {% endif %}
-                            <a href="{{ path('app_helpdesk_show', {'id': ticket.id}) }}" class="btn btn-sm btn-dark px-3 mb-0 float-end">Ansehen</a>
-                        </td>
-                    </tr>
-                    {% endif %}
-                {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+<style>
+	:root {
+		--hd-card: #ffffff;
+		--hd-dark: #0f172a;
+		--hd-dim: #64748b;
+		--hd-border: rgba(0,0,0,0.06);
+		--hd-green: #16a34a;
+		--hd-amber: #f59e0b;
+		--hd-red: #ef4444;
+		--hd-radius: 16px;
+	}
+	.hd-wrap {
+		max-width: 900px;
+		margin: 0 auto;
+		padding: 2rem 1.5rem 4rem;
+	}
+	.hd-section-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 1.5rem;
+		flex-wrap: wrap;
+		gap: 1rem;
+	}
+	.hd-section-title {
+		font-size: 1.5rem;
+		font-weight: 800;
+		color: var(--hd-dark);
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+	}
+	.hd-section-count {
+		font-size: 0.75rem;
+		font-weight: 700;
+		background: rgba(22,163,74,0.1);
+		color: var(--hd-green);
+		padding: 0.25rem 0.7rem;
+		border-radius: 20px;
+	}
+	.hd-btn-new {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.55rem 1.2rem;
+		background: linear-gradient(135deg, #16a34a, #22c55e);
+		color: #fff;
+		border: none;
+		border-radius: 10px;
+		font-size: 0.85rem;
+		font-weight: 600;
+		text-decoration: none;
+		transition: all 0.25s;
+	}
+	.hd-btn-new:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 6px 20px rgba(22,163,74,0.3);
+		color: #fff;
+	}
+	.hd-ticket-list {
+		background: var(--hd-card);
+		border: 1px solid var(--hd-border);
+		border-radius: var(--hd-radius);
+		overflow: hidden;
+	}
+	.hd-ticket-item {
+		display: flex;
+		align-items: center;
+		padding: 1rem 1.5rem;
+		border-bottom: 1px solid var(--hd-border);
+		transition: background 0.2s;
+		gap: 1rem;
+	}
+	.hd-ticket-item:last-child { border-bottom: none; }
+	.hd-ticket-item:hover { background: rgba(0,0,0,0.015); }
+
+	.hd-ticket-status {
+		width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+	}
+	.hd-ticket-status.open { background: var(--hd-green); box-shadow: 0 0 8px rgba(22,163,74,0.4); }
+	.hd-ticket-status.in_progress { background: var(--hd-amber); box-shadow: 0 0 8px rgba(245,158,11,0.4); }
+	.hd-ticket-status.closed { background: var(--hd-dim); }
+
+	.hd-ticket-info { flex: 1; min-width: 0; }
+	.hd-ticket-title-text {
+		font-weight: 600; color: var(--hd-dark); font-size: 0.9rem;
+		white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+	}
+	.hd-ticket-meta { font-size: 0.75rem; color: var(--hd-dim); margin-top: 0.15rem; }
+
+	.hd-ticket-badge {
+		font-size: 0.7rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 6px; white-space: nowrap;
+	}
+	.hd-ticket-badge.open { background: rgba(22,163,74,0.1); color: var(--hd-green); }
+	.hd-ticket-badge.in_progress { background: rgba(245,158,11,0.1); color: var(--hd-amber); }
+	.hd-ticket-badge.closed { background: rgba(100,116,139,0.1); color: var(--hd-dim); }
+
+	.hd-ticket-reply {
+		font-size: 0.75rem;
+		color: var(--hd-dim);
+		text-align: right;
+		min-width: 100px;
+	}
+	.hd-ticket-reply strong { color: var(--hd-dark); }
+
+	.hd-btn-view {
+		display: inline-flex; align-items: center; gap: 0.3rem;
+		padding: 0.4rem 0.9rem; background: var(--hd-dark); color: #fff;
+		border: none; border-radius: 8px; font-size: 0.75rem; font-weight: 600;
+		text-decoration: none; transition: opacity 0.2s;
+	}
+	.hd-btn-view:hover { opacity: 0.85; color: #fff; }
+
+	.hd-empty {
+		text-align: center; padding: 3rem; color: var(--hd-dim);
+	}
+	.hd-empty i { font-size: 2rem; margin-bottom: 0.5rem; display: block; opacity: 0.3; }
+
+	@media(max-width: 640px) {
+		.hd-ticket-item { flex-wrap: wrap; padding: 0.8rem 1rem; }
+		.hd-ticket-reply { display: none; }
+	}
+</style>
+
+<div class="hd-wrap">
+	<div class="hd-section-header">
+		<div class="hd-section-title">
+			Meine Tickets
+			{% if tickets|length > 0 %}
+				<span class="hd-section-count">{{ tickets|length }}</span>
+			{% endif %}
+		</div>
+		<a href="{{ path('app_helpdesk_new') }}" class="hd-btn-new">
+			<i class="fas fa-plus"></i> Neues Ticket
+		</a>
+	</div>
+
+	<div class="hd-ticket-list">
+		{% if tickets|length > 0 %}
+			{% for ticket in tickets %}
+				<div class="hd-ticket-item">
+					<div class="hd-ticket-status {{ ticket.status }}"></div>
+					<div class="hd-ticket-info">
+						<div class="hd-ticket-title-text">{{ ticket.title }}</div>
+						<div class="hd-ticket-meta">
+							#{{ ticket.id }} &middot; {{ ticket.createdAt|date('d.m.Y H:i') }}
+							{% if ticket.user is defined %}
+								&middot; {{ ticket.user.firstname }} {{ ticket.user.lastname }}
+							{% endif %}
+						</div>
+					</div>
+					<span class="hd-ticket-badge {{ ticket.status }}">
+						{% if ticket.status == 'open' %}Offen{% elseif ticket.status == 'in_progress' %}In Bearbeitung{% else %}Geschlossen{% endif %}
+					</span>
+					{% if ticket.latestComment is defined and ticket.latestComment %}
+						<div class="hd-ticket-reply">
+							<strong>{{ ticket.latestComment.user.firstname }}</strong><br>
+							{{ ticket.latestComment.createdAt|date('d.m.Y H:i') }}
+						</div>
+					{% endif %}
+					<a href="{{ path('app_helpdesk_show', {'id': ticket.id}) }}" class="hd-btn-view">
+						<i class="fas fa-eye"></i> Ansehen
+					</a>
+				</div>
+			{% endfor %}
+		{% else %}
+			<div class="hd-empty">
+				<i class="fas fa-ticket-alt"></i>
+				Noch keine Tickets vorhanden
+			</div>
+		{% endif %}
+	</div>
+</div>
 {% endblock %}
