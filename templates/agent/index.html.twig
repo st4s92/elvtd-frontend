@@ -743,11 +743,12 @@
 	.mo-chart-side {
 		position: relative;
 		overflow: hidden;
+		height: 600px;
 		border-right: 1px solid rgba(255, 255, 255, 0.05);
 	}
 	.mo-chart-side iframe {
-		width: 100%;
-		height: 100%;
+		width: 100% !important;
+		height: 100% !important;
 		border: none;
 	}
 	.mo-chart-header {
@@ -797,6 +798,8 @@
 	.mo-orders-side {
 		display: flex;
 		flex-direction: column;
+		overflow: hidden;
+		min-height: 0;
 	}
 	.mo-orders-header {
 		display: flex;
@@ -835,7 +838,7 @@
 		scrollbar-color: rgba(74, 222, 128, 0.3) rgba(255, 255, 255, 0.03);
 	}
 	.mo-orders-list::-webkit-scrollbar {
-		width: 6px;
+		width: 4px;
 	}
 	.mo-orders-list::-webkit-scrollbar-track {
 		background: rgba(255, 255, 255, 0.03);
@@ -1448,7 +1451,7 @@
 								{% if master_trades|length > 0 %}
 									{% for trade in master_trades %}
 										{% set is_open = trade.status != 700 %}
-										<div class="mo-order-item{{ is_open ? ' is-open' : '' }}" data-symbol="{{ trade.order_symbol|lower }}">
+										<div class="mo-order-item{{ is_open ? ' is-open' : '' }}" data-symbol="{{ trade.order_symbol|lower }}" data-entry="{{ trade.order_price }}" data-exit="{{ trade.order_close_price|default(0) }}" data-type="{{ trade.order_type }}" data-open-at="{{ trade.order_open_at|date('U') }}" data-close-at="{{ trade.order_close_at is defined and trade.order_close_at ? trade.order_close_at|date('U') : 0 }}" data-lot="{{ trade.order_lot }}" data-profit="{{ trade.order_profit }}" data-status="{{ trade.status }}">
 											<div class="mo-order-left">
 												<span class="mo-order-type {{ trade.order_type == 'DEAL_TYPE_BUY' ? 'buy' : 'sell' }}">
 													{{ trade.order_type == 'DEAL_TYPE_BUY' ? 'BUY' : 'SELL' }}
@@ -1491,6 +1494,13 @@
 													&euro;
 												</div>
 												<div class="mo-order-date">#{{ trade.order_ticket }}</div>
+												{% if is_granted('ROLE_ADMIN') %}
+													<form method="post" action="{{ path('app_admin_delete_order', {'orderId': trade.id}) }}" style="margin:0;" onsubmit="return confirm('Order #{{ trade.id }} ({{ trade.order_symbol }}) wirklich löschen?')">
+														<button type="submit" style="background:rgba(220,38,38,0.1);color:#dc2626;border:1px solid rgba(220,38,38,0.2);border-radius:6px;font-size:.6rem;font-weight:700;padding:2px 8px;cursor:pointer;margin-top:4px;transition:all .2s;" onmouseover="this.style.background='rgba(220,38,38,0.2)'" onmouseout="this.style.background='rgba(220,38,38,0.1)'">
+															<i class="fas fa-trash-alt" style="font-size:.55rem;margin-right:2px;"></i> DEL
+														</button>
+													</form>
+												{% endif %}
 											</div>
 										</div>
 									{% endfor %}

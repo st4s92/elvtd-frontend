@@ -426,6 +426,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 tvWidget = new TradingView.widget({
                     container: chartContainer,
                     locale: 'en',
+                    timezone: 'Europe/Berlin',
                     library_path: '/charting/charting_library/',
                     datafeed: datafeed,
                     symbol: sym,
@@ -612,6 +613,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 tvWidget = new TradingView.widget({
                     container: chartContainer,
                     locale: 'en',
+                    timezone: 'Europe/Berlin',
                     library_path: '/charting/charting_library/',
                     datafeed: datafeed,
                     symbol: sym,
@@ -847,6 +849,496 @@ document.addEventListener('DOMContentLoaded', function () {
 
             updateSubmitBtn();
 
+            // Beta-Hinweis für alle Order-Buttons
+            function showBetaPopup() {
+                alert('Diese Funktion befindet sich derzeit in der Beta-Phase und wird in Kürze freigeschaltet.');
+            }
+
+            if (submitBtn) submitBtn.addEventListener('click', function(e) { e.preventDefault(); showBetaPopup(); });
+            var mobileSell = document.getElementById('cmMobileSell');
+            var mobileBuy = document.getElementById('cmMobileBuy');
+            if (mobileSell) mobileSell.addEventListener('click', function(e) { e.preventDefault(); showBetaPopup(); });
+            if (mobileBuy) mobileBuy.addEventListener('click', function(e) { e.preventDefault(); showBetaPopup(); });
+
+            // ── Symbol Picker ──
+            var _symbolPickerOpen = false;
+            var _allSymbols = [];
+            var _symbolsLoaded = false;
+            var symbolBtn = document.getElementById('cmSymbolBtn');
+            var symbolDropdown = document.getElementById('cmSymbolDropdown');
+            var symbolSearch = document.getElementById('cmSymbolSearch');
+            var symbolList = document.getElementById('cmSymbolList');
+
+            function renderSymbolList(filter) {
+                if (!symbolList) return;
+                var f = (filter || '').toLowerCase();
+                var filtered = f ? _allSymbols.filter(function(s) { return s.toLowerCase().indexOf(f) >= 0; }) : _allSymbols;
+                var html = '';
+                var max = Math.min(filtered.length, 100);
+                for (var i = 0; i < max; i++) {
+                    var s = filtered[i];
+                    var isActive = s === sym;
+                    html += '<div class="cm-sym-item' + (isActive ? ' active' : '') + '" data-sym="' + s + '" style="padding:7px 10px;border-radius:8px;cursor:pointer;font-size:.82rem;font-weight:' + (isActive ? '700' : '500') + ';color:' + (isActive ? '#4a6cf7' : 'var(--txt,#2d3748)') + ';transition:background .1s;' + (isActive ? 'background:rgba(74,108,247,.08);' : '') + '">' + s + '</div>';
+                }
+                if (filtered.length === 0) {
+                    html = '<div style="padding:16px;text-align:center;color:#a0aec0;font-size:.8rem;">Kein Symbol gefunden</div>';
+                }
+                symbolList.innerHTML = html;
+
+                symbolList.querySelectorAll('.cm-sym-item').forEach(function(el) {
+                    el.addEventListener('mouseenter', function() { if (!el.classList.contains('active')) el.style.background = 'rgba(0,0,0,.04)'; });
+                    el.addEventListener('mouseleave', function() { if (!el.classList.contains('active')) el.style.background = ''; });
+                    el.addEventListener('click', function() {
+                        var newSym = el.getAttribute('data-sym');
+                        if (newSym && newSym !== sym) {
+                            sym = newSym;
+                            // Determine decimals for new symbol
+                            decimals = 5;
+                            if (/JPY/i.test(sym)) decimals = 3;
+                            if (/XAU|GOLD/i.test(sym)) decimals = 2;
+                            if (/BTC|XBT/i.test(sym)) decimals = 2;
+                            if (/US30|US100|US500|NAS|SPX|USTEC|DJ|DE40|DAX|GER|UK100|JP225|FRA/i.test(sym)) decimals = 2;
+
+                            document.getElementById('cmSymbol').textContent = sym;
+                            closeSymbolPicker();
+                            reloadChart();
+                        } else {
+                            closeSymbolPicker();
+                        }
+                    });
+                });
+            }
+
+            function openSymbolPicker() {
+                if (!symbolDropdown) return;
+                _symbolPickerOpen = true;
+                symbolDropdown.style.display = 'block';
+                if (symbolSearch) { symbolSearch.value = ''; symbolSearch.focus(); }
+
+                if (!_symbolsLoaded) {
+                    symbolList.innerHTML = '<div style="padding:16px;text-align:center;color:#a0aec0;font-size:.8rem;"><div class="ai-spinner" style="width:20px;height:20px;border:2px solid rgba(0,0,0,.1);border-top-color:#4a6cf7;border-radius:50%;animation:ai-spin .8s linear infinite;display:inline-block;vertical-align:middle;margin-right:8px;"></div>Symbole werden geladen...</div>';
+                    window._onSymbolsLoaded = function(symbols) {
+                        _allSymbols = symbols;
+                        _symbolsLoaded = true;
+                        renderSymbolList('');
+                    };
+                    ensureTickWs(function(ready) {
+                        if (ready && _tickWs) {
+                            _tickWs.send(JSON.stringify({ type: 'getSymbols' }));
+                        }
+                    });
+                } else {
+                    renderSymbolList('');
+                }
+            }
+
+            function closeSymbolPicker() {
+                if (!symbolDropdown) return;
+                _symbolPickerOpen = false;
+                symbolDropdown.style.display = 'none';
+            }
+
+            if (symbolBtn) {
+                symbolBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    if (_symbolPickerOpen) closeSymbolPicker();
+                    else openSymbolPicker();
+                });
+            }
+
+            if (symbolSearch) {
+                symbolSearch.addEventListener('input', function() {
+                    renderSymbolList(symbolSearch.value);
+                });
+                symbolSearch.addEventListener('click', function(e) { e.stopPropagation(); });
+            }
+
+            if (symbolDropdown) {
+                symbolDropdown.addEventListener('click', function(e) { e.stopPropagation(); });
+            }
+
+            document.addEventListener('click', function() {
+                if (_symbolPickerOpen) closeSymbolPicker();
+            });
+
+            // ── Volumetric Order Flow Structure (ELVTD Depth Zones) ──
+            function drawOrderFlowStructure(chart, collectedBars) {
+                window._drawOrderFlowStructure = drawOrderFlowStructure;
+                window._collectedBarsRef = collectedBars;
+                var BULL = '#089981', BEAR = '#f23645', POC_C = '#ff9800';
+                var pivotLen = 3, maxObs = 5, profileRows = 15, baseTr = 80;
+
+                // Deduplicate and sort
+                var seen = {};
+                var bars = [];
+                collectedBars.forEach(function(b) { if (!seen[b.time]) { seen[b.time] = true; bars.push(b); } });
+                bars.sort(function(a, b) { return a.time - b.time; });
+                if (bars.length < pivotLen * 2 + 10) return [];
+
+                var barInt = bars.length > 1 ? (bars[bars.length - 1].time - bars[bars.length - 2].time) / 1000 : 900;
+                var lastBarTime = bars[bars.length - 1].time / 1000;
+                var shapes = [];
+
+                // ATR
+                function calcATR(idx, period) {
+                    var sum = 0, n = 0;
+                    for (var i = Math.max(1, idx - period + 1); i <= idx; i++) {
+                        sum += Math.max(bars[i].high - bars[i].low, Math.abs(bars[i].high - bars[i-1].close), Math.abs(bars[i].low - bars[i-1].close));
+                        n++;
+                    }
+                    return n > 0 ? sum / n : bars[idx].high - bars[idx].low;
+                }
+
+                // Max volume in last 200 bars (for manipulation bubble sizing)
+                var maxVolLookback = 0;
+                for (var i = Math.max(0, bars.length - 200); i < bars.length; i++) {
+                    if ((bars[i].volume || 0) > maxVolLookback) maxVolLookback = bars[i].volume;
+                }
+
+                // ── Pivot Detection ──
+                var pivots = [];
+                for (var i = pivotLen; i < bars.length - pivotLen; i++) {
+                    var isPH = true, isPL = true;
+                    for (var j = 1; j <= pivotLen; j++) {
+                        if (bars[i].high <= bars[i-j].high || bars[i].high <= bars[i+j].high) isPH = false;
+                        if (bars[i].low >= bars[i-j].low || bars[i].low >= bars[i+j].low) isPL = false;
+                    }
+                    if (isPH) pivots.push({ type: 'high', price: bars[i].high, idx: i, at: i + pivotLen });
+                    if (isPL) pivots.push({ type: 'low', price: bars[i].low, idx: i, at: i + pivotLen });
+                }
+                pivots.sort(function(a, b) { return a.at - b.at; });
+
+                // ── Structure Break Detection ──
+                var lastPH = null, lastPL = null, trend = 0, pIdx = 0;
+                var breaks = [];
+
+                for (var i = 0; i < bars.length; i++) {
+                    while (pIdx < pivots.length && pivots[pIdx].at <= i) {
+                        if (pivots[pIdx].type === 'high') lastPH = pivots[pIdx];
+                        else lastPL = pivots[pIdx];
+                        pIdx++;
+                    }
+                    if (lastPH && i > 0 && bars[i].close > lastPH.price && bars[i-1].close <= lastPH.price) {
+                        breaks.push({ level: lastPH.price, pivIdx: lastPH.idx, brkIdx: i, label: trend === -1 ? 'CHoCH' : 'BOS', bull: true });
+                        trend = 1; lastPH = null;
+                    }
+                    if (lastPL && i > 0 && bars[i].close < lastPL.price && bars[i-1].close >= lastPL.price) {
+                        breaks.push({ level: lastPL.price, pivIdx: lastPL.idx, brkIdx: i, label: trend === 1 ? 'CHoCH' : 'BOS', bull: false });
+                        trend = -1; lastPL = null;
+                    }
+                }
+
+                // ── Filter Mitigated OBs ──
+                var active = [];
+                breaks.forEach(function(sb) {
+                    var pb = bars[sb.pivIdx];
+                    var mit = false;
+                    for (var i = sb.brkIdx + 1; i < bars.length; i++) {
+                        if (sb.bull && bars[i].close < pb.low) { mit = true; break; }
+                        if (!sb.bull && bars[i].close > pb.high) { mit = true; break; }
+                    }
+                    if (!mit) active.push(sb);
+                });
+                active = active.slice(-maxObs);
+
+                // ── Draw Each Order Block ──
+                var endTime = lastBarTime + barInt * 10;
+                var histBase = lastBarTime + barInt * 12;
+
+                active.forEach(function(ob) {
+                    var css = ob.bull ? BULL : BEAR;
+                    var pb = bars[ob.pivIdx];
+                    var bb = bars[ob.brkIdx];
+                    var startT = bars[ob.pivIdx].time / 1000;
+                    var brkT = bars[ob.brkIdx].time / 1000;
+
+                    var atr = calcATR(ob.brkIdx, 14);
+                    var h_ = Math.max(atr * 0.05, (pb.high - pb.low) * 0.02);
+
+                    // Delta fill ratio
+                    var rng = Math.max(0.00001, bb.high - bb.low);
+                    var dPct = ob.bull ? (bb.close - bb.low) / rng : (bb.high - bb.close) / rng;
+                    dPct = Math.max(0.1, Math.min(1, dPct));
+                    var fillEndT = startT + (brkT - startT) * dPct;
+
+                    // Layer 1: Background (wide, very transparent)
+                    var id = chart.createMultipointShape(
+                        [{ time: startT, price: ob.level + h_ }, { time: endTime, price: ob.level - h_ }],
+                        { shape: 'rectangle', lock: true, disableSelection: true, disableSave: true, disableUndo: true,
+                          overrides: { backgroundColor: css, color: '#00000000', transparency: 92, fillBackground: true, linewidth: 0 } }
+                    );
+                    if (id) shapes.push(id);
+
+                    // Layer 2: Glow
+                    id = chart.createMultipointShape(
+                        [{ time: startT, price: ob.level + h_ * 1.5 }, { time: fillEndT, price: ob.level - h_ * 1.5 }],
+                        { shape: 'rectangle', lock: true, disableSelection: true, disableSave: true, disableUndo: true,
+                          overrides: { backgroundColor: css, color: '#00000000', transparency: 80, fillBackground: true, linewidth: 0 } }
+                    );
+                    if (id) shapes.push(id);
+
+                    // Layer 3: Core
+                    id = chart.createMultipointShape(
+                        [{ time: startT, price: ob.level + h_ * 0.8 }, { time: fillEndT, price: ob.level - h_ * 0.8 }],
+                        { shape: 'rectangle', lock: true, disableSelection: true, disableSave: true, disableUndo: true,
+                          overrides: { backgroundColor: css, color: '#00000000', transparency: 20, fillBackground: true, linewidth: 0 } }
+                    );
+                    if (id) shapes.push(id);
+
+
+                    // ── Profile Boxes (15 rows in OB zone) ──
+                    var pHigh = pb.high, pLow = pb.low;
+                    var rowStep = (pHigh - pLow) / profileRows;
+                    if (rowStep <= 0) return;
+
+                    var bodyMax = Math.max(pb.open, pb.close);
+                    var bodyMin = Math.min(pb.open, pb.close);
+
+                    var weights = [], maxW = 0, pocIdx = -1;
+                    for (var i = 0; i < profileRows; i++) {
+                        var dMid = Math.abs(i - profileRows / 2);
+                        var w = Math.max(2, Math.floor(12 - dMid * 1.5));
+                        var rTop = pHigh - i * rowStep;
+                        var rBtm = rTop - rowStep;
+                        if ((rTop <= bodyMax && rTop >= bodyMin) || (rBtm <= bodyMax && rBtm >= bodyMin)) w += 5;
+                        weights.push(w);
+                        if (w > maxW) { maxW = w; pocIdx = i; }
+                    }
+
+                    for (var i = 0; i < profileRows; i++) {
+                        var rTop = pHigh - i * rowStep;
+                        var rBtm = rTop - rowStep;
+                        var inBody = (rTop <= bodyMax && rTop >= bodyMin) || (rBtm <= bodyMax && rBtm >= bodyMin);
+                        var tr = baseTr + (inBody ? 0 : 10);
+
+                        // Profile overlay on OB
+                        id = chart.createMultipointShape(
+                            [{ time: startT, price: rTop }, { time: endTime, price: rBtm }],
+                            { shape: 'rectangle', lock: true, disableSelection: true, disableSave: true, disableUndo: true,
+                              overrides: { backgroundColor: css, color: '#00000000', transparency: Math.min(100, tr), fillBackground: true, linewidth: 0 } }
+                        );
+                        if (id) shapes.push(id);
+
+                        // Histogram bar (right side)
+                        var barCol = i === pocIdx ? POC_C : css;
+                        var w = weights[i];
+                        id = chart.createMultipointShape(
+                            [{ time: histBase, price: rTop }, { time: histBase + barInt * w * 0.3, price: rBtm }],
+                            { shape: 'rectangle', lock: true, disableSelection: true, disableSave: true, disableUndo: true,
+                              overrides: { backgroundColor: barCol, color: '#00000000', transparency: 50, fillBackground: true, linewidth: 0 } }
+                        );
+                        if (id) shapes.push(id);
+                    }
+
+                    // ── Manipulation Bubbles ──
+                    for (var i = ob.brkIdx + 1; i < bars.length; i++) {
+                        var raidHigh = !ob.bull && bars[i].high > pb.high && bars[i].close <= pb.high;
+                        var raidLow = ob.bull && bars[i].low < pb.low && bars[i].close >= pb.low;
+                        if (raidHigh || raidLow) {
+                            var mId = chart.createShape(
+                                { time: bars[i].time / 1000, price: raidHigh ? bars[i].high : bars[i].low },
+                                { shape: raidHigh ? 'arrow_down' : 'arrow_up', lock: true, disableSelection: true, disableSave: true, disableUndo: true,
+                                  overrides: { color: raidHigh ? BEAR : BULL } }
+                            );
+                            if (mId) shapes.push(mId);
+                        }
+                    }
+                });
+
+                console.log('[OrderFlow] Drew ' + shapes.length + ' shapes for ' + active.length + ' active OBs (' + breaks.length + ' total breaks)');
+                return shapes;
+            }
+
+            function reloadChart() {
+                if (tvWidget) {
+                    try { tvWidget.remove(); } catch(e) {}
+                    tvWidget = null;
+                }
+                // Clear tick subscriptions for old symbol
+                _tickCallbacks = {};
+
+                chartContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;gap:.8rem;color:#64748b;"><div class="ai-spinner" style="width:30px;height:30px;border:3px solid rgba(0,0,0,.1);border-top-color:#4338ca;border-radius:50%;animation:ai-spin .8s linear infinite;"></div><span>Loading Chart...</span></div>';
+
+                var now = Math.floor(Date.now() / 1000);
+                visibleFrom = now - 48 * 3600;
+                visibleTo = now + 3600;
+
+                var datafeed = createTradeDatafeed(sym, resolution, decimals, true);
+                _collectedBars = [];
+                var _origGetBarsReload = datafeed.getBars.bind(datafeed);
+                datafeed.getBars = function (symbolInfo, res, periodParams, onResult, onError) {
+                    _origGetBarsReload(symbolInfo, res, periodParams, function (bars, meta) {
+                        if (bars && bars.length) {
+                            bars.forEach(function (b) { _collectedBars.push({ time: b.time, open: b.open, high: b.high, low: b.low, close: b.close, volume: b.volume || 0 }); });
+                        }
+                        onResult(bars, meta);
+                    }, onError);
+                };
+
+                ensureTradingView(function(err) {
+                    if (err) {
+                        chartContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:1rem;color:#64748b;"><i class="fas fa-exclamation-triangle" style="font-size:2rem;opacity:.4;"></i><span>TradingView konnte nicht geladen werden</span></div>';
+                        return;
+                    }
+                    chartContainer.innerHTML = '';
+                    try {
+                        tvWidget = new TradingView.widget({
+                            container: chartContainer,
+                            locale: 'en',
+                            timezone: 'Europe/Berlin',
+                            library_path: '/charting/charting_library/',
+                            datafeed: datafeed,
+                            symbol: sym,
+                            interval: resolution,
+                            fullscreen: false,
+                            autosize: true,
+                            theme: 'Light',
+                            style: '1',
+                            toolbar_bg: '#f9f7f6',
+                            enable_publishing: false,
+                            hide_top_toolbar: false,
+                            hide_legend: false,
+                            hide_side_toolbar: false,
+                            allow_symbol_change: false,
+                            save_image: false,
+                            disabled_features: [
+                                'header_symbol_search','symbol_search_hot_key','header_compare','header_undo_redo',
+                                'header_settings','go_to_date','timeframes_toolbar','use_localstorage_for_settings',
+                                'create_volume_indicator_by_default','create_volume_indicator_by_default_once',
+                                'legend_context_menu','show_chart_property_page','chart_property_page_scales',
+                                'chart_property_page_background','chart_property_page_trading','display_market_status',
+                            ],
+                            enabled_features: ['hide_left_toolbar_by_default'],
+                            overrides: {
+                                'mainSeriesProperties.candleStyle.upColor': '#26a69a',
+                                'mainSeriesProperties.candleStyle.downColor': '#424242',
+                                'mainSeriesProperties.candleStyle.wickUpColor': '#26a69a',
+                                'mainSeriesProperties.candleStyle.wickDownColor': '#424242',
+                                'mainSeriesProperties.candleStyle.borderUpColor': '#26a69a',
+                                'mainSeriesProperties.candleStyle.borderDownColor': '#424242',
+                                'mainSeriesProperties.candleStyle.drawBorder': false,
+                                'paneProperties.background': '#ffffff',
+                                'paneProperties.backgroundType': 'solid',
+                                'scalesProperties.backgroundColor': '#ffffff',
+                                'scalesProperties.textColor': '#94a3b8',
+                                'paneProperties.vertGridProperties.color': 'rgba(0,0,0,0.025)',
+                                'paneProperties.horzGridProperties.color': 'rgba(0,0,0,0.025)',
+                                'paneProperties.crossHairProperties.color': '#cbd5e1',
+                                'paneProperties.legendProperties.showSeriesOHLC': false,
+                                'paneProperties.legendProperties.showSeriesTitle': false,
+                                'paneProperties.legendProperties.showStudyArguments': false,
+                                'paneProperties.legendProperties.showStudyTitles': true,
+                                'paneProperties.legendProperties.showStudyValues': false,
+                                'paneProperties.legendProperties.showBarChange': false,
+                                'paneProperties.legendProperties.showVolume': false,
+                            },
+                            loading_screen: { backgroundColor: '#ffffff', foregroundColor: '#4338ca' },
+                        });
+
+                        window._tvWidgetInstance = tvWidget;
+                        tvWidget.onChartReady(function () {
+                            var chart = tvWidget.activeChart();
+                            chart.setVisibleRange({ from: visibleFrom, to: visibleTo });
+                            chart.getAllStudies().forEach(function (s) { chart.removeEntity(s.id); });
+
+                            window._studyShapes = { killzones: [], liquidityProfile: [] };
+                            window._studyData = { killzones: [] };
+
+                            // Subscribe ticks for bid/ask display
+                            ensureTickWs(function (ok) {
+                                if (ok) {
+                                    var bidPriceEl = document.getElementById('cmBidPrice');
+                                    var askPriceEl = document.getElementById('cmAskPrice');
+                                    subscribeTickWs(sym, function (bid, ask, time) {
+                                        if (bidPriceEl && bid) bidPriceEl.textContent = 'BID ' + bid.toFixed(decimals);
+                                        if (askPriceEl && ask) askPriceEl.textContent = 'ASK ' + ask.toFixed(decimals);
+                                    });
+                                }
+                            });
+
+                            // Killzone helpers
+                            function _toNYMin2R(ts) {
+                                var d = new Date(ts), m = d.getUTCMonth(), dy = d.getUTCDate(), dst = false;
+                                if (m > 2 && m < 10) dst = true;
+                                else if (m === 2) { var s = 14 - new Date(d.getUTCFullYear(), 2, 1).getUTCDay(); dst = dy >= s; }
+                                else if (m === 10) { var f = 7 - new Date(d.getUTCFullYear(), 10, 1).getUTCDay(); dst = dy < f; }
+                                return ((d.getUTCHours() + 24 + (dst ? -4 : -5)) % 24) * 60 + d.getUTCMinutes();
+                            }
+                            var _kzSessionsR = [
+                                [1200, 1440, '#2962ff', 'Asia'], [120, 300, '#ef5350', 'London'],
+                                [570, 660, '#089981', 'NY AM'], [720, 780, '#ffeb3b', 'NY Lunch'], [810, 960, '#9c27b0', 'NY PM']
+                            ];
+
+                            // Killzones
+                            setTimeout(function () {
+                                if (!_collectedBars.length) return;
+                                _collectedBars.sort(function (a, b) { return a.time - b.time; });
+                                var sessions = [], active = {};
+                                var cutoff = Date.now() - 3 * 86400000;
+                                _collectedBars.forEach(function (bar) {
+                                    if (bar.time < cutoff) return;
+                                    var t = _toNYMin2R(bar.time);
+                                    _kzSessionsR.forEach(function (kz, idx) {
+                                        var inS = (kz[0] < kz[1]) ? (t >= kz[0] && t < kz[1]) : (t >= kz[0] || t < kz[1]);
+                                        if (inS) {
+                                            if (!active[idx]) active[idx] = { startTime: bar.time / 1000, high: bar.high, low: bar.low, highTime: bar.time / 1000, lowTime: bar.time / 1000, color: kz[2], label: kz[3] };
+                                            else {
+                                                if (bar.high > active[idx].high) { active[idx].high = bar.high; active[idx].highTime = bar.time / 1000; }
+                                                if (bar.low < active[idx].low) { active[idx].low = bar.low; active[idx].lowTime = bar.time / 1000; }
+                                                active[idx].endTime = bar.time / 1000;
+                                            }
+                                        } else if (active[idx]) {
+                                            active[idx].endTime = active[idx].endTime || bar.time / 1000;
+                                            sessions.push(active[idx]);
+                                            delete active[idx];
+                                        }
+                                    });
+                                });
+                                Object.keys(active).forEach(function (k) { active[k].endTime = active[k].endTime || Math.floor(Date.now() / 1000); sessions.push(active[k]); });
+
+                                var sortedBars = _collectedBars.filter(function(b) { return b.time >= cutoff; });
+                                sessions.forEach(function (s) {
+                                    var sessionEndMs = (s.endTime || s.startTime) * 1000;
+                                    s.highEndTime = null;
+                                    s.lowEndTime = null;
+                                    for (var bi = 0; bi < sortedBars.length; bi++) {
+                                        var b = sortedBars[bi];
+                                        if (b.time <= sessionEndMs) continue;
+                                        if (!s.highEndTime && b.high >= s.high) s.highEndTime = b.time / 1000;
+                                        if (!s.lowEndTime && b.low <= s.low) s.lowEndTime = b.time / 1000;
+                                        if (s.highEndTime && s.lowEndTime) break;
+                                    }
+                                    var lastBarTime = sortedBars.length ? sortedBars[sortedBars.length - 1].time / 1000 : s.endTime;
+                                    var barInterval = sortedBars.length > 1 ? (sortedBars[sortedBars.length - 1].time - sortedBars[sortedBars.length - 2].time) / 1000 : 900;
+                                    var defaultEnd = lastBarTime + (barInterval * 5);
+                                    var highEnd = s.highEndTime || defaultEnd;
+                                    var lowEnd = s.lowEndTime || defaultEnd;
+
+                                    var kzPts1 = [{ time: s.highTime || s.startTime, price: s.high }, { time: highEnd, price: s.high }];
+                                    var kzOpts1 = { shape: 'trend_line', lock: true, disableSelection: true, disableSave: true, disableUndo: true,
+                                        overrides: { linecolor: '#94a3b8', linestyle: 0, linewidth: 1, showLabel: true, text: s.label + ' H', textcolor: '#94a3b8', fontsize: 7, vertLabelsAlign: 'bottom' } };
+                                    var kzPts2 = [{ time: s.lowTime || s.startTime, price: s.low }, { time: lowEnd, price: s.low }];
+                                    var kzOpts2 = { shape: 'trend_line', lock: true, disableSelection: true, disableSave: true, disableUndo: true,
+                                        overrides: { linecolor: '#94a3b8', linestyle: 0, linewidth: 1, showLabel: true, text: s.label + ' L', textcolor: '#94a3b8', fontsize: 7, vertLabelsAlign: 'top' } };
+                                    var kzId1 = chart.createMultipointShape(kzPts1, kzOpts1);
+                                    var kzId2 = chart.createMultipointShape(kzPts2, kzOpts2);
+                                    if (kzId1) { window._studyShapes.killzones.push(kzId1); window._studyData.killzones.push({pts: kzPts1, opts: kzOpts1}); }
+                                    if (kzId2) { window._studyShapes.killzones.push(kzId2); window._studyData.killzones.push({pts: kzPts2, opts: kzOpts2}); }
+                                });
+                                console.log('[Killzones] Reload: drew ' + sessions.length + ' sessions');
+                            }, 4000);
+
+                            // Liquidity Profile
+                            setTimeout(function() {
+                                window._studyShapes.liquidityProfile = drawOrderFlowStructure(chart, _collectedBars);
+                            }, 5000);
+                        });
+                    } catch(e) {
+                        console.error('TradingView widget error:', e);
+                    }
+                });
+            }
+
             var liveBadge = document.getElementById('cmLiveBadge');
             if (liveBadge) { liveBadge.style.display = 'inline-flex'; }
 
@@ -862,7 +1354,7 @@ document.addEventListener('DOMContentLoaded', function () {
             datafeed.getBars = function (symbolInfo, resolution, periodParams, onResult, onError) {
                 _origGetBars(symbolInfo, resolution, periodParams, function (bars, meta) {
                     if (bars && bars.length) {
-                        bars.forEach(function (b) { _collectedBars.push({ time: b.time, high: b.high, low: b.low }); });
+                        bars.forEach(function (b) { _collectedBars.push({ time: b.time, open: b.open, high: b.high, low: b.low, close: b.close, volume: b.volume || 0 }); });
                     }
                     onResult(bars, meta);
                 }, onError);
@@ -879,6 +1371,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     tvWidget = new TradingView.widget({
                         container: chartContainer,
                         locale: 'en',
+                        timezone: 'Europe/Berlin',
                         library_path: '/charting/charting_library/',
                         datafeed: datafeed,
                         symbol: sym,
@@ -932,7 +1425,8 @@ document.addEventListener('DOMContentLoaded', function () {
                             'paneProperties.vertGridProperties.color': 'rgba(0,0,0,0.025)',
                             'paneProperties.horzGridProperties.color': 'rgba(0,0,0,0.025)',
                             'paneProperties.crossHairProperties.color': '#cbd5e1',
-                            'paneProperties.legendProperties.showSeriesOHLC': true,
+                            'paneProperties.legendProperties.showSeriesOHLC': false,
+                                'paneProperties.legendProperties.showSeriesTitle': false,
                             'paneProperties.legendProperties.showStudyArguments': false,
                             'paneProperties.legendProperties.showStudyTitles': true,
                             'paneProperties.legendProperties.showStudyValues': false,
@@ -952,33 +1446,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         chart.setVisibleRange({ from: visibleFrom, to: visibleTo });
                         chart.getAllStudies().forEach(function (s) { chart.removeEntity(s.id); });
 
-                        // Shape tracking for toggling studies (ids + draw data for re-creation)
-                        window._studyShapes = { depthZones: [], killzones: [] };
-                        window._studyData = { depthZones: [], killzones: [] };
+                        // Shape tracking for toggling studies
+                        window._studyShapes = { killzones: [], liquidityProfile: [] };
+                        window._studyData = { killzones: [] };
 
-                        // Depth Zones as rectangles + WS for price
-                        function drawDepthRects(price) {
-                            var offset = 100, step = offset / 5;
-                            var vr = chart.getVisibleRange();
-                            var farLeft = Math.floor(vr.to - 900);
-                            var farRight = Math.floor(vr.to + 90000);
-                            var upTr = [60, 72, 82, 90];
-                            var dnTr = [60, 72, 82, 90];
-                            for (var i = 0; i < 4; i++) {
-                                var pts1 = [{ time: farLeft, price: price + step * (i + 1) }, { time: farRight, price: price + step * (i + 2) }];
-                                var opts1 = { shape: 'rectangle', lock: true, disableSelection: true, disableSave: true, disableUndo: true,
-                                    overrides: { backgroundColor: '#ff5000', color: '#ff500000', transparency: upTr[i], fillBackground: true, linewidth: 0 } };
-                                var pts2 = [{ time: farLeft, price: price - step * (i + 1) }, { time: farRight, price: price - step * (i + 2) }];
-                                var opts2 = { shape: 'rectangle', lock: true, disableSelection: true, disableSave: true, disableUndo: true,
-                                    overrides: { backgroundColor: '#0078ff', color: '#0078ff00', transparency: dnTr[i], fillBackground: true, linewidth: 0 } };
-                                var id1 = chart.createMultipointShape(pts1, opts1);
-                                var id2 = chart.createMultipointShape(pts2, opts2);
-                                if (id1) { window._studyShapes.depthZones.push(id1); window._studyData.depthZones.push({pts: pts1, opts: opts1}); }
-                                if (id2) { window._studyShapes.depthZones.push(id2); window._studyData.depthZones.push({pts: pts2, opts: opts2}); }
-                            }
-                        }
-
-                        // Connect WS, draw depth zones + load positions
+                        // Connect WS + load positions
                         var posPanel = document.getElementById('cmPositionsPanel');
                         var posBody = document.getElementById('cmPosBody');
                         var posCount = document.getElementById('cmPosCount');
@@ -1067,14 +1539,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
                         ensureTickWs(function (ok) {
                             if (ok) {
-                                var _depthDrawn = false;
                                 var bidPriceEl = document.getElementById('cmBidPrice');
                                 var askPriceEl = document.getElementById('cmAskPrice');
                                 subscribeTickWs(sym, function (bid, ask, time) {
-                                    if (!_depthDrawn && bid) {
-                                        _depthDrawn = true;
-                                        drawDepthRects(bid);
-                                    }
                                     if (bidPriceEl && bid) bidPriceEl.textContent = 'BID ' + bid.toFixed(1);
                                     if (askPriceEl && ask) askPriceEl.textContent = 'ASK ' + ask.toFixed(1);
                                 });
@@ -1164,6 +1631,11 @@ document.addEventListener('DOMContentLoaded', function () {
                             });
                             console.log('[Killzones] Drew ' + sessions.length + ' sessions from ' + _collectedBars.length + ' bars');
                         }, 4000);
+
+                        // Liquidity Profile
+                        setTimeout(function() {
+                            window._studyShapes.liquidityProfile = drawOrderFlowStructure(chart, _collectedBars);
+                        }, 5000);
                     });
                 } catch (e) {
                     chartContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:1rem;color:#64748b;">' +
@@ -1222,6 +1694,10 @@ document.addEventListener('DOMContentLoaded', function () {
             if (msg.type === 'tick') {
                 var fns = _tickCallbacks[msg.symbol];
                 if (fns) fns.forEach(function (fn) { fn(msg.bid, msg.ask, msg.time); });
+            }
+
+            if (msg.type === 'symbols' && window._onSymbolsLoaded) {
+                window._onSymbolsLoaded(msg.symbols);
             }
 
             if (msg.type === 'pnl' && _onPnlUpdate) {
@@ -1356,7 +1832,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         description: symbol,
                         type: 'forex',
                         session: '24x7',
-                        timezone: 'Etc/UTC',
+                        timezone: 'Europe/Berlin',
                         exchange: '',
                         listed_exchange: '',
                         format: 'price',

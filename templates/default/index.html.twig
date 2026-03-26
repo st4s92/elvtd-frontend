@@ -1137,7 +1137,16 @@
 							</div>
 
 							<div class="mt-4 pt-3 border-top border-white border-opacity-10 d-flex justify-content-between align-items-center">
-								<div class="text-white text-opacity-40 fw-800" style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em;">Real-In Profit</div>
+								<div>
+									<div class="text-white text-opacity-40 fw-800" style="font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em;">Real-In Profit</div>
+									{% if is_granted('ROLE_ADMIN') %}
+										<form method="post" action="{{ path('app_admin_delete_order', {'orderId': latest.id}) }}" style="margin:0;margin-top:6px;" onsubmit="return confirm('Order #{{ latest.id }} ({{ latest.order_symbol }}) wirklich löschen?')">
+											<button type="submit" style="background:rgba(220,38,38,0.15);color:#f87171;border:1px solid rgba(220,38,38,0.3);border-radius:8px;font-size:.65rem;font-weight:700;padding:3px 10px;cursor:pointer;transition:all .2s;">
+												<i class="fas fa-trash-alt" style="font-size:.55rem;margin-right:3px;"></i> DEL #{{ latest.id }}
+											</button>
+										</form>
+									{% endif %}
+								</div>
 								<div class="fw-900 {{ latest.order_profit >= 0 ? 'text-glow-success' : 'text-glow-danger' }}" style="font-size: 2.2rem; letter-spacing: -0.04em;">
 									{{ latest.order_profit >= 0 ? '+' : '' }}{{ latest.order_profit|number_format(2, ',', '.') }}
 									€
@@ -1195,6 +1204,81 @@
 								</div>
 							{% endfor %}
 						</div>
+
+						<style>
+						.btn-agent-cta {
+							position: relative;
+							overflow: hidden;
+							background: linear-gradient(135deg, rgba(74,222,128,0.12), rgba(139,92,246,0.12));
+							border: 1px solid rgba(74,222,128,0.25);
+							color: #4ade80;
+							border-radius: 14px;
+							padding: 0.8rem;
+							font-size: 0.75rem;
+							letter-spacing: 0.06em;
+							transition: all 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+							box-shadow: 0 0 0 0 rgba(74,222,128,0), 0 4px 15px rgba(0,0,0,0.1);
+							animation: agentBtnPulse 3s ease-in-out infinite;
+						}
+						.btn-agent-cta::before {
+							content: '';
+							position: absolute;
+							top: 0; left: -100%;
+							width: 100%; height: 100%;
+							background: linear-gradient(90deg, transparent, rgba(74,222,128,0.15), rgba(139,92,246,0.1), transparent);
+							animation: agentShimmer 4s ease-in-out infinite;
+						}
+						.btn-agent-cta::after {
+							content: '';
+							position: absolute;
+							inset: -1px;
+							border-radius: 14px;
+							padding: 1px;
+							background: linear-gradient(135deg, rgba(74,222,128,0.5), rgba(139,92,246,0.4), rgba(6,182,212,0.3), rgba(74,222,128,0.5));
+							background-size: 300% 300%;
+							animation: agentBorderShift 4s ease infinite;
+							-webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+							mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+							-webkit-mask-composite: xor;
+							mask-composite: exclude;
+							pointer-events: none;
+							opacity: 0.6;
+						}
+						.btn-agent-cta:hover {
+							transform: translateY(-2px) scale(1.02);
+							color: #fff;
+							background: linear-gradient(135deg, rgba(74,222,128,0.25), rgba(139,92,246,0.25));
+							border-color: rgba(74,222,128,0.5);
+							box-shadow: 0 0 20px rgba(74,222,128,0.25), 0 0 40px rgba(139,92,246,0.15), 0 8px 25px rgba(0,0,0,0.2);
+						}
+						.btn-agent-cta:hover::after { opacity: 1; }
+						.btn-agent-cta:hover .btn-agent-arrow {
+							transform: translateX(4px);
+						}
+						.btn-agent-cta:active {
+							transform: translateY(0) scale(0.98);
+						}
+						.btn-agent-arrow {
+							transition: transform 0.3s ease;
+						}
+						@keyframes agentShimmer {
+							0%, 100% { left: -100%; }
+							50% { left: 100%; }
+						}
+						@keyframes agentBtnPulse {
+							0%, 100% { box-shadow: 0 0 0 0 rgba(74,222,128,0), 0 4px 15px rgba(0,0,0,0.1); }
+							50% { box-shadow: 0 0 15px rgba(74,222,128,0.1), 0 4px 15px rgba(0,0,0,0.1); }
+						}
+						@keyframes agentBorderShift {
+							0% { background-position: 0% 50%; }
+							50% { background-position: 100% 50%; }
+							100% { background-position: 0% 50%; }
+						}
+						</style>
+						<a href="{{ path('app_agents_index') }}" class="btn w-100 mt-3 fw-800 d-flex align-items-center justify-content-center gap-2 btn-agent-cta">
+							<span style="position:relative;z-index:1;">Zum Agent</span>
+							<i class="fas fa-arrow-right btn-agent-arrow" style="font-size: 0.65rem; position:relative;z-index:1;"></i>
+						</a>
 					{% else %}
 						<div class="text-center py-5">
 							<div class="spinner-grow text-primary text-opacity-20 mb-3" role="status"></div>

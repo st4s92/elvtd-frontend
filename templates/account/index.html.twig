@@ -113,37 +113,143 @@ body {
 	color: var(--txt-main);
 }
 
-.card-table-wrap {
+/* ── Account Cards Grid ── */
+.accounts-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+	gap: 1rem;
+}
+.acc-card {
 	background: var(--bg-card);
 	border: 1px solid var(--border);
-	border-radius: 18px;
+	border-radius: 16px;
+	padding: 1.25rem;
+	cursor: pointer;
+	transition: all 0.25s cubic-bezier(0.16,1,0.3,1);
+	position: relative;
 	overflow: hidden;
-	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
 }
-.pf-table {
-	width: 100%;
-	border-collapse: collapse;
+.acc-card:hover {
+	transform: translateY(-3px);
+	box-shadow: 0 12px 32px rgba(0,0,0,0.08);
+	border-color: rgba(0,0,0,0.1);
 }
-.pf-table th {
-	background: #fdfdfd;
-	padding: 1rem 1.5rem;
-	text-align: left;
-	font-size: 0.75rem;
+.acc-card-online {
+	border-left: 3px solid var(--g);
+}
+.acc-card-offline {
+	border-left: 3px solid var(--txt-dim);
+}
+.acc-card-error {
+	border-left: 3px solid var(--r);
+	background: linear-gradient(135deg, rgba(220,38,38,0.02), transparent);
+}
+.acc-card-top {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	margin-bottom: 1rem;
+}
+.acc-card-name {
+	font-weight: 800;
+	font-size: 1rem;
+	color: var(--txt-main);
+	letter-spacing: -0.02em;
+	line-height: 1.2;
+}
+.acc-card-meta {
+	display: flex;
+	gap: 0.4rem;
+	margin-top: 0.35rem;
+	flex-wrap: wrap;
+}
+.acc-card-meta .badge-acc {
+	font-size: 0.62rem;
+	background: #f1f5f9;
+	color: #475569;
+	padding: 2px 7px;
+	border-radius: 6px;
+	font-weight: 600;
+}
+.acc-card-status {
+	flex-shrink: 0;
+}
+.acc-card-numbers {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.75rem;
+	margin-bottom: 1rem;
+}
+.acc-num-item {
+	background: var(--bg-root);
+	border-radius: 10px;
+	padding: 0.6rem 0.75rem;
+}
+.acc-num-label {
+	font-size: 0.62rem;
 	font-weight: 700;
-	color: var(--txt-dim);
 	text-transform: uppercase;
-	border-bottom: 1px solid var(--border);
+	letter-spacing: 0.05em;
+	color: var(--txt-dim);
+	margin-bottom: 0.2rem;
 }
-.pf-table td {
-	padding: 1.25rem 1.5rem;
-	border-bottom: 1px solid var(--border);
-	vertical-align: middle;
+.acc-num-val {
+	font-size: 0.95rem;
+	font-weight: 800;
+	color: var(--txt-main);
 }
-.pf-table tr:last-child td {
-	border-bottom: none;
+.acc-card-footer {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding-top: 0.75rem;
+	border-top: 1px solid var(--border);
 }
-.pf-table tr:hover {
-	background: #fafafa;
+.acc-card-agent {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	font-size: 0.7rem;
+	font-weight: 700;
+}
+.acc-card-actions {
+	display: flex;
+	gap: 0.35rem;
+}
+.acc-card-actions .btn-icon {
+	width: 30px;
+	height: 30px;
+	border-radius: 8px;
+	border: 1px solid var(--border);
+	background: #fff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 0.7rem;
+	color: var(--txt-dim);
+	cursor: pointer;
+	transition: all 0.2s;
+}
+.acc-card-actions .btn-icon:hover {
+	background: var(--bg-root);
+	color: var(--txt-main);
+}
+.acc-card-actions .btn-icon-danger:hover {
+	background: rgba(220,38,38,0.06);
+	color: var(--r);
+	border-color: rgba(220,38,38,0.15);
+}
+@media(max-width: 768px) {
+	.accounts-grid {
+		grid-template-columns: 1fr;
+	}
+}
+.card-table-wrap {
+	background: transparent;
+	border: none;
+	border-radius: 0;
+	overflow: visible;
+	box-shadow: none;
 }
 
 .pill {
@@ -266,57 +372,7 @@ body {
 		grid-template-columns: 1fr;
 	}
 
-	/* ── Mobile Table Transformation ── */
-	.pf-table thead {
-		display: none; /* Hide headers on mobile */
-	}
-	.pf-table,
-	.pf-table tbody,
-	.pf-table tr,
-	.pf-table td {
-		display: block;
-		width: 100%;
-	}
-	.pf-table tr {
-		margin-bottom: 1rem;
-		border-bottom: 1px solid var(--border);
-		padding: 1rem;
-		position: relative;
-		background: #fff;
-		border-radius: 12px;
-	}
-	.pf-table td {
-		text-align: left !important;
-		padding: 0.5rem 0 !important;
-		border: none !important;
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-	}
-	.pf-table td:first-child {
-		display: block;
-		margin-bottom: 0.5rem;
-	}
-	.pf-table td:not(:first-child)::before {
-		content: attr(data-label);
-		font-size: 0.75rem;
-		font-weight: 700;
-		color: var(--txt-dim);
-		text-transform: uppercase;
-	}
-	.pf-table td:last-child {
-		justify-content: center;
-		margin-top: 0.5rem;
-		border-top: 1px solid var(--bg-root) !important;
-		padding-top: 1rem !important;
-	}
-	.clickable-row {
-		cursor: pointer;
-		transition: background 0.2s;
-	}
-	.clickable-row:active {
-		background: var(--bg-root);
-	}
+	/* Mobile handled by grid */
 }
 
 /* ══════════════════════════════════════════════════════
@@ -865,42 +921,91 @@ class="container-custom">
 		</div>
 	</div>
 
-	<div class="card-table-wrap mb-5" id="tableWrap">
-		<table class="pf-table">
-			<thead>
-				<tr>
-					<th>Account</th>
-					<th>Status</th>
-					<th>Agent</th>
-					<th class="text-end">Equity / Balance</th>
-					<th class="text-center">Offener P&L</th>
-					<th class="text-center">Gesamtprofit</th>
-					<th class="text-end">Aktionen</th>
-				</tr>
-			</thead>
-			<tbody id="accountsBody"></tbody>
-		</table>
+	<div id="tableWrap" class="card-table-wrap mb-5">
+		<div id="accountsGrid" class="accounts-grid"></div>
 	</div>
 </div></div></div>{# ══ Add Account Modal ══ #}<div class="modal fade" id="addAccountModal" tabindex="-1" aria-hidden="true"><div class="modal-dialog modal-dialog-centered">
 <div class="modal-content shadow-lg border-0" style="border-radius: 20px;">
 	<div class="modal-header border-0 pb-0">
-		<h5 class="fw-800">Account hinzufügen</h5>
-		<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+		<div class="w-100">
+			<div class="d-flex justify-content-between align-items-center">
+				<h5 class="fw-800 mb-0" id="wizardTitle">Account hinzufügen</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+			</div>
+			<div class="d-flex gap-1 mt-3" id="wizardProgress">
+				<div class="wizard-dot active"></div>
+				<div class="wizard-dot"></div>
+				<div class="wizard-dot"></div>
+				<div class="wizard-dot"></div>
+				<div class="wizard-dot"></div>
+				<div class="wizard-dot"></div>
+			</div>
+		</div>
 	</div>
 	<div class="modal-body p-4">
-		{{ form_start(form, { 'action': path('app_account_new') }) }}
-		<div class="row g-3">
-			<div class="col-12">{{ form_widget(form.name, {'attr': {'class': 'form-control rounded-pill px-3 shadow-none border', 'placeholder': 'Name (frei wählbar)'}}) }}</div>
-			<div class="col-12">{{ form_widget(form.platform, {'attr': {'class': 'form-control rounded-pill px-3 shadow-none border', 'placeholder': 'Plattform'}}) }}</div>
-			<div class="col-12">{{ form_widget(form.broker, {'attr': {'class': 'form-control rounded-pill px-3 shadow-none border', 'placeholder': 'Broker (z.B. FTMO)'}}) }}</div>
-			<div class="col-12">{{ form_widget(form.tradeServer, {'attr': {'class': 'form-control rounded-pill px-3 shadow-none border', 'placeholder': 'Server (z.B. FTMO-Server oder cTrader Email)'}}) }}</div>
-			<div class="col-12">{{ form_widget(form.login, {'attr': {'class': 'form-control rounded-pill px-3 shadow-none border', 'placeholder': 'Login (Account Nr)'}}) }}</div>
-			<div class="col-12">{{ form_widget(form.password, {'attr': {'class': 'form-control rounded-pill px-3 shadow-none border', 'placeholder': 'Passwort'}}) }}</div>
+		{{ form_start(form, { 'action': path('app_account_new'), 'attr': {'id': 'wizardForm'} }) }}
+
+		{# Step 1: Platform #}
+		<div class="wizard-step" data-step="0">
+			<label class="fw-bold mb-2" style="font-size:0.95rem;">Plattform wählen</label>
+			{{ form_widget(form.platform, {'attr': {'class': 'form-control rounded-pill px-3 shadow-none border'}}) }}
+			<p class="text-muted mt-2 mb-0" style="font-size:0.8rem;">Welche Trading-Plattform nutzt du? Bei cTrader wirst du nach der Auswahl zur OAuth-Anmeldung weitergeleitet.</p>
 		</div>
-		<button type="submit" class="btn btn-dark w-100 rounded-pill py-2 mt-3 fw-bold">Verknüpfen</button>
+
+		{# Step 2: Broker #}
+		<div class="wizard-step" data-step="1" style="display:none;">
+			<label class="fw-bold mb-2" style="font-size:0.95rem;">Broker</label>
+			{{ form_widget(form.broker, {'attr': {'class': 'form-control rounded-pill px-3 shadow-none border', 'placeholder': 'z.B. FTMO, TheFundedTrader, ...'}}) }}
+			<p class="text-muted mt-2 mb-0" style="font-size:0.8rem;">Der Name deines Brokers oder Prop-Firms. Hilft dir, deine Accounts zu unterscheiden.</p>
+		</div>
+
+		{# Step 3: Server #}
+		<div class="wizard-step" data-step="2" style="display:none;">
+			<label class="fw-bold mb-2" style="font-size:0.95rem;">Server</label>
+			<div style="position:relative;">
+				{{ form_widget(form.tradeServer, {'attr': {'class': 'form-control rounded-pill px-3 shadow-none border', 'placeholder': 'z.B. FTMO-Server3', 'autocomplete': 'off'}}) }}
+				<div id="serverDropdown" class="list-group shadow" style="position:absolute;z-index:1055;width:100%;max-height:200px;overflow-y:auto;display:none;border-radius:12px;"></div>
+			</div>
+			<p class="text-muted mt-2 mb-0" style="font-size:0.8rem;">Den Server findest du in deinem MT4/MT5-Terminal unter Datei > Konto eröffnen. Tippe, um aus bekannten Servern zu wählen.</p>
+		</div>
+
+		{# Step 4: Login #}
+		<div class="wizard-step" data-step="3" style="display:none;">
+			<label class="fw-bold mb-2" style="font-size:0.95rem;">Login / Account-Nummer</label>
+			{{ form_widget(form.login, {'attr': {'class': 'form-control rounded-pill px-3 shadow-none border', 'placeholder': 'z.B. 12345678'}}) }}
+			<p class="text-muted mt-2 mb-0" style="font-size:0.8rem;">Deine Account-Nummer, die du vom Broker erhalten hast. Nicht die E-Mail-Adresse.</p>
+		</div>
+
+		{# Step 5: Password #}
+		<div class="wizard-step" data-step="4" style="display:none;">
+			<label class="fw-bold mb-2" style="font-size:0.95rem;">Passwort</label>
+			{{ form_widget(form.password, {'attr': {'class': 'form-control rounded-pill px-3 shadow-none border', 'placeholder': 'Trading-Passwort'}}) }}
+			<p class="text-muted mt-2 mb-0" style="font-size:0.8rem;">WICHTIG: Dein Master-Passwort, NICHT das Investor-Passwort. Wird verschlüsselt gespeichert und nur zur Verbindung genutzt.</p>
+		</div>
+
+		{# Step 6: Name #}
+		<div class="wizard-step" data-step="5" style="display:none;">
+			<label class="fw-bold mb-2" style="font-size:0.95rem;">Account-Name</label>
+			{{ form_widget(form.name, {'attr': {'class': 'form-control rounded-pill px-3 shadow-none border', 'placeholder': 'z.B. FTMO Challenge 100k'}}) }}
+			<p class="text-muted mt-2 mb-0" style="font-size:0.8rem;">Ein frei wählbarer Name, damit du den Account in deinem Dashboard wiederfindest.</p>
+		</div>
+
+		<div class="d-flex gap-2 mt-4">
+			<button type="button" id="wizardBack" class="btn btn-outline-secondary rounded-pill py-2 fw-bold flex-fill" style="display:none;">Zurück</button>
+			<button type="button" id="wizardNext" class="btn btn-dark rounded-pill py-2 fw-bold flex-fill">Weiter</button>
+			<button type="submit" id="wizardSubmit" class="btn btn-dark rounded-pill py-2 fw-bold flex-fill" style="display:none;">Verknüpfen</button>
+		</div>
+
 		{{ form_end(form) }}
 	</div>
-</div></div></div>{# ══ Charts JS ══ #}<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script><script>document.addEventListener('DOMContentLoaded', function () {
+</div>
+<style>
+.wizard-dot{height:4px;flex:1;border-radius:4px;background:var(--bs-gray-300);transition:background .3s}
+.wizard-dot.active{background:var(--bs-dark)}
+.wizard-dot.done{background:var(--bs-dark);opacity:.4}
+.wizard-step{animation:wizardFadeIn .25s ease}
+@keyframes wizardFadeIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+</style></div></div>{# ══ Charts JS ══ #}<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script><script>document.addEventListener('DOMContentLoaded', function () {
 					
 					const fmt = (n, d = 2) => Number(n).toLocaleString('de-DE', {
 					minimumFractionDigits: d,
@@ -1054,127 +1159,95 @@ class="container-custom">
 					document.getElementById('valDeposits').textContent = fmt(totalDeposits, 0) + ' \u20ac';
 					document.getElementById('valWithdrawals').textContent = fmt(totalWithdrawals, 0) + ' \u20ac';
 					
-					// Accounts table
-					const tbody = document.getElementById('accountsBody');
+					// Accounts grid
+					const grid = document.getElementById('accountsGrid');
 					accounts.forEach((acc, idx) => {
 					const openPnL = acc.equity - acc.balance;
 					const ddPct = acc.balance > 0 ? (openPnL / acc.balance * 100) : 0;
 					const pnlColor = openPnL >= 0 ? 'var(--g)' : 'var(--r)';
 					const profitColor = acc.profit >= 0 ? 'var(--g)' : 'var(--r)';
-					const profitBadge = acc.profit >= 0 ? 'bg-success' : 'bg-danger';
 					const platformIcon = acc.platform === 'ctrader' ? 'dna' : 'bolt';
-					
+
 					let statusHtml = '';
+					let cardClass = 'acc-card-online';
 					const isDisc = acc.error === 'DISCONNECTED' || acc.error === 'ST\u00d6RUNG';
 					const isError = acc.error && acc.error.length > 0;
-					
+
 					if (isDisc) {
 					const label = acc.error === 'ST\u00d6RUNG' ? 'St\u00f6rung' : 'Disconnected';
 					statusHtml = `<div class="pill pill-error"><span class="dot dot-r"></span> ${label}</div>`;
-					if (acc.reauthUrl) {
-					statusHtml += ` <a href="${
-					acc.reauthUrl
-					}" class="badge bg-warning text-dark ms-1" style="font-size:0.6rem;text-decoration:none;" onclick="return confirm('Neu autorisieren?');">REAUTH</a>`;
-					}
+					cardClass = 'acc-card-error';
 					} else if (isError && acc.error !== 'subscription expired') {
 					const label = acc.isActive ? 'Online' : 'St\u00f6rung';
 					statusHtml = `<div class="pill pill-offline"><span class="dot dot-off"></span> ${label}</div>`;
+					cardClass = 'acc-card-offline';
 					} else {
 					const pillClass = acc.isActive ? 'pill-online' : 'pill-offline';
 					const dotClass = acc.isActive ? 'dot-on' : 'dot-off';
 					const label = acc.isActive ? 'Online' : 'Pausiert';
 					statusHtml = `<div class="pill ${pillClass}"><span class="dot ${dotClass}"></span> ${label}</div>`;
+					cardClass = acc.isActive ? 'acc-card-online' : 'acc-card-offline';
 					}
-					
-					const tr = document.createElement('tr');
-					tr.className = 'clickable-row';
-					tr.onclick = (e) => {
+
+					const agentHtml = acc.agents && acc.agents.length > 0
+					? acc.agents.map(a => `<span class="acc-card-agent" style="color:var(--g);"><span class="dot dot-on" style="width:5px;height:5px;"></span> ${a.name}</span>`).join(' ')
+					: `<span class="acc-card-agent" style="color:var(--txt-dim);"><i class="fas fa-link" style="font-size:0.6rem;"></i> Kein Agent</span>`;
+
+					const card = document.createElement('div');
+					card.className = `acc-card ${cardClass}`;
+					card.style.opacity = '0';
+					card.style.transform = 'translateY(12px)';
+					card.style.transition = `opacity 0.4s ease ${idx * 0.06}s, transform 0.4s ease ${idx * 0.06}s`;
+					card.onclick = (e) => {
 					if (!e.target.closest('a') && !e.target.closest('form') && !e.target.closest('button')) {
 					window.location.href = acc.showUrl;
 					}
 					};
-					tr.style.opacity = '0';
-					tr.style.transform = 'translateY(10px)';
-					tr.style.transition = `opacity 0.4s ease ${
-					idx * 0.08
-					}s, transform 0.4s ease ${
-					idx * 0.08
-					}s`;
-					tr.innerHTML = `
-									<td data-label="Account">
-										<div class="d-flex align-items-center">
-											<div class="me-3" style="background:var(--bg-root);border-radius:12px;padding:10px;">
-												<i class="fas fa-${platformIcon} opacity-50"></i>
-											</div>
-											<div>
-												<a href="${
-					acc.showUrl
-					}" class="text-dark" style="font-weight:700;text-decoration:none;">${
-					acc.name
-					}</a><br>
-												<span class="badge-acc">${
-					acc.login
-					}</span>
-												<span class="badge-acc">${
-					acc.broker
-					}</span>
-											</div>
-										</div>
-									</td>
-									<td data-label="Status">${statusHtml}</td>
-									<td data-label="Agent">
-										${
-					acc.agents && acc.agents.length > 0 ? acc.agents.map(a => `<div class="pill pill-online" style="background:rgba(99,102,241,0.1) !important; color:var(--p) !important; border-color:rgba(99,102,241,0.2) !important;"><span class="dot" style="background:var(--p); box-shadow:0 0 10px var(--p);"></span> ${
-					a.name
-					}</div>`).join('') : `<a href="${
-					acc.showUrl
-					}" class="btn btn-sm btn-outline-primary rounded-pill px-3" style="font-size:0.7rem; font-weight:700; text-transform:uppercase;">Verbinden</a>`
-					}
-									</td>
-									<td data-label="Equity / Balance" class="text-end">
-										<span style="font-weight:800;">${
-					fmt(acc.equity)
-					}</span><br>
-										<span style="font-size:0.75rem;color:var(--txt-dim);">${
-					fmt(acc.balance)
-					}</span>
-									</td>
-									<td data-label="Offener P&L" class="text-center">
-										<span style="font-weight:700;color:${pnlColor}">${
-					fmt(openPnL)
-					} \u20ac</span><br>
-										<span style="font-size:0.75rem;color:${pnlColor};opacity:0.8;">${
-					ddPct.toFixed(2)
-					}%</span>
-									</td>
-									<td data-label="Gesamtprofit" class="text-center">
-										<span style="font-weight:700;color:${profitColor}">${
-					fmt(acc.profit)
-					} \u20ac</span><br>
-										<span class="badge ${profitBadge} p-1" style="font-size:0.65rem;">${
-					Number(acc.gain).toFixed(2)
-					}%</span>
-									</td>
-									<td data-label="Aktionen" class="text-end">
-										<div class="d-flex justify-content-end gap-2">
-											<a href="${
-					acc.showUrl
-					}" class="btn-modern btn-ghost p-2" title="Ansehen"><i class="fas fa-eye"></i></a>
-											<a href="${
-					acc.editUrl
-					}" class="btn-modern btn-ghost p-2" title="Bearbeiten"><i class="fas fa-pen"></i></a>
-											<form method="post" action="${
-					acc.deleteUrl
-					}" onsubmit="return confirm('L\u00f6schen?');">
-												<input type="hidden" name="_token" value="${
-					acc.deleteToken
-					}">
-												<button class="btn-modern btn-ghost p-2 text-danger" type="submit"><i class="fas fa-trash"></i></button>
-											</form>
-										</div>
-									</td>
-								`;
-					tbody.appendChild(tr);
+					card.innerHTML = `
+					<div class="acc-card-top">
+						<div>
+							<div class="acc-card-name">
+								<i class="fas fa-${platformIcon}" style="font-size:0.75rem;opacity:0.3;margin-right:4px;"></i>
+								${acc.name}
+							</div>
+							<div class="acc-card-meta">
+								<span class="badge-acc">#${acc.login}</span>
+								<span class="badge-acc">${acc.broker}</span>
+								<span class="badge-acc">${acc.platform.toUpperCase()}</span>
+							</div>
+						</div>
+						<div class="acc-card-status">${statusHtml}</div>
+					</div>
+					<div class="acc-card-numbers">
+						<div class="acc-num-item">
+							<div class="acc-num-label">Equity</div>
+							<div class="acc-num-val">${fmt(acc.equity)}</div>
+						</div>
+						<div class="acc-num-item">
+							<div class="acc-num-label">Balance</div>
+							<div class="acc-num-val" style="color:var(--txt-dim);">${fmt(acc.balance)}</div>
+						</div>
+						<div class="acc-num-item">
+							<div class="acc-num-label">Offener P&L</div>
+							<div class="acc-num-val" style="color:${pnlColor};">${fmt(openPnL)} <span style="font-size:0.7rem;opacity:0.7;">${ddPct.toFixed(2)}%</span></div>
+						</div>
+						<div class="acc-num-item">
+							<div class="acc-num-label">Gesamtprofit</div>
+							<div class="acc-num-val" style="color:${profitColor};">${fmt(acc.profit)} <span style="font-size:0.7rem;opacity:0.7;">${Number(acc.gain).toFixed(2)}%</span></div>
+						</div>
+					</div>
+					<div class="acc-card-footer">
+						<div>${agentHtml}</div>
+						<div class="acc-card-actions">
+							<a href="${acc.showUrl}" class="btn-icon" title="Ansehen"><i class="fas fa-eye"></i></a>
+							<a href="${acc.editUrl}" class="btn-icon" title="Bearbeiten"><i class="fas fa-pen"></i></a>
+							<form method="post" action="${acc.deleteUrl}" onsubmit="return confirm('L\u00f6schen?');" style="margin:0;">
+								<input type="hidden" name="_token" value="${acc.deleteToken}">
+								<button class="btn-icon btn-icon-danger" type="submit" title="L\u00f6schen"><i class="fas fa-trash"></i></button>
+							</form>
+						</div>
+					</div>`;
+					grid.appendChild(card);
 					});
 					
 					// Show content with staggered reveals
@@ -1189,14 +1262,13 @@ class="container-custom">
 					document.getElementById('chartPerf').classList.add('revealed');
 					document.getElementById('chartAlloc').classList.add('revealed');
 					}, 500);
-					// Reveal table
+					// Reveal grid
 					setTimeout(() => {
 					document.getElementById('tableWrap').classList.add('revealed');
-					// Reveal rows
-					tbody.querySelectorAll('tr').forEach(tr => {
+					grid.querySelectorAll('.acc-card').forEach(card => {
 					requestAnimationFrame(() => {
-					tr.style.opacity = '1';
-					tr.style.transform = 'translateY(0)';
+					card.style.opacity = '1';
+					card.style.transform = 'translateY(0)';
 					});
 					});
 					}, 700);
@@ -1331,4 +1403,135 @@ class="container-custom">
 					});
 					}
 					}
-					});</script>{% endblock %}
+					});</script><script>
+(function() {
+	const steps = document.querySelectorAll('.wizard-step');
+	const dots = document.querySelectorAll('.wizard-dot');
+	const btnNext = document.getElementById('wizardNext');
+	const btnBack = document.getElementById('wizardBack');
+	const btnSubmit = document.getElementById('wizardSubmit');
+	const title = document.getElementById('wizardTitle');
+	const platformSelect = document.getElementById('account_platform');
+	const serverInput = document.getElementById('account_tradeServer');
+	const dropdown = document.getElementById('serverDropdown');
+
+	const titles = ['Plattform', 'Broker', 'Server', 'Login', 'Passwort', 'Benennen'];
+	let current = 0;
+
+	// Steps that should be skipped for cTrader (server, login, password)
+	function getVisibleSteps() {
+		const p = platformSelect.value;
+		if (p === 'ctrader') return [0, 1, 5]; // platform, broker, name only
+		return [0, 1, 2, 3, 4, 5]; // all steps for mt4/mt5
+	}
+
+	function currentVisible() { return getVisibleSteps(); }
+	function currentIdx() { return currentVisible().indexOf(current); }
+
+	function goTo(step) {
+		current = step;
+
+		steps.forEach(s => s.style.display = 'none');
+		steps[step].style.display = 'block';
+		steps[step].style.animation = 'none';
+		steps[step].offsetHeight; // trigger reflow
+		steps[step].style.animation = '';
+
+		const visible = currentVisible();
+		const idx = visible.indexOf(step);
+		dots.forEach((d, i) => {
+			d.className = 'wizard-dot';
+			const stepForDot = visible[i];
+			if (stepForDot === undefined) { d.style.display = 'none'; return; }
+			d.style.display = '';
+			if (stepForDot < step) d.classList.add('done');
+			else if (stepForDot === step) d.classList.add('active');
+		});
+		dots.forEach((d, i) => { if (i >= visible.length) d.style.display = 'none'; });
+
+		btnBack.style.display = idx > 0 ? '' : 'none';
+		const isLast = idx === visible.length - 1;
+		btnNext.style.display = isLast ? 'none' : '';
+		btnSubmit.style.display = isLast ? '' : 'none';
+
+		title.textContent = titles[step];
+
+		const input = steps[step].querySelector('input, select');
+		if (input) setTimeout(() => input.focus(), 100);
+	}
+
+	function validate() {
+		const input = steps[current].querySelector('input, select');
+		if (!input) return true;
+		if (!input.value.trim()) {
+			input.classList.add('is-invalid');
+			input.addEventListener('input', () => input.classList.remove('is-invalid'), { once: true });
+			input.focus();
+			return false;
+		}
+		return true;
+	}
+
+	btnNext.addEventListener('click', () => {
+		if (!validate()) return;
+		const visible = currentVisible();
+		const idx = currentIdx();
+		if (idx < visible.length - 1) goTo(visible[idx + 1]);
+	});
+
+	btnBack.addEventListener('click', () => {
+		const visible = currentVisible();
+		const idx = currentIdx();
+		if (idx > 0) goTo(visible[idx - 1]);
+	});
+
+	// Reset wizard when modal opens
+	document.getElementById('addAccountModal').addEventListener('show.bs.modal', () => {
+		goTo(0);
+	});
+
+	// Allow Enter to go next (not submit)
+	document.getElementById('wizardForm').addEventListener('keydown', function(e) {
+		if (e.key === 'Enter' && btnSubmit.style.display === 'none') {
+			e.preventDefault();
+			btnNext.click();
+		}
+	});
+
+	// Server autocomplete
+	let debounceTimer = null;
+	function fetchServers() {
+		const platform = platformSelect.value;
+		if (platform !== 'mt4' && platform !== 'mt5') { dropdown.style.display = 'none'; return; }
+		const q = serverInput.value.trim();
+		clearTimeout(debounceTimer);
+		debounceTimer = setTimeout(() => {
+			fetch('{{ path("app_account_api_servers") }}?platform=' + encodeURIComponent(platform) + '&q=' + encodeURIComponent(q))
+				.then(r => r.json())
+				.then(servers => {
+					dropdown.innerHTML = '';
+					if (!servers.length) { dropdown.style.display = 'none'; return; }
+					servers.forEach(s => {
+						const item = document.createElement('a');
+						item.href = '#';
+						item.className = 'list-group-item list-group-item-action';
+						item.style.cssText = 'font-size:0.85rem;padding:8px 16px;';
+						item.textContent = s;
+						item.addEventListener('mousedown', function(e) {
+							e.preventDefault();
+							serverInput.value = s;
+							dropdown.style.display = 'none';
+						});
+						dropdown.appendChild(item);
+					});
+					dropdown.style.display = 'block';
+				});
+		}, 200);
+	}
+	serverInput.addEventListener('input', fetchServers);
+	serverInput.addEventListener('focus', fetchServers);
+	serverInput.addEventListener('blur', () => { setTimeout(() => dropdown.style.display = 'none', 150); });
+
+	goTo(0);
+})();
+</script>{% endblock %}

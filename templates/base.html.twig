@@ -164,7 +164,7 @@
 
 					<div class="sidenav-header text-center">
 						<span class="btn btn-outline-dark pb-2 text-sm  w-100">
-							<i class="text-success text-lg mx-1">●</i>Alle Systeme sind aktiv</span>
+							<i class="text-warning text-lg mx-1">●</i>Wartungsarbeiten aktiv</span>
 						{# <span class="btn btn-outline-dark pb-2 text-sm  w-100">
 																																											<i class="text-success text-lg mx-1">●</i>Server: London-B</span> #}
 					</div>
@@ -326,6 +326,22 @@
 						Dein Abonnement ist abgelaufen und die Automatisierung wurde gesperrt. Neues Abonnement buchen, um das Trading fortzusetzen.
 					</div>
 				{% endif %}
+
+				{# ══ Wartungsbanner — entfernen wenn Wartung beendet ══ #}
+				<div style="background:linear-gradient(135deg,#1e293b 0%,#334155 100%);border-radius:16px;padding:1.25rem 1.5rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:1.25rem;position:relative;overflow:hidden;">
+					<div style="width:48px;height:48px;border-radius:50%;background:rgba(99,102,241,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+						<div style="width:24px;height:24px;border-radius:50%;background:#6366f1;box-shadow:0 0 12px rgba(99,102,241,0.6);animation:mPulse 2s ease-in-out infinite;"></div>
+					</div>
+					<div style="flex:1;min-width:0;">
+						<div style="font-size:0.95rem;font-weight:800;color:#fff;margin-bottom:0.2rem;">System-Optimierung</div>
+						<div style="font-size:0.8rem;color:rgba(255,255,255,0.7);line-height:1.5;">Wir führen derzeit planmäßige Wartungsarbeiten durch. Dein Konto kann vorübergehend als <span style="color:#f59e0b;font-weight:600;">offline</span> angezeigt werden, obwohl alles korrekt eingerichtet ist. Nach Abschluss wird der Betrieb vollautomatisch fortgesetzt.</div>
+					</div>
+					<div style="flex-shrink:0;opacity:0.08;position:absolute;right:1.5rem;top:50%;transform:translateY(-50%);">
+						<i class="fas fa-shield-alt" style="font-size:4rem;color:#fff;"></i>
+					</div>
+				</div>
+				<style>@keyframes mPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}</style>
+				{# ══ Ende Wartungsbanner ══ #}
 
 				{% block body %}{% endblock %}
 			</div>

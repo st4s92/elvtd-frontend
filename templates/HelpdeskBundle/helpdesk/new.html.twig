@@ -1,25 +1,214 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Helpdesk - New Ticket{% endblock %}
+{% block title %}Neues Ticket{% endblock %}
 
 {% block body %}
-    <div class="container">
-        <h1>Create New Ticket</h1>
+<style>
+	:root {
+		--hd-card: #ffffff;
+		--hd-dark: #0f172a;
+		--hd-dim: #64748b;
+		--hd-border: rgba(0,0,0,0.06);
+		--hd-green: #16a34a;
+		--hd-accent: #6366f1;
+		--hd-radius: 16px;
+	}
+	.hd-wrap {
+		max-width: 640px;
+		margin: 0 auto;
+		padding: 2rem 1.5rem 4rem;
+	}
+	.hd-back {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: var(--hd-dim);
+		text-decoration: none;
+		margin-bottom: 1.5rem;
+		transition: color 0.2s;
+	}
+	.hd-back:hover { color: var(--hd-dark); }
+	.hd-header {
+		margin-bottom: 2rem;
+	}
+	.hd-title {
+		font-size: 1.5rem;
+		font-weight: 800;
+		color: var(--hd-dark);
+		letter-spacing: -0.03em;
+		margin: 0 0 0.35rem;
+	}
+	.hd-subtitle {
+		font-size: 0.85rem;
+		color: var(--hd-dim);
+		line-height: 1.5;
+	}
 
-        {% for flash_message in app.flashes('success') %}
-            <div class="alert alert-success">{{ flash_message }}</div>
-        {% endfor %}
+	.hd-card {
+		background: var(--hd-card);
+		border: 1px solid var(--hd-border);
+		border-radius: var(--hd-radius);
+		padding: 2rem;
+		box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+	}
+	.hd-prefill-banner {
+		background: rgba(99,102,241,0.06);
+		border: 1px solid rgba(99,102,241,0.12);
+		border-radius: 12px;
+		padding: 0.85rem 1.1rem;
+		margin-bottom: 1.5rem;
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		font-size: 0.8rem;
+		color: var(--hd-accent);
+		font-weight: 600;
+	}
+	.hd-prefill-banner i {
+		font-size: 1rem;
+		opacity: 0.7;
+	}
 
-        {{ form_start(form) }}
-        <div class="form-group">
-            {{ form_row(form.title, {'attr': {'class': 'form-control'}}) }}
-        </div>
-        <div class="form-group">
-            {{ form_row(form.description, {'attr': {'class': 'form-control', 'rows': 5}}) }}
-        </div>
-        <button type="submit" class="btn btn-primary">Submit Ticket</button>
-        {{ form_end(form) }}
+	.hd-field {
+		margin-bottom: 1.25rem;
+	}
+	.hd-field:last-of-type { margin-bottom: 0; }
+	.hd-label {
+		display: block;
+		font-size: 0.78rem;
+		font-weight: 700;
+		color: var(--hd-dark);
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		margin-bottom: 0.5rem;
+	}
+	.hd-input {
+		width: 100%;
+		padding: 0.7rem 1rem;
+		border: 1.5px solid rgba(0,0,0,0.1);
+		border-radius: 12px;
+		font-size: 0.9rem;
+		color: var(--hd-dark);
+		background: #fff;
+		transition: border-color 0.2s, box-shadow 0.2s;
+		font-family: inherit;
+	}
+	.hd-input:focus {
+		outline: none;
+		border-color: var(--hd-accent);
+		box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+	}
+	.hd-textarea {
+		resize: vertical;
+		min-height: 160px;
+		line-height: 1.6;
+	}
+	.hd-hint {
+		font-size: 0.72rem;
+		color: var(--hd-dim);
+		margin-top: 0.35rem;
+	}
 
-        <a href="{{ path('app_helpdesk_index') }}" class="btn btn-secondary mt-3">Back to Tickets</a>
-    </div>
+	.hd-actions {
+		display: flex;
+		gap: 0.75rem;
+		margin-top: 1.75rem;
+		align-items: center;
+	}
+	.hd-btn-submit {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.65rem 1.75rem;
+		background: var(--hd-dark);
+		color: #fff;
+		border: none;
+		border-radius: 12px;
+		font-size: 0.85rem;
+		font-weight: 700;
+		cursor: pointer;
+		transition: transform 0.2s, box-shadow 0.2s;
+	}
+	.hd-btn-submit:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+	}
+	.hd-btn-cancel {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.65rem 1.25rem;
+		background: transparent;
+		color: var(--hd-dim);
+		border: 1.5px solid rgba(0,0,0,0.1);
+		border-radius: 12px;
+		font-size: 0.85rem;
+		font-weight: 600;
+		text-decoration: none;
+		transition: border-color 0.2s, color 0.2s;
+	}
+	.hd-btn-cancel:hover { border-color: var(--hd-dark); color: var(--hd-dark); }
+
+	.alert-success {
+		background: rgba(22,163,74,0.08);
+		border: 1px solid rgba(22,163,74,0.15);
+		color: var(--hd-green);
+		padding: 0.75rem 1rem;
+		border-radius: 12px;
+		font-size: 0.85rem;
+		font-weight: 600;
+		margin-bottom: 1.5rem;
+	}
+</style>
+
+<div class="hd-wrap">
+	<a href="{{ path('app_helpdesk_index') }}" class="hd-back">
+		<i class="fas fa-arrow-left"></i> Zurück zu meinen Tickets
+	</a>
+
+	<div class="hd-header">
+		<h1 class="hd-title">Neues Ticket erstellen</h1>
+		<p class="hd-subtitle">Beschreibe dein Anliegen so genau wie möglich, damit wir dir schnell helfen können.</p>
+	</div>
+
+	{% for flash_message in app.flashes('success') %}
+		<div class="alert-success">{{ flash_message }}</div>
+	{% endfor %}
+
+	<div class="hd-card">
+		{% set isPrefilled = form.vars.data.title is defined and form.vars.data.title and 'Account Installation' in form.vars.data.title %}
+
+		{% if isPrefilled %}
+		<div class="hd-prefill-banner">
+			<i class="fas fa-info-circle"></i>
+			Dieses Ticket wurde automatisch vorausgefüllt. Du kannst die Angaben vor dem Absenden anpassen.
+		</div>
+		{% endif %}
+
+		{{ form_start(form, {'attr': {'novalidate': 'novalidate'}}) }}
+
+		<div class="hd-field">
+			<label class="hd-label" for="{{ form.title.vars.id }}">Betreff</label>
+			{{ form_widget(form.title, {'attr': {'class': 'hd-input', 'placeholder': 'Kurze Zusammenfassung deines Anliegens'}}) }}
+			<div class="hd-hint">z.B. "Account verbindet sich nicht", "Balance wird nicht angezeigt"</div>
+		</div>
+
+		<div class="hd-field">
+			<label class="hd-label" for="{{ form.description.vars.id }}">Beschreibung</label>
+			{{ form_widget(form.description, {'attr': {'class': 'hd-input hd-textarea', 'placeholder': 'Beschreibe dein Problem im Detail...', 'rows': 8}}) }}
+			<div class="hd-hint">Je mehr Details, desto schneller können wir helfen. Account-Nummer, Fehlermeldungen etc.</div>
+		</div>
+
+		<div class="hd-actions">
+			<button type="submit" class="hd-btn-submit">
+				<i class="fas fa-paper-plane"></i> Ticket absenden
+			</button>
+			<a href="{{ path('app_helpdesk_index') }}" class="hd-btn-cancel">Abbrechen</a>
+		</div>
+
+		{{ form_end(form) }}
+	</div>
+</div>
 {% endblock %}

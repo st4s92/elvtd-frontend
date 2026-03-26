@@ -41,6 +41,12 @@ class CtraderMarketData
         '1D'  => 12,
     ];
 
+    // Resolution → bar duration in minutes (for timestamp correction)
+    private const RESOLUTION_MINUTES = [
+        '1' => 1, '5' => 5, '15' => 15, '30' => 30,
+        '60' => 60, '240' => 240, 'D' => 1440, '1D' => 1440,
+    ];
+
     private $socket = null;
     private string $clientId;
     private string $clientSecret;
@@ -90,7 +96,7 @@ class CtraderMarketData
         foreach ($hosts as $tryLive) {
             $this->debug[] = 'trying ' . ($tryLive ? 'LIVE' : 'DEMO') . ' server...';
             try {
-                $result = $this->doGetCandles($accessToken, $login, $symbolName, $period, $fromTimestamp, $toTimestamp, $tryLive, $ctid);
+                $result = $this->doGetCandles($accessToken, $login, $symbolName, $period, $fromTimestamp, $toTimestamp, $tryLive, $ctid, $resolution);
                 if ($result && !empty($result['t'])) {
                     $this->debug[] = 'SUCCESS on ' . ($tryLive ? 'LIVE' : 'DEMO') . ': ' . count($result['t']) . ' candles';
                     $this->disconnect();
@@ -115,7 +121,8 @@ class CtraderMarketData
         int $fromTimestamp,
         int $toTimestamp,
         bool $isLive,
-        ?int $ctid = null
+        ?int $ctid = null,
+        string $resolution = '15'
     ): ?array {
         $this->connect($isLive);
         $this->debug[] = 'connected to ' . ($isLive ? self::HOST_LIVE : self::HOST_DEMO);
@@ -168,7 +175,7 @@ class CtraderMarketData
         $bars = $this->getRepeatedEmbedded($res['fields'], 5);
         $this->debug[] = 'raw trendbars received: ' . count($bars);
 
-        $candles = $this->parseTrendbars($res, $symbolInfo['digits']);
+        $candles = $this->parseTrendbars($res, $symbolInfo['digits'], $resolution);
         $this->debug[] = 'parsed candles: ' . count($candles['t'] ?? []);
 
         return $candles;
@@ -356,9 +363,10 @@ class CtraderMarketData
         return 5; // default
     }
 
-    private function parseTrendbars(array $res, int $digits): array
+    private function parseTrendbars(array $res, int $digits, string $resolution = '15'): array
     {
         $divisor = pow(10, $digits);
+        $barMinutes = self::RESOLUTION_MINUTES[$resolution] ?? 15;
         $t = []; $o = []; $h = []; $l = []; $c = []; $v = [];
 
         // Field 5 = repeated ProtoOATrendbar
@@ -376,7 +384,7 @@ class CtraderMarketData
             $closePrice = ($lowRaw + $deltaClose) / $divisor;
             $highPrice = ($lowRaw + $deltaHigh) / $divisor;
 
-            $t[] = (int)$timestampMinutes * 60; // seconds
+            $t[] = ((int)$timestampMinutes - $barMinutes) * 60; // convert close-time to open-time
             $o[] = round($openPrice, $digits);
             $h[] = round($highPrice, $digits);
             $l[] = round($lowPrice, $digits);

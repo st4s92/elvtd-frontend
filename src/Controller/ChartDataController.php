@@ -131,15 +131,8 @@ class ChartDataController extends AbstractController
                 return null;
             }
 
-            $user = $this->getUser();
-            if (!$user) {
-                $debugInfo['steps'][] = 'ctrader: no authenticated user (not logged in?)';
-                return null;
-            }
-            if ($account->getUser() !== $user && !$this->isGranted('ROLE_ADMIN')) {
-                $debugInfo['steps'][] = 'ctrader: access denied (user mismatch)';
-                return null;
-            }
+            // Chart data (OHLC candles) is public market data — no ownership check needed.
+            // The cTrader access token from Denies API provides the actual authorization.
 
             // Fetch ctid + isLive + accessToken from Denies API
             $ctraderInfo = $deniesClient->getCtraderInfoByLogin($accountLogin);

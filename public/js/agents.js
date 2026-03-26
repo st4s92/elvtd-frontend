@@ -431,18 +431,28 @@
             getBars: function (symbolInfo, resolution, periodParams, onResult, onError) {
                 var from = periodParams.from;
                 var to = periodParams.to;
+                var countBack = periodParams.countBack || 300;
                 var ck = resolution + '_' + from + '_' + to;
                 if (barsCache[ck]) {
                     onResult(barsCache[ck], { noData: barsCache[ck].length === 0 });
                     return;
                 }
+                // Use current time as 'to' if TradingView sends a future timestamp
+                var now = Math.floor(Date.now() / 1000);
+                var reqTo = Math.min(to, now + 86400);
+                // Ensure we request enough history for countBack bars
+                var minRange = countBack * (parseInt(resolution, 10) || 15) * 60;
+                var reqFrom = Math.min(from, reqTo - minRange);
+
                 var url = '/api/chart-data?symbol=' + encodeURIComponent(symbol) +
                     '&resolution=' + encodeURIComponent(resolution) +
-                    '&from=' + from + '&to=' + to +
+                    '&from=' + reqFrom + '&to=' + reqTo +
                     (masterLogin ? '&account=' + masterLogin : '');
+                console.log('[agents-chart] getBars', symbol, resolution, 'from=' + reqFrom, 'to=' + reqTo, 'account=' + masterLogin, 'url=' + url);
                 fetch(url)
                     .then(function (r) { return r.json(); })
                     .then(function (data) {
+                        console.log('[agents-chart] response', data.s, data.source, 'candles=' + (data.t ? data.t.length : 0));
                         if (data.s !== 'ok' || !data.t || data.t.length === 0) {
                             barsCache[ck] = [];
                             onResult([], { noData: true });
@@ -462,7 +472,8 @@
                         barsCache[ck] = bars;
                         onResult(bars, { noData: false });
                     })
-                    .catch(function () {
+                    .catch(function (err) {
+                        console.error('[agents-chart] fetch error', err);
                         onResult([], { noData: true });
                     });
             },
@@ -474,7 +485,32 @@
     // Chart container counter for unique IDs
     var chartCounter = 0;
 
-    function loadChart(symbol) {
+    function getTradeFromItem(item) {
+        if (!item) return null;
+        var entry = parseFloat(item.getAttribute('data-entry') || 0);
+        var exit = parseFloat(item.getAttribute('data-exit') || 0);
+        if (!entry) return null;
+        var sym = (item.getAttribute('data-symbol') || '').toUpperCase();
+        var decimals = 5;
+        if (/JPY/.test(sym)) decimals = 3;
+        if (/XAU|GOLD/i.test(sym)) decimals = 2;
+        if (/BTC/i.test(sym)) decimals = 2;
+        if (/US30|US100|US500|NAS|SPX|USTEC|DJ|DE40|DAX|GER|UK100|JP225|FRA/i.test(sym)) decimals = 2;
+        return {
+            symbol: sym,
+            entry: entry,
+            exit: exit,
+            isBuy: (item.getAttribute('data-type') || '').indexOf('BUY') !== -1,
+            openAt: parseInt(item.getAttribute('data-open-at') || 0, 10),
+            closeAt: parseInt(item.getAttribute('data-close-at') || 0, 10),
+            lot: parseFloat(item.getAttribute('data-lot') || 0),
+            profit: parseFloat(item.getAttribute('data-profit') || 0),
+            isClosed: parseInt(item.getAttribute('data-status') || 0, 10) === 700,
+            decimals: decimals
+        };
+    }
+
+    function loadChart(symbol, trade) {
         var sym = (symbol || 'USTEC').toUpperCase();
         currentSymbol = sym;
 
@@ -488,8 +524,9 @@
 
         // Create fresh container each time (TradingView needs unique container)
         chartSide.innerHTML = '';
+        var chartId = 'moTvChart_' + (++chartCounter);
         var chartDiv = document.createElement('div');
-        chartDiv.id = 'moTvChart_' + (++chartCounter);
+        chartDiv.id = chartId;
         chartDiv.style.cssText = 'width:100%;height:100%;';
         chartSide.appendChild(chartDiv);
 
@@ -500,7 +537,7 @@
             }
             try {
                 tvWidget = new TradingView.widget({
-                    container: chartDiv,
+                    container: chartId,
                     locale: 'de',
                     library_path: '/charting/charting_library/',
                     datafeed: createChartDatafeed(sym),
@@ -546,22 +583,98 @@
                         'go_to_date',
                         'timeframes_toolbar',
                         'left_toolbar',
-                        'header_resolutions'
+                        'header_resolutions',
+                        'create_volume_indicator_by_default',
+                        'create_volume_indicator_by_default_once'
                     ],
                     enabled_features: [],
                     loading_screen: { backgroundColor: '#0d1520', foregroundColor: '#4ade80' }
                 });
+
+                // Draw entry/exit markers when chart is ready
+                if (trade && tvWidget) {
+                    tvWidget.onChartReady(function () {
+                        var chart = tvWidget.activeChart();
+                        var d = trade.decimals;
+                        var entryColor = trade.isBuy ? '#4ade80' : '#f87171';
+                        var typeLabel = trade.isBuy ? '▲ BUY' : '▼ SELL';
+
+                        // Set visible range around the trade
+                        if (trade.openAt) {
+                            var padding = 3600; // 1h padding
+                            var rangeFrom = trade.openAt - padding;
+                            var rangeTo = trade.isClosed && trade.closeAt ? trade.closeAt + padding : Math.floor(Date.now() / 1000) + padding;
+                            chart.setVisibleRange({ from: rangeFrom, to: rangeTo });
+                        }
+
+                        // Entry line
+                        chart.createShape(
+                            { time: trade.openAt, price: trade.entry },
+                            {
+                                shape: 'horizontal_line',
+                                lock: true, disableSelection: true, disableSave: true, disableUndo: true,
+                                overrides: {
+                                    linecolor: entryColor,
+                                    linestyle: 2, linewidth: 1, showLabel: true,
+                                    text: typeLabel + '  ' + trade.lot.toFixed(2) + ' Lot @ ' + trade.entry.toFixed(d),
+                                    textcolor: entryColor,
+                                    fontsize: 11, bold: true, horzLabelsAlign: 'left',
+                                }
+                            }
+                        );
+
+                        // Entry arrow
+                        chart.createShape(
+                            { time: trade.openAt, price: trade.entry },
+                            {
+                                shape: 'arrow_' + (trade.isBuy ? 'up' : 'down'),
+                                lock: true, disableSelection: true, disableSave: true, disableUndo: true,
+                                overrides: { color: entryColor, fontsize: 14 }
+                            }
+                        );
+
+                        // Exit line + arrow (only for closed trades)
+                        if (trade.isClosed && trade.exit && trade.closeAt) {
+                            var profitText = (trade.profit >= 0 ? '+' : '') + trade.profit.toFixed(2) + ' €';
+                            var exitColor = '#a78bfa'; // purple
+
+                            chart.createShape(
+                                { time: trade.closeAt, price: trade.exit },
+                                {
+                                    shape: 'horizontal_line',
+                                    lock: true, disableSelection: true, disableSave: true, disableUndo: true,
+                                    overrides: {
+                                        linecolor: exitColor,
+                                        linestyle: 2, linewidth: 1, showLabel: true,
+                                        text: 'Exit ' + trade.exit.toFixed(d) + '  ' + profitText,
+                                        textcolor: exitColor,
+                                        fontsize: 11, bold: true, horzLabelsAlign: 'left',
+                                    }
+                                }
+                            );
+
+                            chart.createShape(
+                                { time: trade.closeAt, price: trade.exit },
+                                {
+                                    shape: 'arrow_' + (trade.isBuy ? 'down' : 'up'),
+                                    lock: true, disableSelection: true, disableSave: true, disableUndo: true,
+                                    overrides: { color: exitColor, fontsize: 14 }
+                                }
+                            );
+                        }
+                    });
+                }
             } catch (e) {
                 chartDiv.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:1rem;color:rgba(255,255,255,0.3);"><i class="fas fa-exclamation-triangle" style="font-size:1.5rem;opacity:.4;"></i><span>Chart nicht verfügbar</span></div>';
             }
         });
     }
 
-    // Find first trade symbol and load it
+    // Find first trade and load chart with its data
     var firstItem = document.querySelector('.mo-order-item');
     if (firstItem) {
-        var firstSymbol = firstItem.getAttribute('data-symbol') || 'ustec';
-        loadChart(firstSymbol);
+        var firstTrade = getTradeFromItem(firstItem);
+        loadChart(firstItem.getAttribute('data-symbol') || 'ustec', firstTrade);
         firstItem.classList.add('active');
     } else {
         loadChart('ustec');
@@ -581,7 +694,8 @@
         });
         item.classList.add('active');
 
-        loadChart(symbol);
+        var trade = getTradeFromItem(item);
+        loadChart(symbol, trade);
     });
 
     // Search filter

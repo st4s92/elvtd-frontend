@@ -12,6 +12,7 @@ use App\Repository\OrderRepository;
 use App\Repository\UserRepository;
 use App\Service\DuplikiumClient;
 use App\Service\DeniesClient;
+use App\Service\TelegramNotifier;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -205,6 +206,90 @@ class AccountController extends AbstractController
             'userCount' => count($users),
             'activeLast30Min' => $activeLast30Min,
             'activeLast24h' => $activeLast24h,
+        ]);
+    }
+
+    /**
+     * @Route("/account/api/servers", name="app_account_api_servers", methods={"GET"})
+     */
+    public function apiServers(Request $request, AccountRepository $accountRepository): JsonResponse
+    {
+        $platform = $request->query->get('platform', '');
+        $search = $request->query->get('q', '');
+
+        if (!in_array($platform, ['mt4', 'mt5'], true)) {
+            return $this->json([]);
+        }
+
+        $servers = $accountRepository->findDistinctServersByPlatform($platform, $search);
+
+        return $this->json($servers);
+    }
+
+    /**
+     * @Route("/account/setup/{id}", name="app_account_setup", methods={"GET"})
+     */
+    public function setup(Account $account): Response
+    {
+        if ($account->getUser() !== $this->getUser() && !$this->isGranted('ROLE_ADMIN')) {
+            return $this->redirectToRoute('app_account_index');
+        }
+
+        return $this->render('account/setup.html.twig', [
+            'account' => $account,
+        ]);
+    }
+
+    /**
+     * @Route("/account/api/setup-status/{id}", name="app_account_setup_status", methods={"GET"})
+     */
+    public function setupStatus(
+        Account $account,
+        DeniesClient $deniesClient,
+        DuplikiumClient $duplikiumClient,
+        AccountRepository $accountRepository,
+        OrderRepository $orderRepository,
+        EntityManagerInterface $entityManager
+    ): JsonResponse
+    {
+        if ($account->getUser() !== $this->getUser() && !$this->isGranted('ROLE_ADMIN')) {
+            return $this->json(['error' => 'Zugriff verweigert'], 403);
+        }
+
+        // Get raw API data including server_status_message (Denies only, kept for later)
+        $serverStatus = null;
+        if ($account->getHost() === 'denies') {
+            try {
+                $rawAccount = $deniesClient->getAccountRawByLogin((int) $account->getLogin());
+                if ($rawAccount) {
+                    $serverStatus = $rawAccount->server_status_message ?? $rawAccount->serverStatusMessage ?? null;
+                }
+            } catch (\Exception $e) {}
+        }
+
+        // Refresh account stats from the appropriate API
+        try {
+            $this->refreshAccountStats($account, $deniesClient, $duplikiumClient, $accountRepository, $orderRepository, $entityManager);
+            $entityManager->flush();
+        } catch (\Exception $e) {
+            // refreshAccountStats may set error on the account
+        }
+
+        $error = $account->getError();
+        $balance = $account->getBalance() ?? 0;
+        $equity = $account->getEquity() ?? 0;
+        $isReady = ($balance > 0 || $equity > 0);
+
+        return $this->json([
+            'isActive' => $isReady,
+            'error' => ($error && $error !== '') ? $error : null,
+            'balance' => $balance,
+            'equity' => $equity,
+            'login' => $account->getLogin(),
+            'broker' => $account->getBroker(),
+            'platform' => $account->getPlatform(),
+            'host' => $account->getHost(),
+            'serverStatus' => $serverStatus,
         ]);
     }
 
@@ -407,7 +492,7 @@ class AccountController extends AbstractController
     /**
      * @Route("/auth/ctrader/callback", name="app_auth_ctrader_callback", methods={"GET"})
      */
-    public function authCtraderCallback(Request $request, AccountRepository $accountRepository, EntityManagerInterface $entityManager, DeniesClient $deniesClient): Response
+    public function authCtraderCallback(Request $request, AccountRepository $accountRepository, EntityManagerInterface $entityManager, DeniesClient $deniesClient, TelegramNotifier $telegramNotifier): Response
     {
         // Hole den Autorisierungscode und den State (login) aus den Query-Parametern
         $code = $request->query->get('code');
@@ -478,6 +563,7 @@ class AccountController extends AbstractController
         // Neuer Account: Bei Denies registrieren
         $account->setHost('denies');
         $response = $deniesClient->addAccount($account);
+        $telegramNotifier->notifyAccountAdded($account);
 
         if (isset($tokenData['access_token']) && strlen($tokenData['access_token']) > 1) {
             $this->addFlash('success', 'cTrader Account ' . $response->data->accountNumber . ' wurde erfolgreich verbunden.');
@@ -549,6 +635,7 @@ class AccountController extends AbstractController
         DuplikiumClient $duplikiumClient,
         DeniesClient $deniesClient,
         EntityManagerInterface $entityManager,
+        TelegramNotifier $telegramNotifier,
     ): Response
     {
         $account = new Account();
@@ -581,47 +668,14 @@ class AccountController extends AbstractController
                 $account->setPassword($encryptedPassword); // Verschlüsseltes Passwort setzen
             }
 
-            if($account->getPlatform() == 'ctrader') {
-                $account->setHost('denies');
-                $response = $deniesClient->addAccount($account);
-            }
-            elseif($account->getPlatform() == 'mt5') {
-                $account->setHost('denies');
-                $response = $deniesClient->addAccount($account);
-            }
-            else {
-                $account->setHost('duplikium');
-                $response = $duplikiumClient->addAccount($account);
-            }
+            $account->setHost('denies');
+            $response = $deniesClient->addAccount($account);
+            $accountRepository->add($account, true);
 
-            if($account->getHost() == 'denies') {
-                $this->addFlash('success', 'Acount '. $account->getLogin() .' wurde erfolgreich verbunden.');
-                $accountRepository->add($account, true);    
-            }
-            elseif($account->getHost() == 'duplikium') {
-                $this->addFlash('success', 'Acount '. $account->getLogin() .' wurde erfolgreich verbunden.');
+            $telegramNotifier->notifyAccountAdded($account);
 
-                $account->setHost('duplikium');
-                $account->setMetaId($response->account->account_id);
-                $account->setBalance($response->account->balance);
-                $account->setEquity($response->account->equity);
-
-                // Account in die Datenbank speichern
-                $accountRepository->add($account, true);
-            } else {
-                if (isset($response->error) && strlen($response->error) > 1) {
-                    $this->addFlash('danger', strip_tags($response->error));
-                } else {
-                    $this->addFlash('danger', 'Account-Erstellung fehlgeschlagen. Account wurde nicht erstellt.');
-                }
-                return $this->redirectToRoute('app_account_index', [], Response::HTTP_SEE_OTHER);
-            }
-
-            // Flash-Nachricht hinzufügen
-            $this->addFlash('success', 'Account wurde erfolgreich erstellt.');
-
-            // Weiterleitung zur Account-Indexseite
-            return $this->redirectToRoute('app_account_index', [], Response::HTTP_SEE_OTHER);
+            // Weiterleitung zur Setup-/Installationsseite
+            return $this->redirectToRoute('app_account_setup', ['id' => $account->getId()], Response::HTTP_SEE_OTHER);
         }
 
         return $this->renderForm('account/new.html.twig', [
@@ -781,6 +835,42 @@ class AccountController extends AbstractController
                 // Fallback: apiData bleibt null, Template zeigt lokale DB-Daten
             }
 
+            // Deduplicate by order_ticket: keep the entry with more complete data
+            if (!empty($allClosedTrades)) {
+                $byTicket = [];
+                $noTicket = [];
+                foreach ($allClosedTrades as $trade) {
+                    $ticket = $trade->order_ticket ?? $trade->orderTicket ?? 0;
+                    if (!$ticket || $ticket == 0) {
+                        $noTicket[] = $trade;
+                        continue;
+                    }
+                    $key = (string) $ticket;
+                    if (!isset($byTicket[$key])) {
+                        $byTicket[$key] = $trade;
+                    } else {
+                        // Keep the one with close_price set (more complete)
+                        $existingClose = $byTicket[$key]->close_price ?? $byTicket[$key]->closePrice ?? 0;
+                        $newClose = $trade->close_price ?? $trade->closePrice ?? 0;
+                        $existingOpen = $byTicket[$key]->order_open_at ?? $byTicket[$key]->orderOpenAt ?? null;
+                        $newOpen = $trade->order_open_at ?? $trade->orderOpenAt ?? null;
+
+                        // Prefer the entry that has: open time, close price, and order_label with copy_
+                        $existingLabel = $byTicket[$key]->order_label ?? '';
+                        $newLabel = $trade->order_label ?? '';
+                        $existingIsCopy = str_contains($existingLabel, 'copy_');
+                        $newIsCopy = str_contains($newLabel, 'copy_');
+
+                        if ($newIsCopy && $newOpen && $newClose > 0) {
+                            $byTicket[$key] = $trade;
+                        } elseif (!$existingIsCopy && $newOpen && $newClose > 0) {
+                            $byTicket[$key] = $trade;
+                        }
+                    }
+                }
+                $allClosedTrades = array_merge(array_values($byTicket), $noTicket);
+            }
+
             // Sort closed trades descending by close date (newest first)
             if (!empty($allClosedTrades)) {
                 usort($allClosedTrades, function($a, $b) {
@@ -935,7 +1025,7 @@ class AccountController extends AbstractController
     /**
      * @Route("/account/{meta_id}", name="app_account_delete", methods={"POST"})
      */
-    public function delete(string $meta_id, Request $request, AccountRepository $accountRepository, MetaApiClient $metaApiClient, DuplikiumClient $duplikiumClient, DeniesClient $deniesClient): Response
+    public function delete(string $meta_id, Request $request, AccountRepository $accountRepository, MetaApiClient $metaApiClient, DuplikiumClient $duplikiumClient, DeniesClient $deniesClient, TelegramNotifier $telegramNotifier): Response
     {
         // Account anhand der meta_id finden
         $account = $accountRepository->findOneBy(['meta_id' => $meta_id]);
@@ -969,6 +1059,7 @@ class AccountController extends AbstractController
                 $this->session->getFlashBag()->add('danger', "Account konnte nicht gelöscht werden.");
             }
 
+            $telegramNotifier->notifyAccountDeleted($account);
             $accountRepository->remove($account, true);
             $this->session->getFlashBag()->add('success', 'Dein Account wurde erfolgreich gelöscht.');
         } else {
@@ -1077,22 +1168,17 @@ class AccountController extends AbstractController
             $response = $deniesClient->addAccount($account);
 
             if(isset($response->data->accountNumber) && strlen($response->data->accountNumber) > 1) {
-                $this->addFlash('success', 'Account '. $response->data->accountNumber .' wurde erfolgreich zu Denies übertragen.');
                 $account->setMetaId($response->data->accountNumber);
-            } else {
-                if (isset($response->error) && strlen($response->error) > 1) {
-                    $this->addFlash('danger', strip_tags($response->error));
-                } else {
-                    $this->addFlash('danger', 'Account-Übertragung fehlgeschlagen.');
-                }
             }
         } catch (\Exception $e) {
             $this->addFlash('danger', 'Fehler beim Übertragen: ' . $e->getMessage());
+            $accountRepository->add($account, true);
+            return $this->redirectToRoute('app_account_show', ['meta_id' => $account->getMetaId()]);
         }
 
         $accountRepository->add($account, true);
 
-        return $this->redirectToRoute('app_account_show', ['meta_id' => $account->getLogin()]);
+        return $this->redirectToRoute('app_account_setup', ['id' => $account->getId()]);
     }
 
     /**

@@ -4,55 +4,117 @@
 
 {% block body %}
     <style>
-        body {
-            background-color: #eae8e1 !important; width: 100%; height: 100vh; overflow: initial !important;
+        body { overflow-y: auto !important; }
+        .login-wrapper { padding: 2rem 0; }
+        .reg-card .form-group { margin-bottom: 1rem; }
+        .reg-card .form-group label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--txt);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 0.4rem;
         }
-        .registration ul {
-            margin: 0;
-            color: red;
-            font-size: 14px;
-            float: right;
-            max-width: 75%;
-        }
-        .registration li {
-            list-style-type: none;
-            text-align: right;
+        .reg-card input[type="text"],
+        .reg-card input[type="email"],
+        .reg-card input[type="password"] {
             width: 100%;
+            padding: 0.65rem 1rem;
+            background: rgba(255,255,255,0.7);
+            border: 1.5px solid rgba(0,0,0,0.08);
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            font-weight: 500;
+            color: var(--txt);
+            transition: all 0.25s ease;
+            outline: none;
         }
+        .reg-card input:focus {
+            border-color: var(--g);
+            box-shadow: 0 0 0 3px rgba(22,163,74,0.1);
+            background: #fff;
+        }
+        /* Symfony form_row error styling */
+        .reg-card ul {
+            margin: 0.25rem 0 0 0;
+            padding: 0;
+            list-style: none;
+        }
+        .reg-card ul li {
+            font-size: 0.75rem;
+            color: #dc2626;
+            font-weight: 500;
+        }
+        /* Stagger animation for fields */
+        .reg-card .form-group:nth-child(1) { animation: fadeUp 0.5s 0.3s cubic-bezier(0.16,1,0.3,1) both; }
+        .reg-card .form-group:nth-child(2) { animation: fadeUp 0.5s 0.35s cubic-bezier(0.16,1,0.3,1) both; }
+        .reg-card .form-group:nth-child(3) { animation: fadeUp 0.5s 0.4s cubic-bezier(0.16,1,0.3,1) both; }
+        .reg-card .form-group:nth-child(4) { animation: fadeUp 0.5s 0.45s cubic-bezier(0.16,1,0.3,1) both; }
+        .reg-card .form-group:nth-child(5) { animation: fadeUp 0.5s 0.5s cubic-bezier(0.16,1,0.3,1) both; }
+        .reg-card .form-group:nth-child(6) { animation: fadeUp 0.5s 0.55s cubic-bezier(0.16,1,0.3,1) both; }
     </style>
-    <div class="row">
-        <div class="card" style="background-image: linear-gradient(180deg, #f9f7f6 0%, rgba(247, 244, 242, 50%) 80%); box-shadow: 0px 2px 15px 15px rgba(0, 0, 0, 0.05);">
-            <div class="card-body mx-2 mt-3">
-                <h2 class="mb-2 text-center"><img src="{{ asset('assets/img/elvtd_logo.png') }}" width="50"></h2>
-                <h3 class="text-center">REGISTRIEREN</h3>
 
-                {{ form_start(form) }}
-                <div class="form-group mt-0">
-                    {{ form_row(form.username, {'attr': {'class': 'form-control'}}) }}
-                </div>
-                <div class="form-group mt-3">
-                    {{ form_row(form.firstname, {'attr': {'class': 'form-control'}}) }}
-                </div>
-                <div class="form-group mt-3">
-                    {{ form_row(form.lastname, {'attr': {'class': 'form-control'}}) }}
-                </div>
-                <div class="form-group mt-3">
-                    {{ form_row(form.email, {'attr': {'class': 'form-control'}}) }}
-                </div>
-                <div class="form-group mt-3">
-                    {{ form_row(form.password.first, {'attr': {'class': 'form-control'}}) }}
-                </div>
-                <div class="form-group mt-3">
-                    {{ form_row(form.password.second, {'attr': {'class': 'form-control'}}) }}
-                </div>
-                {{ form_row(form.recaptcha) }}
-                <p class="mt-3">
-                    Du hast bereits einen Account?
-                    <a href="{{ path('app_login') }}" class="text-decoration-underline">Jetzt einloggen</a>
-                </p>
-                <button class="btn btn-dark btn-block mt-3 float-end w-50 w-md-25">Registrieren</button>
-                {{ form_end(form) }}
-            </div>
+    <div class="login-heading">
+        <h1>Konto erstellen</h1>
+        <p>Registriere dich bei ELVTD Finance</p>
+    </div>
+
+    <div class="login-card reg-card">
+        {{ form_start(form) }}
+
+        <div class="form-group">
+            <label>Username</label>
+            {{ form_widget(form.username, {'attr': {'class': '', 'placeholder': 'Dein Benutzername'}}) }}
+            {{ form_errors(form.username) }}
         </div>
+
+        <div class="form-group">
+            <label>Vorname</label>
+            {{ form_widget(form.firstname, {'attr': {'class': '', 'placeholder': 'Max'}}) }}
+            {{ form_errors(form.firstname) }}
+        </div>
+
+        <div class="form-group">
+            <label>Nachname</label>
+            {{ form_widget(form.lastname, {'attr': {'class': '', 'placeholder': 'Mustermann'}}) }}
+            {{ form_errors(form.lastname) }}
+        </div>
+
+        <div class="form-group">
+            <label>E-Mail</label>
+            {{ form_widget(form.email, {'attr': {'class': '', 'placeholder': 'max@beispiel.de'}}) }}
+            {{ form_errors(form.email) }}
+        </div>
+
+        <div class="form-group">
+            <label>Passwort</label>
+            {{ form_widget(form.password.first, {'attr': {'class': '', 'placeholder': 'Mindestens 8 Zeichen'}}) }}
+            {{ form_errors(form.password.first) }}
+        </div>
+
+        <div class="form-group">
+            <label>Passwort wiederholen</label>
+            {{ form_widget(form.password.second, {'attr': {'class': '', 'placeholder': 'Passwort bestätigen'}}) }}
+            {{ form_errors(form.password.second) }}
+        </div>
+
+        {{ form_row(form.recaptcha) }}
+
+        <div class="login-links" style="animation: fadeUp 0.5s 0.6s cubic-bezier(0.16,1,0.3,1) both;">
+            <a href="{{ path('app_login') }}">Bereits registriert? Anmelden</a>
+        </div>
+
+        <button type="submit" class="btn-login" style="animation: fadeUp 0.5s 0.65s cubic-bezier(0.16,1,0.3,1) both;">
+            <span class="btn-shine"></span>
+            Registrieren
+        </button>
+
+        {{ form_end(form) }}
+    </div>
+
+    <div class="login-footer">
+        <p>Bereits ein Konto? <a href="{{ path('app_login') }}">Jetzt anmelden</a></p>
     </div>
 {% endblock %}

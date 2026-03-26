@@ -146,6 +146,30 @@ class AgentController extends AbstractController
     }
 
     /**
+     * @Route("/admin/delete-order/{orderId}", name="app_admin_delete_order", methods={"POST"})
+     */
+    public function adminDeleteOrder(int $orderId, Request $request, DeniesClient $deniesClient): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
+        try {
+            // First try to close the active order, then soft-delete it
+            try {
+                $deniesClient->closeActiveOrder($orderId);
+            } catch (\Exception $e) {
+                // May already be closed, continue with soft-delete
+            }
+            $deniesClient->softDeleteOrder($orderId);
+            $this->addFlash('success', 'Order #' . $orderId . ' wurde gelöscht.');
+        } catch (\Exception $e) {
+            $this->addFlash('danger', 'Fehler beim Löschen: ' . $e->getMessage());
+        }
+
+        $referer = $request->headers->get('referer');
+        return new RedirectResponse($referer ?: $this->generateUrl('app_agents_index'));
+    }
+
+    /**
      * @Route("/agents/{meta_id}", name="app_agents_show", methods={"GET"})
      */
     public function show(Account $account, OrderRepository $orderRepository, AccountAgentSubscriptionRepository $accountAgentSubscriptionRepository, AgentRepository $agentRepository, MetaApiClient $metaApiClient, DuplikiumClient $duplikiumClient): Response

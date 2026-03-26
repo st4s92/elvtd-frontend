@@ -779,6 +779,22 @@ wss.on('connection', (ws) => {
                 }
                 break;
 
+            case 'getSymbols':
+                if (!isConnected) { ws.send(JSON.stringify({ type: 'error', error: 'Not connected' })); return; }
+                try {
+                    // Ensure symbol list is loaded
+                    await ctrader.resolveSymbolId('_');
+                    const symbols = [];
+                    for (const [name] of ctrader.symbolNameToId) {
+                        symbols.push(name);
+                    }
+                    symbols.sort();
+                    ws.send(JSON.stringify({ type: 'symbols', symbols }));
+                } catch (e) {
+                    ws.send(JSON.stringify({ type: 'error', error: 'getSymbols: ' + e.message }));
+                }
+                break;
+
             default:
                 break;
         }

@@ -133,6 +133,25 @@ class TicketController extends AbstractController
         } else {
             return $this->json(['success' => false, 'message' => 'User not authenticated.'], 403);
         }
+
+        // Prefill from query parameters (e.g. from setup page)
+        $prefillSubject = $request->query->get('subject', '');
+        if ($prefillSubject && !$request->isMethod('POST')) {
+            $ticket->setTitle($prefillSubject);
+            // Auto-generate description for account installation tickets
+            if (str_contains($prefillSubject, 'Account Installation')) {
+                preg_match('/:\s*(\d+)/', $prefillSubject, $m);
+                $login = $m[1] ?? '—';
+                $ticket->setDescription(
+                    "Hallo Support-Team,\n\n" .
+                    "bei der Installation meines Trading-Accounts (Nr. {$login}) ist ein Problem aufgetreten.\n" .
+                    "Die Verbindung konnte nicht innerhalb der erwarteten Zeit hergestellt werden.\n\n" .
+                    "Bitte prüft den Account-Status und die Server-Verbindung.\n\n" .
+                    "Vielen Dank!"
+                );
+            }
+        }
+
         $form = $this->createForm(TicketType::class, $ticket);
 
         if ($request->isXmlHttpRequest()) {

@@ -117,6 +117,90 @@
 			background: var(--r);
 			animation: dp 1.6s infinite;
 		}
+
+		/* ── Offline header background ── */
+		.header-offline {
+			position: relative;
+			overflow: hidden;
+			background: linear-gradient(135deg, rgba(220,38,38,0.08) 0%, rgba(239,68,68,0.14) 50%, rgba(220,38,38,0.06) 100%) !important;
+			border: 1.5px solid rgba(220,38,38,0.2) !important;
+			box-shadow: 0 0 30px rgba(220,38,38,0.06), inset 0 0 40px rgba(220,38,38,0.03);
+		}
+		.header-offline::before {
+			content: '';
+			position: absolute;
+			inset: 0;
+			background: linear-gradient(90deg, transparent 0%, rgba(239,68,68,0.12) 50%, transparent 100%);
+			animation: offline-sweep 2.5s ease-in-out infinite;
+			pointer-events: none;
+		}
+		@keyframes offline-sweep {
+			0% { transform: translateX(-100%); }
+			100% { transform: translateX(100%); }
+		}
+		.offline-banner {
+			display: flex;
+			align-items: center;
+			gap: 0.75rem;
+			background: rgba(220,38,38,0.08);
+			border: 1px solid rgba(220,38,38,0.12);
+			border-radius: 12px;
+			padding: 0.75rem 1rem;
+			margin-top: 0.75rem;
+		}
+		.offline-banner-icon {
+			width: 32px;
+			height: 32px;
+			background: rgba(220,38,38,0.12);
+			border-radius: 50%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			flex-shrink: 0;
+			color: #dc2626;
+			font-size: 0.85rem;
+			animation: offline-pulse 2s ease-in-out infinite;
+		}
+		@keyframes offline-pulse {
+			0%, 100% { box-shadow: 0 0 0 0 rgba(220,38,38,0.3); }
+			50% { box-shadow: 0 0 0 6px rgba(220,38,38,0); }
+		}
+		.offline-banner-text {
+			font-size: 0.78rem;
+			color: #991b1b;
+			font-weight: 600;
+			line-height: 1.4;
+		}
+		.offline-banner-text span {
+			display: block;
+			font-size: 0.72rem;
+			font-weight: 500;
+			color: #b91c1c;
+			opacity: 0.8;
+			margin-top: 2px;
+		}
+		.offline-ticket-btn {
+			display: inline-flex;
+			align-items: center;
+			gap: 5px;
+			padding: 0.4rem 0.9rem;
+			background: #dc2626;
+			color: #fff;
+			border: none;
+			border-radius: 50px;
+			font-size: 0.72rem;
+			font-weight: 700;
+			text-decoration: none;
+			white-space: nowrap;
+			flex-shrink: 0;
+			transition: all 0.2s ease;
+		}
+		.offline-ticket-btn:hover {
+			background: #b91c1c;
+			color: #fff;
+			transform: translateY(-1px);
+			box-shadow: 0 4px 12px rgba(220,38,38,0.3);
+		}
 		@keyframes dp {
 			0,
 			100% {
@@ -1074,9 +1158,10 @@
 	{% set orders = api ? (api.orders ?? []) : [] %}
 	{% set trades = allClosedTrades ?? [] %}
 	{% set sa = api ? (api.serverAccount ?? null) : null %}
-	{% set isOn = api and api.account is defined %}
 	{% set apiUpdatedAt = (api and api.account.updated_at is defined and api.account.updated_at) ? api.account.updated_at : null %}
-	{% set isDisconnected = account.platform == 'ctrader' and (apiUpdatedAt is null or (date().timestamp - apiUpdatedAt|date('U') > 300)) %}
+	{% set isStale = apiUpdatedAt is null or (date().timestamp - apiUpdatedAt|date('U') > 300) %}
+	{% set isOn = api and api.account is defined and not isStale %}
+	{% set isDisconnected = account.platform == 'ctrader' and isStale %}
 	{% set tokenExpiresAt = (api and api.account.token_expired_at is defined and api.account.token_expired_at) ? api.account.token_expired_at : null %}
 	{% set tokenExpiresSoon = tokenExpiresAt and (tokenExpiresAt|date('U') - date().timestamp < 259200) %}
 
@@ -1113,8 +1198,20 @@
 					id="aiContent" style="display:none;">
 
 					{# ═══ HEADER ═══ #}
-					<div class="card-d p-4 mb-3 fu">
-						<div class="d-flex justify-content-between align-items-start flex-wrap gap-3 header-content">
+					<div class="card-d p-4 mb-3 fu{{ isStale ? ' header-offline' : '' }}">
+						{% if isStale %}
+						<div class="offline-banner">
+							<div class="offline-banner-icon"><i class="fas fa-exclamation-triangle"></i></div>
+							<div class="offline-banner-text">
+								Account ist offline — keine Verbindung zum Trading-Server
+								<span>Letzte Aktualisierung: {{ apiUpdatedAt ? apiUpdatedAt|date('d.m.Y H:i:s') : 'unbekannt' }}</span>
+							</div>
+							<a href="{{ path('app_helpdesk_new') }}?subject={{ ('Account Offline: ' ~ account.login ~ ' (' ~ account.name ~ ')')|url_encode }}" class="offline-ticket-btn">
+								<i class="fas fa-ticket-alt"></i> Support-Ticket
+							</a>
+						</div>
+						{% endif %}
+						<div class="d-flex justify-content-between align-items-start flex-wrap gap-3 header-content" style="{{ isStale ? 'margin-top:0.75rem;' : '' }}">
 							<div>
 								{% if is_granted('ROLE_ADMIN') and account.user %}
 									<span style="opacity:.3;font-size:.75rem;">{{ account.user.username }}
@@ -1183,6 +1280,11 @@
 									<button class="btn btn-sm btn-outline-danger mb-0" type="submit">
 										<i class="fas fa-trash me-1"></i>Delete</button>
 								</form>
+								{% if is_granted('ROLE_ADMIN') %}
+									<a href="{{ path('app_account_transfer_denies', {'meta_id': account.metaId}) }}" class="btn btn-sm btn-outline-danger mb-0" title="Auf Denies übertragen">
+										<i class="fas fa-exchange-alt"></i>
+									</a>
+								{% endif %}
 							</div>
 						</div>
 					</div>
@@ -1459,6 +1561,7 @@
 								<table class="tt">
 									<thead>
 										<tr>
+											<th>Ticket</th>
 											<th>Symbol</th>
 											<th>Type</th>
 											<th>Lot</th>
@@ -1471,22 +1574,36 @@
 									</thead>
 									<tbody>
 										{% for t in trades %}
+											{% set ticket_num = t.order_ticket ?? t.orderTicket ?? t.id ?? 0 %}
+											{% set label = t.order_label ?? t.orderLabel ?? '' %}
+											{% set copyMsg = t.copy_message ?? t.copyMessage ?? '' %}
+											{% set isAgent = 'copy_' in label %}
+											{% set isZeroTicket = (ticket_num == 0 or ticket_num == '0') %}
+											{% set isCopyError = isZeroTicket and copyMsg and isAgent %}
+											{% if not isZeroTicket or isCopyError %}
 											{% set buy = 'BUY' in (t.order_type ?? t.orderType ?? '')|upper %}
 											{% set pnl = t.order_profit ?? t.orderProfit ?? 0 %}
-											<tr>
+											<tr{% if isCopyError %} style="background:rgba(220,38,38,0.03);"{% endif %}>
+												<td>
+													{% if not isZeroTicket %}<span style="background:rgba(99,102,241,0.08);color:#6366f1;font-size:.68rem;font-weight:700;padding:3px 8px;border-radius:6px;white-space:nowrap;">#{{ ticket_num }}</span>{% endif %}
+													{% if isAgent %}<span style="background:rgba(22,163,74,0.08);color:#16a34a;font-size:.62rem;font-weight:700;padding:2px 6px;border-radius:5px;margin-left:3px;white-space:nowrap;">AGENT</span>{% endif %}
+													{% if isCopyError %}<span style="background:rgba(220,38,38,0.08);color:#dc2626;font-size:.62rem;font-weight:700;padding:2px 6px;border-radius:5px;white-space:nowrap;">FEHLER</span>{% endif %}
+												</td>
 												<td>
 													<strong>{{ t.order_symbol ?? t.orderSymbol ?? '-' }}</strong>
+													{% if isCopyError %}<div style="font-size:.65rem;color:#dc2626;font-weight:600;margin-top:2px;">{{ copyMsg }}</div>{% endif %}
 												</td>
 												<td>
 													<span class="{{ buy ? 'b-buy' : 'b-sell' }}">{{ buy ? 'BUY' : 'SELL' }}</span>
 												</td>
 												<td>{{ (t.order_lot ?? t.orderLot ?? 0)|number_format(2) }}</td>
 												<td>{{ (t.order_price ?? t.orderPrice ?? 0)|number_format(5) }}</td>
-												<td>{{ (t.order_close_price ?? t.orderClosePrice ?? 0)|number_format(5) }}</td>
+												<td>{{ (t.close_price ?? t.closePrice ?? t.order_close_price ?? t.orderClosePrice ?? 0)|number_format(5) }}</td>
 												<td class="{{ pnl >= 0 ? 'tg' : 'tr' }}" style="font-weight:700">{{ pnl >= 0 ? '+' : '' }}{{ pnl|number_format(2) }}</td>
 												<td style="opacity:.35;font-size:.72rem;">{{ t.order_open_at ?? t.orderOpenAt ?? '-' }}</td>
 												<td style="opacity:.35;font-size:.72rem;">{{ t.order_close_at ?? t.orderCloseAt ?? '-' }}</td>
 											</tr>
+											{% endif %}
 										{% endfor %}
 									</tbody>
 								</table>
@@ -1509,7 +1626,18 @@
 		<div class="chart-modal">
 			<div class="chart-modal-header">
 				<div class="cm-title">
-					<span id="cmSymbol" style="font-size:1.05rem;letter-spacing:-.02em;">-</span>
+					<div class="cm-symbol-picker" id="cmSymbolPicker" style="position:relative;">
+						<button id="cmSymbolBtn" style="display:flex;align-items:center;gap:6px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;cursor:pointer;font-size:1.05rem;font-weight:700;letter-spacing:-.02em;color:var(--txt);transition:all .15s;">
+							<span id="cmSymbol">-</span>
+							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:.5;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+						</button>
+						<div id="cmSymbolDropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;width:260px;max-height:340px;background:var(--bg2,#fff);border:1px solid var(--border,#e2e8f0);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.15);z-index:9999;overflow:hidden;">
+							<div style="padding:8px;">
+								<input id="cmSymbolSearch" type="text" placeholder="Symbol suchen..." style="width:100%;padding:8px 10px;border:1px solid var(--border,#e2e8f0);border-radius:8px;font-size:.85rem;outline:none;background:var(--bg,#f7fafc);color:var(--txt,#2d3748);box-sizing:border-box;">
+							</div>
+							<div id="cmSymbolList" style="max-height:280px;overflow-y:auto;padding:0 4px 4px;"></div>
+						</div>
+					</div>
 					<span id="cmBadge" class="b-buy">BUY</span>
 					<span id="cmLiveBadge" class="cm-live-badge" style="display:none;">
 						<span class="cm-live-dot"></span>LIVE
@@ -1655,9 +1783,9 @@
 									<span class="cm-study-desc">ICT Session High/Low</span>
 								</label>
 								<label class="cm-study-toggle">
-									<input type="checkbox" checked data-study="depthZones">
+									<input type="checkbox" checked data-study="liquidityProfile">
 									<span class="cm-study-name">ELVTD Depth Zones</span>
-									<span class="cm-study-desc">Price depth rectangles</span>
+									<span class="cm-study-desc">Order Flow Structure</span>
 								</label>
 							</div>
 						</div>
@@ -1743,18 +1871,20 @@ window.__ACCOUNT_EQUITY__ = {{ apiData.equity|default(0) }};
 			try {
 				var chart = w.activeChart();
 				if (!cb.checked) {
-					// Remove all shapes for this study
 					var shapes = window._studyShapes[study] || [];
 					shapes.forEach(function(id) { try { chart.removeEntity(id); } catch(e) {} });
 					window._studyShapes[study] = [];
 				} else {
-					// Re-draw from saved data
-					var data = window._studyData[study] || [];
-					window._studyShapes[study] = [];
-					data.forEach(function(d) {
-						var id = chart.createMultipointShape(d.pts, d.opts);
-						if (id) window._studyShapes[study].push(id);
-					});
+					if (study === 'liquidityProfile' && typeof window._drawOrderFlowStructure === 'function' && window._collectedBarsRef) {
+						window._studyShapes[study] = window._drawOrderFlowStructure(chart, window._collectedBarsRef);
+					} else {
+						var data = window._studyData[study] || [];
+						window._studyShapes[study] = [];
+						data.forEach(function(d) {
+							var id = chart.createMultipointShape(d.pts, d.opts);
+							if (id) window._studyShapes[study].push(id);
+						});
+					}
 				}
 			} catch(e) { console.warn('[Studies] Toggle error:', e); }
 		});

@@ -232,6 +232,35 @@ class DeniesClient
         }
     }
 
+    /**
+     * Soft-delete an order by setting DeletedAt via the backend endpoint.
+     */
+    public function softDeleteOrder(int $orderId): bool
+    {
+        try {
+            $this->request('DELETE', "orders/soft-delete/" . $orderId);
+            return true;
+        } catch (\Exception $e) {
+            throw new \RuntimeException('Fehler beim Löschen der Order: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get the raw account data from paginated endpoint (includes server_status_message).
+     */
+    public function getAccountRawByLogin(int $login): ?object
+    {
+        try {
+            $response = $this->request('GET', "account/paginated?PerPage=1&Page=1&AccountNumber=" . $login);
+            if (empty($response->data->data)) {
+                return null;
+            }
+            return $response->data->data[0];
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
     public function getAccount(Account $account)
     {
         try {

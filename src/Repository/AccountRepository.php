@@ -38,4 +38,30 @@ class AccountRepository extends ServiceEntityRepository
             $this->_em->flush();
         }
     }
+
+    /**
+     * Returns distinct trade servers for a given platform, optionally filtered by search term.
+     *
+     * @return string[]
+     */
+    public function findDistinctServersByPlatform(string $platform, string $search = ''): array
+    {
+        $qb = $this->createQueryBuilder('a')
+            ->select('DISTINCT a.tradeServer')
+            ->where('a.platform = :platform')
+            ->andWhere('a.tradeServer IS NOT NULL')
+            ->andWhere('a.tradeServer != :empty')
+            ->setParameter('platform', $platform)
+            ->setParameter('empty', '')
+            ->orderBy('a.tradeServer', 'ASC');
+
+        if ($search !== '') {
+            $qb->andWhere('LOWER(a.tradeServer) LIKE :search')
+               ->setParameter('search', '%' . strtolower($search) . '%');
+        }
+
+        $qb->setMaxResults(20);
+
+        return array_column($qb->getQuery()->getScalarResult(), 'tradeServer');
+    }
 }

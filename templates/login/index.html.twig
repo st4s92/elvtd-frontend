@@ -6,95 +6,670 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text></svg>">
-    {# Run `composer require symfony/webpack-encore-bundle` to start using Symfony UX #}
     {% block stylesheets %}
         {{ encore_entry_link_tags('app') }}
     {% endblock %}
 
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://kit.fontawesome.com/2810542c8f.js" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-
-    <!-- Main Style -->
-    <link rel="stylesheet" href="{{ asset('assets/css/bootstrap.min.css') }}">
-    <link rel="stylesheet" href="{{ asset('assets/css/material-dashboard.css') }}">
-    <link rel="stylesheet" href="{{ asset('css/styles.css') }}">
 
     {% block javascripts %}
         {{ encore_entry_script_tags('app') }}
     {% endblock %}
 
+    <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+        --g: #16a34a;
+        --bg: #f8fafc;
+        --border: rgba(0,0,0,0.06);
+        --txt: #0f172a;
+        --txt-dim: #64748b;
+        --card-bg: rgba(255,255,255,0.88);
+    }
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background: var(--bg);
+        min-height: 100vh;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* ── Trading Canvas ── */
+    #tradingCanvas {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+    }
+
+    /* ── Floating Ticker ── */
+    .ticker-strip {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 32px;
+        z-index: 1;
+        overflow: hidden;
+        background: rgba(255,255,255,0.5);
+        backdrop-filter: blur(8px);
+        border-bottom: 1px solid rgba(0,0,0,0.04);
+        display: flex;
+        align-items: center;
+    }
+    .ticker-track {
+        display: flex;
+        gap: 3rem;
+        white-space: nowrap;
+        animation: tickerScroll 30s linear infinite;
+        font-family: 'JetBrains Mono', 'Fira Code', monospace;
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: var(--txt-dim);
+        letter-spacing: 0.02em;
+    }
+    .ticker-track span { display: inline-flex; align-items: center; gap: 0.35rem; }
+    .ticker-up { color: #16a34a; }
+    .ticker-down { color: #dc2626; }
+    @keyframes tickerScroll {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+    }
+
+    /* ── Main Container ── */
+    .login-wrapper {
+        position: relative;
+        z-index: 2;
+        width: 90%;
+        max-width: 420px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    /* ── Logo ── */
+    .login-logo {
+        width: 64px;
+        height: 64px;
+        background: #fff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+        animation: logoIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .login-logo img {
+        width: 36px;
+        height: 36px;
+        object-fit: contain;
+    }
+
+    /* ── Heading ── */
+    .login-heading {
+        text-align: center;
+        animation: fadeUp 0.6s 0.15s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .login-heading h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--txt);
+        letter-spacing: -0.03em;
+        margin-bottom: 0.25rem;
+    }
+    .login-heading p {
+        font-size: 0.82rem;
+        color: var(--txt-dim);
+        font-weight: 500;
+    }
+
+    /* ── Card ── */
+    .login-card {
+        width: 100%;
+        background: var(--card-bg);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 2rem 1.75rem;
+        box-shadow: 0 8px 40px rgba(0,0,0,0.06);
+        animation: cardIn 0.7s 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    /* ── Flash Messages ── */
+    .login-flash {
+        width: 100%;
+        animation: fadeUp 0.4s ease both;
+    }
+    .login-flash .alert {
+        border-radius: 12px;
+        font-size: 0.82rem;
+        font-weight: 500;
+        border: none;
+        padding: 0.75rem 1rem;
+    }
+    .alert-danger {
+        background: rgba(220, 38, 38, 0.08);
+        color: #dc2626;
+    }
+    .alert-success {
+        background: rgba(22, 163, 74, 0.08);
+        color: #16a34a;
+    }
+
+    /* ── Form ── */
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+    .form-group label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--txt);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 0.4rem;
+    }
+    .form-input {
+        width: 100%;
+        padding: 0.7rem 1rem;
+        background: rgba(255,255,255,0.7);
+        border: 1.5px solid rgba(0,0,0,0.08);
+        border-radius: 12px;
+        font-size: 0.88rem;
+        font-family: inherit;
+        font-weight: 500;
+        color: var(--txt);
+        transition: all 0.25s ease;
+        outline: none;
+    }
+    .form-input:focus {
+        border-color: var(--g);
+        box-shadow: 0 0 0 3px rgba(22,163,74,0.1);
+        background: #fff;
+    }
+    .form-input::placeholder {
+        color: #94a3b8;
+        font-weight: 400;
+    }
+
+    /* ── Submit Button ── */
+    .btn-login {
+        width: 100%;
+        padding: 0.75rem;
+        background: var(--txt);
+        color: #fff;
+        border: none;
+        border-radius: 50px;
+        font-size: 0.88rem;
+        font-weight: 700;
+        font-family: inherit;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+    .btn-login:active {
+        transform: translateY(0);
+    }
+    .btn-login .btn-shine {
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+        animation: shine 3s ease-in-out infinite;
+    }
+
+    /* ── Links ── */
+    .login-links {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 1.25rem;
+    }
+    .login-links a {
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--txt-dim);
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    .login-links a:hover {
+        color: var(--g);
+    }
+
+    /* ── Divider ── */
+    .login-divider {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin: 1.25rem 0;
+    }
+    .login-divider::before,
+    .login-divider::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: var(--border);
+    }
+    .login-divider span {
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: var(--txt-dim);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    /* ── Footer ── */
+    .login-footer {
+        text-align: center;
+        animation: fadeUp 0.6s 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    .login-footer p {
+        font-size: 0.78rem;
+        color: var(--txt-dim);
+        font-weight: 500;
+    }
+    .login-footer a {
+        color: var(--g);
+        font-weight: 700;
+        text-decoration: none;
+        transition: opacity 0.2s;
+    }
+    .login-footer a:hover {
+        opacity: 0.8;
+    }
+
+    /* ── Recaptcha ── */
+    .login-card .form-group:last-of-type {
+        margin-bottom: 0.75rem;
+    }
+
+    /* ── Animations ── */
+    @keyframes logoIn {
+        0% { opacity: 0; transform: scale(0.5); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes fadeUp {
+        0% { opacity: 0; transform: translateY(16px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes cardIn {
+        0% { opacity: 0; transform: translateY(24px) scale(0.97); }
+        100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes shine {
+        0%, 100% { left: -100%; }
+        50% { left: 100%; }
+    }
+
+    /* ── Field stagger animation ── */
+    .form-group:nth-child(1) { animation: fadeUp 0.5s 0.35s cubic-bezier(0.16, 1, 0.3, 1) both; }
+    .form-group:nth-child(2) { animation: fadeUp 0.5s 0.45s cubic-bezier(0.16, 1, 0.3, 1) both; }
+    .login-links { animation: fadeUp 0.5s 0.55s cubic-bezier(0.16, 1, 0.3, 1) both; }
+    .btn-login { animation: fadeUp 0.5s 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+    /* ── Mobile ── */
+    @media (max-width: 480px) {
+        .login-card { padding: 1.5rem 1.25rem; border-radius: 16px; }
+        .login-heading h1 { font-size: 1.3rem; }
+        .login-wrapper { gap: 1.25rem; }
+    }
+    </style>
 </head>
-<body class="d-flex align-items-center justify-content-center" style="background-color: #eae8e1 !important; width: 100%; height: 100vh; overflow: hidden">
-    <div class="container m-auto mx-2 p-4" style="max-width: 600px;">
-        <div class="row">
-        {% for label, messages in app.flashes %}
-            {% for message in messages %}
-                <div class="alert alert-{{ label }} alert-dismissible fade show" role="alert">
+<body>
+
+<canvas id="tradingCanvas"></canvas>
+
+<!-- Ticker Strip -->
+<div class="ticker-strip">
+    <div class="ticker-track" id="tickerTrack"></div>
+</div>
+
+<div class="login-wrapper">
+
+    {% for label, messages in app.flashes %}
+        {% for message in messages %}
+            <div class="login-flash">
+                <div class="alert alert-{{ label }}">
                     {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            {% endfor %}
-        {% endfor %}
-        </div>
-    {% block body %}
-        <div class="row">
-            <div class="card" style="background-image: linear-gradient(180deg, #f9f7f6 0%, rgba(247, 244, 242, 50%) 80%); box-shadow: 0px 2px 15px 15px rgba(0, 0, 0, 0.05);">
-                <div class="card-body mx-2 mt-3 ">
-                    <h2 class="mb-2 text-center"><img src="{{ asset('assets/img/elvtd_logo.png') }}" width="50"></h2>
-                    <h3 class="mb-3 text-center text-bolder">ELVTD Finance</h3>
-                    <h3 class="text-center">LOGIN</h3>
-                    {% if error %}
-                        <div class="alert alert-danger">
-                            {{ error.messageKey|trans(error.messageData, 'security') }}
-                        </div>
-                    {% endif %}
-
-                    {{ form_start(form, { 'attr': { 'name': '' } }) }}
-                    <div class="form-group">
-                        <label for="username">Username</label>
-                        <input type="text" id="username" name="_username" value="{{ last_username }}" required autofocus class="form-control">
-                    </div>
-
-                    <div class="form-group mt-4">
-                        <label for="password">Password</label>
-                        <input type="password" id="password" name="_password" required class="form-control">
-                    </div>
-
-                    {{ form_row(form.recaptcha) }}
-
-                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
-
-                    <p class="mt-3">
-                        <a href="{{ path('app_register') }}" class="text-decoration-underline">Jetzt registrieren</a>
-                        <a href="{{ path('app_forgot_password') }}" class="text-decoration-underline float-end">Passwort vergessen</a>
-                    </p>
-
-                    <button type="submit" class="btn btn-dark btn-block mt-3 float-end w-25">Login</button>
-                    {{ form_end(form) }}
                 </div>
             </div>
-        </div>
-        {% endblock %}
+        {% endfor %}
+    {% endfor %}
+
+    <div class="login-logo">
+        <img src="{{ asset('assets/img/elvtd_logo.png') }}" alt="ELVTD">
     </div>
-    <script>
-        window.intercomSettings = {
-            api_base: "https://api-iam.intercom.io",
-            app_id: "ntrz1ql7",
-        };
-    </script>
-    <script>
-        // We pre-filled your app ID in the widget URL: 'https://widget.intercom.io/widget/ntrz1ql7'
-        (function(){var w=window;var ic=w.Intercom;if(typeof ic==="function"){ic('reattach_activator');ic('update',w.intercomSettings);}else{var d=document;var i=function(){i.c(arguments);};i.q=[];i.c=function(args){i.q.push(args);};w.Intercom=i;var l=function(){var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://widget.intercom.io/widget/ntrz1ql7';var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);};if(document.readyState==='complete'){l();}else if(w.attachEvent){w.attachEvent('onload',l);}else{w.addEventListener('load',l,false);}}})();
-    </script>
+
+    {% block body %}
+    <div class="login-heading">
+        <h1>Willkommen</h1>
+        <p>Melde dich bei ELVTD Finance an</p>
+    </div>
+
+    <div class="login-card">
+        {% if error %}
+            <div class="alert alert-danger" style="border-radius:12px;font-size:0.82rem;font-weight:500;border:none;padding:0.75rem 1rem;margin-bottom:1rem;">
+                {{ error.messageKey|trans(error.messageData, 'security') }}
+            </div>
+        {% endif %}
+
+        {{ form_start(form, { 'attr': { 'name': '' } }) }}
+
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="_username" value="{{ last_username }}" required autofocus class="form-input" placeholder="Dein Benutzername">
+        </div>
+
+        <div class="form-group">
+            <label for="password">Passwort</label>
+            <input type="password" id="password" name="_password" required class="form-input" placeholder="Dein Passwort">
+        </div>
+
+        {{ form_row(form.recaptcha) }}
+
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+        <div class="login-links">
+            <a href="{{ path('app_register') }}">Konto erstellen</a>
+            <a href="{{ path('app_forgot_password') }}">Passwort vergessen?</a>
+        </div>
+
+        <button type="submit" class="btn-login">
+            <span class="btn-shine"></span>
+            Anmelden
+        </button>
+
+        {{ form_end(form) }}
+    </div>
+
+    <div class="login-footer">
+        <p>Noch kein Konto? <a href="{{ path('app_register') }}">Jetzt registrieren</a></p>
+    </div>
+    {% endblock %}
+</div>
+
+<script>
+(function() {
+    const c = document.getElementById('tradingCanvas');
+    const ctx = c.getContext('2d');
+    let W, H, t = 0;
+
+    function resize() {
+        W = c.width = window.innerWidth;
+        H = c.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // ── Generate realistic candlestick data ──
+    const GREEN = { body: 'rgba(22,163,74,0.12)', wick: 'rgba(22,163,74,0.18)', glow: 'rgba(22,163,74,0.06)' };
+    const RED   = { body: 'rgba(220,38,38,0.10)', wick: 'rgba(220,38,38,0.15)', glow: 'rgba(220,38,38,0.05)' };
+
+    function generateCandles(count, baseY, amplitude) {
+        const candles = [];
+        let price = baseY;
+        for (let i = 0; i < count; i++) {
+            const trend = Math.sin(i * 0.04) * amplitude * 0.5;
+            const vol = (Math.random() * 0.7 + 0.3) * amplitude;
+            const open = price;
+            const close = open + (Math.random() - 0.48) * vol + trend * 0.1;
+            const high = Math.max(open, close) + Math.random() * vol * 0.5;
+            const low = Math.min(open, close) - Math.random() * vol * 0.5;
+            candles.push({ open, close, high, low, bull: close > open });
+            price = close;
+        }
+        return candles;
+    }
+
+    // Multiple chart layers at different scales
+    const layers = [
+        { candles: null, y: 0.3, amp: 40, candleW: 8, gap: 3, opacity: 0.7, speed: 0.15 },
+        { candles: null, y: 0.65, amp: 30, candleW: 6, gap: 2, opacity: 0.4, speed: 0.1 },
+        { candles: null, y: 0.5, amp: 50, candleW: 12, gap: 4, opacity: 0.25, speed: 0.05 },
+    ];
+
+    function initLayers() {
+        layers.forEach(l => {
+            const count = Math.ceil(W / (l.candleW + l.gap)) + 40;
+            l.candles = generateCandles(count, H * l.y, l.amp);
+        });
+    }
+    initLayers();
+    window.addEventListener('resize', () => { resize(); initLayers(); });
+
+    // ── Moving price line data ──
+    let priceLinePoints = [];
+    let plPrice = H * 0.45;
+    for (let i = 0; i < 200; i++) {
+        plPrice += (Math.random() - 0.49) * 3;
+        priceLinePoints.push(plPrice);
+    }
+
+    // ── Floating price labels ──
+    const floatingLabels = [];
+    for (let i = 0; i < 6; i++) {
+        floatingLabels.push({
+            x: Math.random() * W,
+            y: Math.random() * H,
+            price: (18000 + Math.random() * 8000).toFixed(2),
+            vx: (Math.random() - 0.5) * 0.3,
+            vy: (Math.random() - 0.5) * 0.2,
+            opacity: Math.random() * 0.08 + 0.03,
+        });
+    }
+
+    // ── Grid ──
+    function drawGrid() {
+        ctx.strokeStyle = 'rgba(0,0,0,0.02)';
+        ctx.lineWidth = 0.5;
+        const gridX = 80, gridY = 60;
+        for (let x = 0; x < W; x += gridX) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+        }
+        for (let y = 0; y < H; y += gridY) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+        }
+    }
+
+    // ── Draw candlesticks ──
+    function drawCandles(layer, offset) {
+        const { candles, candleW, gap, opacity } = layer;
+        const step = candleW + gap;
+        const startIdx = Math.floor(offset / step);
+        const px = -(offset % step);
+
+        for (let i = 0; i < Math.ceil(W / step) + 2; i++) {
+            const ci = (startIdx + i) % candles.length;
+            if (ci < 0) continue;
+            const cd = candles[ci];
+            const x = px + i * step;
+            const colors = cd.bull ? GREEN : RED;
+
+            // Glow
+            ctx.fillStyle = colors.glow;
+            ctx.globalAlpha = opacity;
+            ctx.fillRect(x - 1, Math.min(cd.open, cd.close) - 2, candleW + 2, Math.abs(cd.close - cd.open) + 4);
+
+            // Wick
+            ctx.strokeStyle = colors.wick;
+            ctx.lineWidth = 1;
+            ctx.globalAlpha = opacity;
+            ctx.beginPath();
+            ctx.moveTo(x + candleW/2, cd.high);
+            ctx.lineTo(x + candleW/2, cd.low);
+            ctx.stroke();
+
+            // Body
+            ctx.fillStyle = colors.body;
+            ctx.globalAlpha = opacity;
+            const bodyTop = Math.min(cd.open, cd.close);
+            const bodyH = Math.max(Math.abs(cd.close - cd.open), 1.5);
+            ctx.beginPath();
+            ctx.roundRect(x, bodyTop, candleW, bodyH, 1.5);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+    }
+
+    // ── Draw price line ──
+    function drawPriceLine(offset) {
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(22,163,74,0.08)';
+        ctx.lineWidth = 1.5;
+        const step = W / 120;
+        for (let i = 0; i < 160; i++) {
+            const pi = (Math.floor(offset * 0.5) + i) % priceLinePoints.length;
+            const x = i * step;
+            const y = priceLinePoints[pi];
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        // Gradient fill under line
+        const grad = ctx.createLinearGradient(0, H * 0.3, 0, H * 0.6);
+        grad.addColorStop(0, 'rgba(22,163,74,0.03)');
+        grad.addColorStop(1, 'rgba(22,163,74,0)');
+        ctx.lineTo(160 * step, H);
+        ctx.lineTo(0, H);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+    }
+
+    // ── Floating labels ──
+    function drawLabels() {
+        ctx.font = '600 11px "JetBrains Mono", "Fira Code", monospace';
+        floatingLabels.forEach(l => {
+            l.x += l.vx;
+            l.y += l.vy;
+            if (l.x < -100) l.x = W + 50;
+            if (l.x > W + 100) l.x = -50;
+            if (l.y < -50) l.y = H + 30;
+            if (l.y > H + 50) l.y = -30;
+
+            ctx.globalAlpha = l.opacity;
+            ctx.fillStyle = '#64748b';
+            ctx.fillText('$' + l.price, l.x, l.y);
+        });
+        ctx.globalAlpha = 1;
+    }
+
+    // ── Horizontal price levels ──
+    function drawLevels() {
+        const levels = [0.25, 0.4, 0.6, 0.75];
+        levels.forEach(pct => {
+            const y = H * pct;
+            ctx.setLineDash([4, 8]);
+            ctx.strokeStyle = 'rgba(22,163,74,0.04)';
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(W, y);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Price label on right
+            ctx.globalAlpha = 0.06;
+            ctx.font = '600 10px "JetBrains Mono", monospace';
+            ctx.fillStyle = '#0f172a';
+            ctx.textAlign = 'right';
+            ctx.fillText((20000 + pct * 5000).toFixed(2), W - 10, y - 4);
+            ctx.textAlign = 'left';
+            ctx.globalAlpha = 1;
+        });
+    }
+
+    // ── Main loop ──
+    function draw() {
+        ctx.clearRect(0, 0, W, H);
+        t += 1;
+
+        drawGrid();
+        drawLevels();
+        drawPriceLine(t);
+
+        layers.forEach(l => {
+            drawCandles(l, t * l.speed);
+        });
+
+        drawLabels();
+
+        // Pulse dot (live indicator top-right)
+        const px = W - 30, py = 50;
+        ctx.globalAlpha = 0.15 + Math.sin(t * 0.05) * 0.1;
+        ctx.beginPath();
+        ctx.arc(px, py, 8, 0, Math.PI * 2);
+        ctx.fillStyle = '#16a34a';
+        ctx.fill();
+        ctx.globalAlpha = 0.5;
+        ctx.beginPath();
+        ctx.arc(px, py, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+
+        requestAnimationFrame(draw);
+    }
+    draw();
+
+    // ── Ticker strip ──
+    const tickers = [
+        { sym: 'USTEC', price: '19,842.50', pct: '+1.24%', up: true },
+        { sym: 'US30', price: '42,156.80', pct: '+0.67%', up: true },
+        { sym: 'EURUSD', price: '1.0847', pct: '-0.12%', up: false },
+        { sym: 'XAUUSD', price: '2,648.30', pct: '+0.89%', up: true },
+        { sym: 'GBPUSD', price: '1.2714', pct: '+0.34%', up: true },
+        { sym: 'BTCUSD', price: '97,412.00', pct: '+2.15%', up: true },
+        { sym: 'USDJPY', price: '154.28', pct: '-0.41%', up: false },
+        { sym: 'SPX500', price: '5,998.40', pct: '+0.52%', up: true },
+        { sym: 'DE40', price: '19,425.60', pct: '-0.18%', up: false },
+        { sym: 'ETHUSD', price: '3,487.20', pct: '+1.76%', up: true },
+    ];
+
+    const track = document.getElementById('tickerTrack');
+    let tickerHTML = '';
+    // Double for seamless loop
+    for (let r = 0; r < 2; r++) {
+        tickers.forEach(t => {
+            const cls = t.up ? 'ticker-up' : 'ticker-down';
+            const arrow = t.up ? '&#9650;' : '&#9660;';
+            tickerHTML += `<span>${t.sym} <strong>${t.price}</strong> <span class="${cls}">${arrow} ${t.pct}</span></span>`;
+        });
+    }
+    track.innerHTML = tickerHTML;
+
+    // Focus animation on inputs
+    document.querySelectorAll('.form-input').forEach(input => {
+        input.addEventListener('focus', function() {
+            this.parentElement.style.transform = 'scale(1.01)';
+            this.parentElement.style.transition = 'transform 0.2s ease';
+        });
+        input.addEventListener('blur', function() {
+            this.parentElement.style.transform = 'scale(1)';
+        });
+    });
+})();
+</script>
+
+<script>
+    window.intercomSettings = {
+        api_base: "https://api-iam.intercom.io",
+        app_id: "ntrz1ql7",
+    };
+</script>
+<script>
+    (function(){var w=window;var ic=w.Intercom;if(typeof ic==="function"){ic('reattach_activator');ic('update',w.intercomSettings);}else{var d=document;var i=function(){i.c(arguments);};i.q=[];i.c=function(args){i.q.push(args);};w.Intercom=i;var l=function(){var s=d.createElement('script');s.type='text/javascript';s.async=true;s.src='https://widget.intercom.io/widget/ntrz1ql7';var x=d.getElementsByTagName('script')[0];x.parentNode.insertBefore(s,x);};if(document.readyState==='complete'){l();}else if(w.attachEvent){w.attachEvent('onload',l);}else{w.addEventListener('load',l,false);}}})();
+</script>
 </body>
-
-<script src="{{ asset('assets/js/core/popper.min.js') }}"></script>
-<script src="{{ asset('assets/js/core/bootstrap.min.js') }}"></script>
-
-<!-- Theme JS -->
-<script src="{{ asset('assets/js/material-dashboard.min.js') }}"></script>
 </html>
