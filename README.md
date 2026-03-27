@@ -191,6 +191,129 @@ lokaler Rechner                        Backend-Server (65.108.60.88)
                                       └──────────────────────────┘
 ```
 
+## Symbol Mapping — Anleitung
+
+### Das Problem
+
+Verschiedene Broker benennen dasselbe Instrument unterschiedlich:
+
+| Instrument | FTMO | IC Markets | GBE | Canonical |
+|------------|------|------------|-----|-----------|
+| Euro/Dollar | `EURUSD` | `EURUSD.PRO` | `EURUSD` | `EURUSD` |
+| Nasdaq 100 | `NAS100` | `USTEC` | `US100.cash` | `USTEC` |
+| Gold | `XAUUSD` | `XAUUSD.CASH` | `GOLD` | `XAUUSD` |
+| DAX | `GER40` | `DE40` | `GER40.cash` | `GER40` |
+
+Jedes Broker-Symbol wird auf ein **Canonical Symbol** gemappt — eine einheitliche interne Bezeichnung. Damit weiß der Copy-Trading Copier, welches Symbol er auf dem Slave handeln muss.
+
+```
+Master (FTMO):  NAS100  →  Canonical: USTEC  →  Slave (GBE): US100.cash
+```
+
+### Neues Mapping anlegen
+
+1. **Symbol Maps** im Dashboard öffnen
+2. **"Add Mapping"** klicken
+3. Drei Felder ausfüllen:
+
+| Feld | Beschreibung | Beispiel |
+|------|-------------|---------|
+| **Broker Name** | Exakt wie im System. `ANY` für alle Broker. | `FTMO`, `IC Markets`, `ANY` |
+| **Broker Symbol** | Symbol beim Broker. **Case-sensitive!** | `NAS100`, `US100.cash` |
+| **Canonical Symbol** | Einheitlicher interner Name (uppercase). | `USTEC` |
+
+4. **"Submit Mapping"** klicken
+
+### Neuen Broker komplett einrichten
+
+**Beispiel:** GBE Brokers wird neu angebunden. Master tradet auf FTMO.
+
+**Schritt 1 — Broker-Symbolliste beschaffen:**
+GBE MetaTrader → Market Watch → alle Symbole notieren.
+
+**Schritt 2 — Vorhandene Canonicals prüfen:**
+```bash
+curl http://65.108.60.88:5021/api/trader/symbol-map/canonical
+# → ["EURUSD", "GBPUSD", "USTEC", "XAUUSD", "GER40", ...]
+```
+
+**Schritt 3 — Mappings für den neuen Broker anlegen:**
+
+| GBE Symbol | Canonical |
+|------------|-----------|
+| `EURUSD` | `EURUSD` |
+| `GBPUSD` | `GBPUSD` |
+| `US100.cash` | `USTEC` |
+| `GOLD` | `XAUUSD` |
+| `GER40.cash` | `GER40` |
+
+Identische Symbole (EURUSD = EURUSD) **müssen auch gemappt werden**, damit die Canonical-Auflösung funktioniert.
+
+**Schritt 4 — Master-Broker ebenfalls mappen** (falls noch nicht vorhanden):
+
+| FTMO Symbol | Canonical |
+|-------------|-----------|
+| `NAS100` | `USTEC` |
+| `XAUUSD` | `XAUUSD` |
+| `EURUSD` | `EURUSD` |
+
+**Schritt 5 — Optional: Pair Override** für Sonderfälle:
+Wenn ein bestimmtes Master-Slave Paar eine individuelle Zuordnung braucht → im Frontend die Master-Slave Beziehung öffnen → Pairs konfigurieren. Pair Overrides haben **höchste Priorität** und überschreiben das globale Mapping.
+
+### Wie die Auflösung im Copier funktioniert (5 Stufen)
+
+```
+Master öffnet Position: "NAS100" (FTMO)
+        │
+        ▼
+Tier 1: Pair Override vorhanden? → JA: verwende Override
+        │ NEIN
+        ▼
+Tier 2: Canonical Auflösung (exakt)
+        FTMO + NAS100 → Canonical USTEC → GBE + USTEC → US100.cash
+        │ NICHT GEFUNDEN
+        ▼
+Tier 3: Fuzzy Canonical (Suffixe entfernen: .CASH .PRO .M .ECN etc.)
+        Bereinigtes Symbol → Retry Tier 2
+        │ NICHT GEFUNDEN
+        ▼
+Tier 4: Fuzzy Match gegen Slave-Symbolliste
+        Bereinigter Name == Slave-Symbol? → StartsWith Match?
+        │ NICHT GEFUNDEN
+        ▼
+Tier 5: Fallback — Master-Symbol 1:1 verwenden (wird wahrscheinlich fehlschlagen)
+```
+
+Der Copier cached die Mappings alle **30 Sekunden** — neue Einträge sind also nach max. 30s aktiv.
+
+### Häufige Fehler
+
+| Problem | Ursache | Fix |
+|---------|---------|-----|
+| Symbol wird nicht kopiert | Kein Mapping für Master-Broker ODER Slave-Broker | Beide Seiten mappen |
+| Falsches Instrument | Canonical falsch zugeordnet | Canonical muss bei beiden Brokern gleich sein |
+| "Symbol not found" im Slave | Symbol existiert nicht im Slave-Account | Bei cTrader: Symbol muss subscribed sein |
+
+### API Endpoints
+
+| Method | Endpoint | Beschreibung |
+|--------|----------|-------------|
+| `GET` | `/api/trader/symbol-map` | Alle Mappings |
+| `GET` | `/api/trader/symbol-map/canonical` | Distinct Canonical Symbole |
+| `POST` | `/api/trader/symbol-map` | Neues Mapping |
+| `PUT` | `/api/trader/symbol-map/{id}` | Mapping aktualisieren |
+| `DELETE` | `/api/trader/symbol-map/{id}` | Mapping löschen (Soft Delete) |
+
+**Request-Body (POST/PUT):**
+```json
+{
+  "broker_name": "GBE",
+  "server_name": "GBEbrokers-Live",
+  "broker_symbol": "US100.cash",
+  "canonical_symbol": "USTEC"
+}
+```
+
 ## Umgebungsvariablen
 
 ```env
