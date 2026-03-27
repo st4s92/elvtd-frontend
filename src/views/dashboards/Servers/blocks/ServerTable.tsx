@@ -6,7 +6,7 @@ import { Badge } from "src/components/ui/badge";
 import { Button } from "src/components/ui/button";
 import CreateServerFormModal from "./CreateServerFormModal";
 import EditServerFormModal from "./EditServerFormModal";
-import { Trash2, Pencil } from "lucide-react";
+import { Trash2, Pencil, RotateCw } from "lucide-react";
 import { formatDistanceToNow, differenceInMinutes } from "date-fns";
 
 const ServerTable = () => {
@@ -22,6 +22,8 @@ const ServerTable = () => {
 
   const [openEditServer, setOpenEditServer] = useState(false);
   const [editingServer, setEditingServer] = useState<Record<string, any> | null>(null);
+  const [restartingServer, setRestartingServer] = useState<string | null>(null);
+  const [restartingAll, setRestartingAll] = useState(false);
 
   const fetchData = async () => {
     const res = await axiosClient.get("/trader/servers/paginated", {
@@ -47,6 +49,37 @@ const ServerTable = () => {
       alert("Failed to delete server. Please try again.");
     } finally {
       setIsDeleting(null);
+    }
+  };
+
+  const handleRestart = async (serverIp: string) => {
+    if (!confirm(`Restart bridge on ${serverIp}?`)) return;
+    setRestartingServer(serverIp);
+    try {
+      await axiosClient.post("/trader/bridge/command", {
+        command: "restart",
+        target_ip: serverIp,
+      });
+    } catch (error) {
+      console.error("Failed to restart bridge:", error);
+      alert("Failed to send restart command.");
+    } finally {
+      setTimeout(() => setRestartingServer(null), 3000);
+    }
+  };
+
+  const handleRestartAll = async () => {
+    if (!confirm("Restart ALL bridges on all servers?")) return;
+    setRestartingAll(true);
+    try {
+      await axiosClient.post("/trader/bridge/command", {
+        command: "restart",
+      });
+    } catch (error) {
+      console.error("Failed to restart all bridges:", error);
+      alert("Failed to send restart command.");
+    } finally {
+      setTimeout(() => setRestartingAll(false), 5000);
     }
   };
 
@@ -191,11 +224,23 @@ const ServerTable = () => {
       header: "Actions",
       cell: ({ row }) => {
         const id = row.original.id;
+        const ip = row.original.server_ip || row.original.serverIp || "";
+        const isRestarting = restartingServer === ip;
         return (
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="icon"
+              title="Restart Bridge"
+              onClick={() => handleRestart(ip)}
+              disabled={isRestarting}
+            >
+              <RotateCw className={`h-4 w-4 ${isRestarting ? "animate-spin" : ""}`} />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              title="Edit Server"
               onClick={() => {
                 setEditingServer(row.original);
                 setOpenEditServer(true);
@@ -206,6 +251,7 @@ const ServerTable = () => {
             <Button
               variant="lighterror"
               size="icon"
+              title="Delete Server"
               onClick={() => handleDelete(id)}
               disabled={isDeleting === id}
             >
@@ -245,11 +291,19 @@ const ServerTable = () => {
                 },
               }}
               rightMenu={
-                <>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleRestartAll}
+                    disabled={restartingAll}
+                  >
+                    <RotateCw className={`h-4 w-4 mr-2 ${restartingAll ? "animate-spin" : ""}`} />
+                    {restartingAll ? "Restarting..." : "Restart All"}
+                  </Button>
                   <Button onClick={() => setOpenCreateServer(true)}>
                     Create New Server
                   </Button>
-                </>
+                </div>
               }
             />
           </div>
