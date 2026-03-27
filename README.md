@@ -1,47 +1,198 @@
-# Getting Started with Create React App
+# ELVTD Frontend (React)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+> Admin-Dashboard und Trading-UI der ELVTD Finance Plattform — React 19 SPA mit Echtzeit-Trading, Account-Management, Server-Monitoring und AI-Integration.
 
-## Available Scripts
+## Architektur-Überblick
 
-In the project directory, you can run:
+```
+┌─────────────────────────────────┐
+│   Browser (SPA)                 │
+│   React 19 + Vite + Tailwind   │
+│   ApexCharts + Recharts         │
+│   Three.js (3D)                │
+└───────────┬─────────────────────┘
+            │ HTTP (Axios)
+            │ Bearer Token Auth
+            ▼
+┌─────────────────────────────────┐
+│   Backend (.NET 9)              │
+│   65.108.60.88:5021             │
+│   REST API                      │
+└─────────────────────────────────┘
+```
 
-### `npm start`
+## Rolle im ELVTD-Ökosystem
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+| Komponente | Repo | Aufgabe |
+|------------|------|---------|
+| **Frontend (dieses Repo)** | `elvtd-frontend` | React Admin-Dashboard, Trading-UI, Monitoring |
+| Platform (Symfony) | `elvtd-platform` | Webtrader mit cTrader-Integration, WebSocket, Charts |
+| Backend API | `elvtd-backend` | Datenhaltung, Business-Logik, RabbitMQ-Orchestrierung |
+| Tools | `elvtd-tools` | Go Bridges auf Windows VMs, MT4/MT5 Installer, cTrader Copier |
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+Das React-Frontend ist das **Admin- und Management-Dashboard** — hier werden Accounts, Server, Orders, Copy-Trading-Beziehungen und System-Logs verwaltet. Die Symfony-Platform (`elvtd-platform`) ist dagegen das Webtrader-Frontend für Endbenutzer mit Live-Charts und WebSocket-Trading.
 
-### `npm test`
+## Tech Stack
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- **React 19.2** + TypeScript 5.5
+- **Vite 7.1** (Build + Dev Server)
+- **Tailwind CSS 4.1** + **shadcn/ui** (Radix UI Primitives)
+- **ApexCharts** + **Recharts** (Daten-Visualisierung)
+- **Three.js** + **Framer Motion** (3D + Animationen)
+- **React Router 7.8** (Client-Side Routing)
+- **Axios** (HTTP Client mit Bearer Token Interceptor)
+- **i18next** (Internationalisierung)
+- **Lucide Icons**
 
-### `npm run build`
+## Hauptfunktionen
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### Trading Dashboard
+- Echtzeit-Positionsüberwachung mit PnL-Tracking
+- Aktive Trades Tabelle mit Live-Updates
+- Performance-Metriken (Balance, Equity, Drawdown)
+- Trade-Aktivitäts-Charts
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### Account-Management
+- Accounts anlegen, bearbeiten, löschen
+- Master/Slave Zuordnungen verwalten
+- Installation auf VMs triggern
+- Account-Status und Server-Zuordnung
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Order-Management
+- Globale Order-Übersicht (alle Accounts)
+- Master-Order Tracking
+- Force-Close einzelner Trades
+- Global Kill Switch (alle Trades schließen)
 
-### `npm run eject`
+### Copy-Trading
+- Master-Slave Beziehungen anlegen/verwalten
+- Symbol-Mapping konfigurieren (z.B. EURUSD → EUR.USD)
+- Multiplier setzen
+- Signals-Übersicht
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+### Server-Monitoring
+- Server-Status (CPU, RAM, Uptime, aktive Terminals)
+- Heartbeat-Überwachung
+- Stale Account Reassignment
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Administrative Tools
+- User-Management (Rollen, Berechtigungen)
+- Background Jobs Übersicht
+- System-Logs
+- AI Trading-Assistent (Gemini-Integration)
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+### Content & Support
+- Helpdesk Ticket-System
+- Blog-Management
+- Notizen
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+## Projektstruktur
 
-## Learn More
+```
+elvtd-frontend/
+├── src/
+│   ├── main.tsx                    # App Entry Point
+│   ├── App.tsx                     # Router + Theme Provider
+│   ├── routes/Router.tsx           # Route-Definitionen
+│   ├── views/
+│   │   ├── dashboards/
+│   │   │   ├── Modern/            # Haupt-Analytics Dashboard
+│   │   │   ├── Signals/           # Trade Signals & Orders
+│   │   │   ├── Accounts/          # Account-Verwaltung
+│   │   │   ├── Orders/            # Globale Order-Übersicht
+│   │   │   ├── MasterOrders/      # Master-Account Orders
+│   │   │   ├── SymbolMap/         # Symbol-Mapping
+│   │   │   ├── Servers/           # Server-Monitoring
+│   │   │   ├── Users/             # User-Verwaltung
+│   │   │   ├── Jobs/              # Background Jobs
+│   │   │   ├── AI/                # AI Dashboard
+│   │   │   └── Logs/              # System-Logs
+│   │   ├── apps/
+│   │   │   ├── tickets/           # Helpdesk
+│   │   │   ├── blog/              # Blog
+│   │   │   └── notes/             # Notizen
+│   │   └── authentication/        # Login/Register
+│   ├── components/
+│   │   ├── ui/                    # shadcn/ui Komponenten
+│   │   ├── dashboards/            # Dashboard-spezifische Komponenten
+│   │   └── shared/                # Layouts, Breadcrumbs
+│   ├── context/                   # React Context (Blog, Notes, Tickets)
+│   ├── api/                       # API Response Types
+│   ├── hooks/                     # Custom Hooks (useDashboardMetrics)
+│   ├── lib/                       # Axios Client, Helpers
+│   ├── css/                       # Global Styles + Tailwind
+│   └── types/                     # TypeScript Interfaces
+├── package.json
+├── vite.config.ts
+├── tsconfig.json
+└── tailwind.config.ts
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## API-Anbindung
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+Alle API-Calls gehen über einen Axios-Client mit:
+- **Base URL:** `VITE_API_BASE_URL` (default: `http://65.108.60.88:5021`)
+- **Auth:** Bearer Token aus localStorage
+- **Interceptors:** Automatischer Token-Header bei jedem Request
 
+Genutzte Backend-Endpoints:
+```
+/api/trader/account/*           — Account CRUD + Install/Restart
+/api/trader/orders/*            — Order-Verwaltung
+/api/trader/master-slave/*      — Copy-Trading Beziehungen
+/api/trader/servers/*           — Server-Status + Reassignment
+/api/trader/symbol-map/*        — Symbol-Mapping
+/api/user/*                     — User-Verwaltung
+/api/ai/*                       — AI Chat + Analyse
+```
+
+## Development
+
+```bash
+# Dependencies installieren
+npm install
+
+# Dev Server starten (Hot Reload)
+npm run dev
+
+# Linting
+npm run lint
+
+# Production Preview
+npm run preview
+```
+
+## Deployment
+
+Das Frontend wird als statisches SPA gebaut und auf den Backend-Server kopiert, wo Nginx es aus `/dist` ausliefert.
+
+```bash
+# 1. Production Build erstellen
+npm run build
+
+# 2. Build-Output auf Backend-Server deployen
+scp -r dist/* deniesBackend:~/elvtd-backend/dist/
+```
+
+Der **Nginx-Container** im `elvtd-backend` Docker Setup (Port 80) liefert den Inhalt von `/dist` als statische Dateien aus.
+
+### Deployment-Ablauf im Detail
+
+```
+lokaler Rechner                        Backend-Server (65.108.60.88)
+┌──────────────┐                      ┌──────────────────────────┐
+│ npm run build │                      │ ~/elvtd-backend/         │
+│      ↓        │   scp -r dist/*     │   dist/                  │
+│ dist/         │ ──────────────────▶  │     index.html           │
+│   index.html  │                      │     assets/              │
+│   assets/     │                      │                          │
+└──────────────┘                      │ Docker: nginx:alpine     │
+                                      │   Port 80 → serves /dist │
+                                      └──────────────────────────┘
+```
+
+## Umgebungsvariablen
+
+```env
+VITE_API_BASE_URL=http://65.108.60.88:5021   # Backend API URL
+```
