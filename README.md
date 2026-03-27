@@ -210,6 +210,40 @@ Jedes Broker-Symbol wird auf ein **Canonical Symbol** gemappt — eine einheitli
 Master (FTMO):  NAS100  →  Canonical: USTEC  →  Slave (GBE): US100.cash
 ```
 
+### Wichtig: Broker Name muss EXAKT übereinstimmen
+
+Der `broker_name` im Mapping wird **exakt** (case-insensitive) mit dem `BrokerName` des Accounts verglichen. Es gibt **kein** Substring- oder Prefix-Matching.
+
+```
+"GBE" ≠ "GBEbrokers-Live"    ← FUNKTIONIERT NICHT
+"GBEbrokers-Live" == "gbebrokers-live"  ← OK (case-insensitive)
+```
+
+**Prüfe den exakten BrokerName deiner Accounts:**
+```bash
+curl http://65.108.60.88:5021/api/trader/account/paginated | jq '.data[] | {id, account_number, broker_name}'
+```
+
+Wenn Accounts `GBEbrokers-Live` als BrokerName haben, muss das Mapping auch `GBEbrokers-Live` verwenden. `GBEbrokers-Demo` braucht **separate Mappings**, falls der BrokerName anders lautet.
+
+**`server_name` wird NICHT für die Auflösung benutzt** — es wird gespeichert, aber ignoriert. Die gesamte Resolution läuft ausschließlich über `broker_name` + `broker_symbol` + `canonical_symbol`.
+
+### Multi-Broker: Gleiches Canonical, verschiedene Broker
+
+Dasselbe Canonical Symbol kann für verschiedene Broker unterschiedlich gemappt werden:
+
+| Broker Name | Broker Symbol | Canonical |
+|-------------|--------------|-----------|
+| `FTMO` | `NAS100` | `USTEC` |
+| `GBEbrokers-Live` | `US100.cash` | `USTEC` |
+| `ICMarketsSC-Live` | `USTEC` | `USTEC` |
+
+Wenn ein Master (FTMO) `NAS100` tradet:
+- Slave auf `GBEbrokers-Live` → Copier findet `USTEC` canonical → `US100.cash`
+- Slave auf `ICMarketsSC-Live` → Copier findet `USTEC` canonical → `USTEC`
+
+Das funktioniert, weil der Copier den `BrokerName` des Slave-Accounts kennt und damit das richtige Mapping findet.
+
 ### Neues Mapping anlegen
 
 1. **Symbol Maps** im Dashboard öffnen
@@ -218,7 +252,7 @@ Master (FTMO):  NAS100  →  Canonical: USTEC  →  Slave (GBE): US100.cash
 
 | Feld | Beschreibung | Beispiel |
 |------|-------------|---------|
-| **Broker Name** | Exakt wie im System. `ANY` für alle Broker. | `FTMO`, `IC Markets`, `ANY` |
+| **Broker Name** | **Exakt** wie im Account gespeichert (siehe oben). | `FTMO`, `GBEbrokers-Live` |
 | **Broker Symbol** | Symbol beim Broker. **Case-sensitive!** | `NAS100`, `US100.cash` |
 | **Canonical Symbol** | Einheitlicher interner Name (uppercase). | `USTEC` |
 
@@ -228,36 +262,44 @@ Master (FTMO):  NAS100  →  Canonical: USTEC  →  Slave (GBE): US100.cash
 
 **Beispiel:** GBE Brokers wird neu angebunden. Master tradet auf FTMO.
 
-**Schritt 1 — Broker-Symbolliste beschaffen:**
+**Schritt 1 — Exakten BrokerName herausfinden:**
+```bash
+curl http://65.108.60.88:5021/api/trader/account/paginated | jq '.data[] | select(.broker_name | test("GBE"; "i")) | {broker_name}'
+# → { "broker_name": "GBEbrokers-Live" }
+```
+
+**Schritt 2 — Broker-Symbolliste beschaffen:**
 GBE MetaTrader → Market Watch → alle Symbole notieren.
 
-**Schritt 2 — Vorhandene Canonicals prüfen:**
+**Schritt 3 — Vorhandene Canonicals prüfen:**
 ```bash
 curl http://65.108.60.88:5021/api/trader/symbol-map/canonical
 # → ["EURUSD", "GBPUSD", "USTEC", "XAUUSD", "GER40", ...]
 ```
 
-**Schritt 3 — Mappings für den neuen Broker anlegen:**
+**Schritt 4 — Mappings für den neuen Broker anlegen (mit exaktem BrokerName!):**
 
-| GBE Symbol | Canonical |
-|------------|-----------|
-| `EURUSD` | `EURUSD` |
-| `GBPUSD` | `GBPUSD` |
-| `US100.cash` | `USTEC` |
-| `GOLD` | `XAUUSD` |
-| `GER40.cash` | `GER40` |
+| Broker Name | Broker Symbol | Canonical |
+|-------------|--------------|-----------|
+| `GBEbrokers-Live` | `EURUSD` | `EURUSD` |
+| `GBEbrokers-Live` | `GBPUSD` | `GBPUSD` |
+| `GBEbrokers-Live` | `US100.cash` | `USTEC` |
+| `GBEbrokers-Live` | `GOLD` | `XAUUSD` |
+| `GBEbrokers-Live` | `GER40.cash` | `GER40` |
 
 Identische Symbole (EURUSD = EURUSD) **müssen auch gemappt werden**, damit die Canonical-Auflösung funktioniert.
 
-**Schritt 4 — Master-Broker ebenfalls mappen** (falls noch nicht vorhanden):
+Falls es auch Demo-Accounts gibt mit anderem BrokerName (z.B. `GBEbrokers-Demo`), müssen die **separat gemappt werden**.
 
-| FTMO Symbol | Canonical |
-|-------------|-----------|
-| `NAS100` | `USTEC` |
-| `XAUUSD` | `XAUUSD` |
-| `EURUSD` | `EURUSD` |
+**Schritt 5 — Master-Broker ebenfalls mappen** (falls noch nicht vorhanden):
 
-**Schritt 5 — Optional: Pair Override** für Sonderfälle:
+| Broker Name | Broker Symbol | Canonical |
+|-------------|--------------|-----------|
+| `FTMO` | `NAS100` | `USTEC` |
+| `FTMO` | `XAUUSD` | `XAUUSD` |
+| `FTMO` | `EURUSD` | `EURUSD` |
+
+**Schritt 6 — Optional: Pair Override** für Sonderfälle:
 Wenn ein bestimmtes Master-Slave Paar eine individuelle Zuordnung braucht → im Frontend die Master-Slave Beziehung öffnen → Pairs konfigurieren. Pair Overrides haben **höchste Priorität** und überschreiben das globale Mapping.
 
 ### Wie die Auflösung im Copier funktioniert (5 Stufen)
@@ -291,8 +333,10 @@ Der Copier cached die Mappings alle **30 Sekunden** — neue Einträge sind also
 | Problem | Ursache | Fix |
 |---------|---------|-----|
 | Symbol wird nicht kopiert | Kein Mapping für Master-Broker ODER Slave-Broker | Beide Seiten mappen |
+| Mapping existiert aber greift nicht | `broker_name` stimmt nicht exakt mit Account überein (z.B. `GBE` statt `GBEbrokers-Live`) | BrokerName der Accounts prüfen und exakt übernehmen |
 | Falsches Instrument | Canonical falsch zugeordnet | Canonical muss bei beiden Brokern gleich sein |
 | "Symbol not found" im Slave | Symbol existiert nicht im Slave-Account | Bei cTrader: Symbol muss subscribed sein |
+| Demo/Live mismatch | Demo-Account hat anderen BrokerName als Live | Separate Mappings für Demo und Live anlegen |
 
 ### API Endpoints
 
@@ -307,7 +351,7 @@ Der Copier cached die Mappings alle **30 Sekunden** — neue Einträge sind also
 **Request-Body (POST/PUT):**
 ```json
 {
-  "broker_name": "GBE",
+  "broker_name": "GBEbrokers-Live",
   "server_name": "GBEbrokers-Live",
   "broker_symbol": "US100.cash",
   "canonical_symbol": "USTEC"
