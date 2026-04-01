@@ -202,17 +202,20 @@ const AccountTable = () => {
   };
 
   const handleTestTrade = async (accountId: number) => {
-    const symbol = prompt("Symbol (e.g. EURUSD):", "EURUSD");
+    const symbol = prompt("Symbol (e.g. EURUSD, USTEC):", "USTEC");
     if (!symbol) return;
     const orderType = prompt("Order Type (BUY or SELL):", "BUY");
     if (!orderType) return;
-    const lot = prompt("Lot Size:", "0.01");
-    if (!lot) return;
+    const masterLot = prompt("Master Lot Size:", "1.0");
+    if (!masterLot) return;
+    const masterBalance = prompt("Master Balance:", "100000");
+    if (!masterBalance) return;
     try {
       const res: any = await axiosClient.post(`/trader/account/${accountId}/test-trade`, {
         symbol,
         order_type: orderType.toUpperCase(),
-        lot: parseFloat(lot),
+        master_lot: parseFloat(masterLot),
+        master_balance: parseFloat(masterBalance),
       });
       alert(res.data?.message || res.message || "Test trade sent");
     } catch (error) {
