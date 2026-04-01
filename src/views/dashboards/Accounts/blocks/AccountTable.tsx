@@ -201,6 +201,26 @@ const AccountTable = () => {
     }
   };
 
+  const handleTestTrade = async (accountId: number) => {
+    const symbol = prompt("Symbol (e.g. EURUSD):", "EURUSD");
+    if (!symbol) return;
+    const orderType = prompt("Order Type (BUY or SELL):", "BUY");
+    if (!orderType) return;
+    const lot = prompt("Lot Size:", "0.01");
+    if (!lot) return;
+    try {
+      const res: any = await axiosClient.post(`/trader/account/${accountId}/test-trade`, {
+        symbol,
+        order_type: orderType.toUpperCase(),
+        lot: parseFloat(lot),
+      });
+      alert(res.data?.message || res.message || "Test trade sent");
+    } catch (error) {
+      console.error("Failed to send test trade", error);
+      alert("Failed to send test trade");
+    }
+  };
+
   const handleDelete = async (accountId: number) => {
     await axiosClient.delete(`/trader/account/${accountId}`);
     fetchData();
@@ -441,6 +461,13 @@ const AccountTable = () => {
                       >
                         <Icon icon="solar:download-bold" height={18} />
                         <span>Reinstall</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="flex gap-3 items-center cursor-pointer mt-4 hover:bg-gray-500"
+                        onSelect={() => handleTestTrade(row.original.id)}
+                      >
+                        <Icon icon="solar:test-tube-bold" height={18} />
+                        <span>Test Trade</span>
                       </DropdownMenuItem>
                     </>
                   )}
