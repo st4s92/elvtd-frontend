@@ -115,6 +115,19 @@ const AccountProfile = () => {
       <PositionHistoryTable
         accountId={data.account.id}
       />
+
+      {/* EXPERT LOG */}
+      {data.account.expert_log && (
+        <div className="rounded-xl border border-white/10 bg-[rgba(233,223,255,0.04)] p-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-white/70">Expert Log</h3>
+            <span className="text-xs text-gray-500">Updated every 5 min by EA</span>
+          </div>
+          <pre className="max-h-[400px] overflow-auto rounded-lg bg-black/40 p-4 text-xs text-green-400/80 font-mono whitespace-pre-wrap leading-5 scrollbar-thin scrollbar-thumb-white/10">
+            {data.account.expert_log}
+          </pre>
+        </div>
+      )}
     </div>
   );
 };
