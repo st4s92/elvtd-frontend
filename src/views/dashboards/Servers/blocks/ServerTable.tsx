@@ -155,6 +155,24 @@ const ServerTable = () => {
       },
     },
     {
+      accessorKey: "diskUsedGb",
+      header: "Disk",
+      cell: ({ row }) => {
+        const used = row.original.diskUsedGb ?? 0;
+        const total = row.original.diskTotalGb ?? 0;
+        if (total === 0) return <span className="text-gray-500">-</span>;
+        const pct = Math.round(used / total * 100);
+        let variant: any = "lightSuccess";
+        if (pct > 85) variant = "error";
+        else if (pct > 70) variant = "warning";
+        return (
+          <Badge variant={variant} className="min-w-[80px] justify-center">
+            {used.toFixed(0)}/{total.toFixed(0)} GB
+          </Badge>
+        );
+      },
+    },
+    {
       accessorKey: "serverOs",
       header: "Server OS",
       cell: ({ row }) => {

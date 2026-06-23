@@ -42,6 +42,9 @@ const ServerLoadChart = () => {
                 {servers.map((server: any) => {
                     const cpu = Math.round(server.cpuUsage || 0);
                     const ram = parseFloat((server.ramUsage || 0).toFixed(1));
+                    const diskUsed = parseFloat((server.diskUsedGb || 0).toFixed(1));
+                    const diskTotal = parseFloat((server.diskTotalGb || 0).toFixed(1));
+                    const diskPct = diskTotal > 0 ? Math.round(diskUsed / diskTotal * 100) : 0;
                     const isOnline = server.status === 200;
 
                     return (
@@ -80,6 +83,18 @@ const ServerLoadChart = () => {
                                     </span>
                                 </div>
                                 <ProgressBar value={ram} color={cpuColor(ram)} />
+
+                                {diskTotal > 0 && (
+                                    <>
+                                        <div className="flex justify-between text-xs text-gray-400">
+                                            <span>Disk</span>
+                                            <span className={diskPct > 85 ? 'text-red-400' : diskPct > 70 ? 'text-amber-400' : 'text-emerald-400'}>
+                                                {diskUsed}/{diskTotal} GB ({diskPct}%)
+                                            </span>
+                                        </div>
+                                        <ProgressBar value={diskPct} color={diskPct > 85 ? 'bg-red-500' : diskPct > 70 ? 'bg-amber-400' : 'bg-emerald-400'} />
+                                    </>
+                                )}
                             </div>
 
                             <div className="flex gap-3 text-xs text-gray-500 mt-1">
