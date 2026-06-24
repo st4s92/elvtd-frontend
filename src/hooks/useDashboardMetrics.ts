@@ -31,13 +31,13 @@ export function useDashboardMetrics(refreshInterval = 10000): DashboardMetrics {
 
     const fetchAll = async () => {
         try {
-            const [serversRes, accountsRes, ordersRes] = await Promise.all([
+            const [serversRes, accountCountRes, ordersRes] = await Promise.all([
                 axiosClient.get('/trader/servers/paginated', { params: { PerPage: 100, Page: 1 } }),
-                axiosClient.get('/trader/account/paginated', { params: { PerPage: 1000, Page: 1 } }),
+                axiosClient.get('/trader/account/paginated', { params: { PerPage: 1, Page: 1 } }),
                 axiosClient.get('/trader/orders/paginated', { params: { PerPage: 1, Page: 1, IsClosed: false } }),
             ]);
             const servers: any[] = serversRes.data?.data || [];
-            const accounts: any[] = accountsRes.data?.data || [];
+            const connectedAccounts: number = accountCountRes.data?.total || 0;
             const openTrades: number = ordersRes.data?.total || 0;
 
             const serversOnline = servers.filter((s) => s.status === 200).length;
@@ -49,23 +49,14 @@ export function useDashboardMetrics(refreshInterval = 10000): DashboardMetrics {
                 : 0;
             const totalActiveTerminals = servers.reduce((sum, s) => sum + (s.activeTerminals || 0), 0);
 
-            const now = new Date();
-            const unresponsiveAccounts = accounts.filter((acc) => {
-                const raw = acc.updated_at || acc.updatedAt;
-                if (!raw) return true;
-                const dateStr = raw.endsWith('Z') ? raw : raw + 'Z';
-                const date = parseISO(dateStr);
-                return differenceInMinutes(now, date) > 5;
-            }).length;
-
             setMetrics({
                 serversOnline,
                 serversTotal: servers.length,
                 avgCpu,
                 avgRam,
                 totalActiveTerminals,
-                connectedAccounts: accounts.length,
-                unresponsiveAccounts,
+                connectedAccounts,
+                unresponsiveAccounts: 0,
                 openTrades,
                 servers,
                 loading: false,
