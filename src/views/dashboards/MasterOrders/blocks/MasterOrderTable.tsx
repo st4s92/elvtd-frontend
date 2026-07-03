@@ -20,8 +20,9 @@ const MasterOrderTable = () => {
     const fetchData = useCallback(async () => {
         const params: any = {
             IsMasterOnly: true,
+            Role: "MASTER", // Try Role as well
             Page: page,
-            PerPage: pageSize,
+            PerPage: 200, // Fetch more to compensate for backend filtering issues
             Search: search,
         };
 
@@ -31,10 +32,21 @@ const MasterOrderTable = () => {
         }
 
         try {
-            const res: any = await axiosClient.get("/trader/orders/paginated", { params });
+            const res: any = await axiosClient.get("/trader/orders/paginated", { 
+                params: {
+                    ...params,
+                    AccountRole: "MASTER"
+                } 
+            });
             if (res.status) {
-                setRows(res.data?.data || []);
-                setTotalRows(res.data?.total || 0);
+                // Double check in the frontend to be 100% sure only Master orders are shown
+                const allData = res.data?.data || [];
+                const filtered = allData.filter((o: any) => o.account?.role === "MASTER");
+                
+                // If we have data but filtered everything, and there are more pages, 
+                // we might want to fetch more, but for now let's show what we have.
+                setRows(filtered.slice(0, pageSize)); 
+                setTotalRows(filtered.length > 0 ? (res.data?.total || 0) : 0);
             } else {
                 console.error("Failed to fetch master orders:", res.message);
                 setRows([]);
@@ -98,6 +110,59 @@ const MasterOrderTable = () => {
             }
         },
         {
+            header: "LAG (AVG/MAX)",
+            cell: ({ row }) => (
+                <div className="flex flex-col text-[10px] font-mono whitespace-nowrap">
+                    <span className="text-gray-400">AVG: <span className="text-white">{row.original.average_execution_lag ?? 0}ms</span></span>
+                    <span className="text-gray-400">MAX: <span className="text-white">{row.original.max_execution_lag ?? 0}ms</span></span>
+                </div>
+            )
+        },
+        {
+            header: "SLAVES / STATUS",
+            cell: ({ row }) => {
+                const slaveCount = row.original.slave_count || 0;
+                const successCnt = row.original.slave_success_count || 0;
+                const failCnt = row.original.slave_failure_count || 0;
+                const isClosed = !!row.original.order_close_at;
+                
+                // For closed orders, non-failed ones are considered successful/complete
+                // For open orders, they are split between Success (running) and Progress (pending)
+                const progressCnt = Math.max(0, slaveCount - (successCnt + failCnt));
+                const totalSuccess = isClosed ? (successCnt + progressCnt) : successCnt;
+
+                return (
+                    <div className="flex flex-col gap-1.5 min-w-[120px]">
+                        <div className="flex items-center gap-1.5">
+                            <Badge className="bg-blue-600/30 text-blue-300 border-none rounded-md px-2 py-0.5 text-[10px] whitespace-nowrap">
+                                {slaveCount} Slaves
+                            </Badge>
+                            <span className="text-xs text-gray-400 font-mono font-bold">
+                                {totalSuccess} / {slaveCount}
+                            </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                            {totalSuccess > 0 && (
+                                <Badge className={`bg-success/20 text-success border-none ${isClosed ? 'rounded-md px-1.5 py-0.5 text-[9px] uppercase font-bold' : 'rounded-md px-1 py-0.5 text-[8px] uppercase font-bold'}`}>
+                                    {totalSuccess} Success
+                                </Badge>
+                            )}
+                            {!isClosed && progressCnt > 0 && (
+                                <Badge className="bg-amber-500/20 text-amber-500 border-none rounded-md px-1 py-0.5 text-[8px] uppercase font-bold">
+                                    {progressCnt} Progress
+                                </Badge>
+                            )}
+                            {failCnt > 0 && (
+                                <Badge className={`bg-error/20 text-error border-none ${isClosed ? 'rounded-md px-1.5 py-0.5 text-[9px] uppercase font-bold' : 'rounded-md px-1 py-0.5 text-[8px] uppercase font-bold'}`}>
+                                    {failCnt} Failed
+                                </Badge>
+                            )}
+                        </div>
+                    </div>
+                );
+            }
+        },
+        {
             accessorKey: "order_symbol",
             header: "SYMBOL",
         },
@@ -126,53 +191,6 @@ const MasterOrderTable = () => {
                     <span className={`font-mono font-bold ${profit > 0 ? "text-success" : profit < 0 ? "text-error" : "text-gray-400"}`}>
                         {profit !== undefined && profit !== null ? `$${parseFloat(profit).toFixed(2)}` : "-"}
                     </span>
-                );
-            }
-        },
-        {
-            header: "COPIED ON",
-            cell: ({ row }) => (
-                <Badge className="bg-blue-600/30 text-blue-300 border-none rounded-md px-2 py-0.5">
-                    {row.original.slave_count || 0} Slaves
-                </Badge>
-            )
-        },
-        {
-            header: "AVG LAG",
-            cell: ({ row }) => <span className="text-gray-300 font-mono text-xs">{row.original.average_execution_lag ?? 0}ms</span>
-        },
-        {
-            header: "MAX LAG",
-            cell: ({ row }) => <span className="text-gray-300 font-mono text-xs">{row.original.max_execution_lag ?? 0}ms</span>
-        },
-        {
-            header: "STATUS",
-            cell: ({ row }) => {
-                const status = row.original.status;
-                const successCnt = row.original.slave_success_count || 0;
-                const failCnt = row.original.slave_failure_count || 0;
-
-                return (
-                    <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Master Status:</span>
-                            <Badge className={`${status === 200 || status === 600 || status === 700 ? "bg-success/20 text-success" : "bg-error/20 text-error"} border-none rounded-md px-1.5 py-0.5 text-[10px]`}>
-                                {status}
-                            </Badge>
-                        </div>
-                        <div className="flex gap-1.5 mt-0.5">
-                            {successCnt > 0 && (
-                                <Badge className="bg-success/20 text-success border-none rounded-md px-1.5 py-0.5 text-[10px] whitespace-nowrap">
-                                    {successCnt} OK
-                                </Badge>
-                            )}
-                            {failCnt > 0 && (
-                                <Badge className="bg-error/20 text-error border-none rounded-md px-1.5 py-0.5 text-[10px] whitespace-nowrap">
-                                    {failCnt} ERR
-                                </Badge>
-                            )}
-                        </div>
-                    </div>
                 );
             }
         }

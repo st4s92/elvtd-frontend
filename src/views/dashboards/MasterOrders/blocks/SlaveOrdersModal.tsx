@@ -88,6 +88,8 @@ const SlaveOrdersModal = ({ open, onOpenChange, masterOrder }: SlaveOrdersModalP
                             <span className="text-[10px] bg-white/10 px-1.5 py-0.5 rounded text-gray-400 font-mono">ID: {account?.id}</span>
                         </div>
                         <div className="flex items-center gap-2 text-xs text-gray-400">
+                            <span className="text-blue-400/80 font-bold uppercase">{account?.platform_name}</span>
+                            <span>•</span>
                             <span>{account?.broker_name}</span>
                             <span>•</span>
                             <span className="text-blue-400/80">{account?.server_name}</span>
@@ -99,6 +101,18 @@ const SlaveOrdersModal = ({ open, onOpenChange, masterOrder }: SlaveOrdersModalP
                             </div>
                         )}
                     </div>
+                );
+            }
+        },
+        {
+            accessorKey: "order_ticket",
+            header: "TICKET",
+            cell: ({ row }) => {
+                const ticket = row.original.order_ticket || row.original.orderTicket || row.original.ticket;
+                return (
+                    <span className="font-mono bg-white/5 px-2 py-0.5 rounded border border-white/5 w-fit">
+                        {ticket ? String(ticket) : "-"}
+                    </span>
                 );
             }
         },
@@ -227,9 +241,12 @@ const SlaveOrdersModal = ({ open, onOpenChange, masterOrder }: SlaveOrdersModalP
                         <div className="col-span-2 flex flex-col gap-1">
                             <span>Master</span>
                             <div className="flex flex-col">
-                                <span className="text-white text-sm font-semibold">
-                                    {masterOrder?.account?.account_number}
-                                </span>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-white text-sm font-semibold">
+                                        {masterOrder?.account?.account_number}
+                                    </span>
+                                    <span className="text-[10px] bg-white/10 px-1.5 py-0.5 rounded text-gray-400 font-mono">ID: {masterOrder?.id}</span>
+                                </div>
                                 <span className="text-gray-500 text-[10px]">
                                     {masterOrder?.account?.broker_name}
                                 </span>

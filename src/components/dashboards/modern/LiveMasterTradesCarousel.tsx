@@ -11,9 +11,10 @@ interface MasterTrade {
     orderTicket: number;
     orderLot: number;
     orderPrice: number;
-    copiedOrders: number;       // actual slave orders active for this master order
+    copiedOrders: number;       // regular successes
+    progressOrders: number;     // pending/progress
     configuredSlaves: number;  // total configured slave connections
-    masterAccountNumber?: number;
+    masterAccountNumber?: string | number;
 }
 
 const typeLabel = (t: any) => {
@@ -83,19 +84,24 @@ const TradeCard = ({ trade, onClose }: { trade: MasterTrade; onClose: (trade: Ma
                     {
                         label: 'Copied / Slaves',
                         value: (
-                            <span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
                                 <span style={{ color: trade.copiedOrders > 0 ? '#00d2b8' : '#ff7070' }}>
                                     {trade.copiedOrders}
                                 </span>
                                 <span style={{ color: '#666' }}> / {trade.configuredSlaves}</span>
-                            </span>
+                                {trade.progressOrders > 0 && (
+                                    <span className="text-[8.5px] text-amber-500 font-bold bg-amber-500/10 px-1 rounded border border-amber-500/20 whitespace-nowrap">
+                                        +{trade.progressOrders} PND
+                                    </span>
+                                )}
+                            </div>
                         )
                     },
                     { label: 'Master Acc', value: `#${trade.masterAccountNumber ?? '-'}` },
                 ].map((item) => (
-                    <div key={item.label} className="bg-white/5 rounded-xl p-2">
-                        <div className="text-[10px] text-gray-500 uppercase tracking-wider">{item.label}</div>
-                        <div className="text-white font-semibold text-sm">{item.value}</div>
+                    <div key={item.label} className="bg-white/5 rounded-xl p-2 min-h-[46px] flex flex-col justify-center">
+                        <div className="text-[10px] text-gray-500 uppercase tracking-wider leading-tight">{item.label}</div>
+                        <div className="text-white font-semibold text-sm leading-tight">{item.value}</div>
                     </div>
                 ))}
             </div>
@@ -135,51 +141,41 @@ const LiveMasterTradesCarousel = () => {
 
     const fetchTrades = async () => {
         try {
-            const accountsRes = await axiosClient.get('/trader/account/paginated', {
-                params: { Role: 'MASTER', PerPage: 100, Page: 1 },
+            // Using the same paginated orders endpoint for efficiency and consistency
+            const res = await axiosClient.get('/trader/orders/paginated', {
+                params: { 
+                    Role: 'MASTER', 
+                    PerPage: 100, 
+                    Page: 1, 
+                    SortBy: 'order_open_at', 
+                    SortOrder: 'desc' 
+                },
             });
-            const masters = accountsRes.data?.data || [];
-            const all: MasterTrade[] = [];
+            
+            const masterOrders = res.data?.data || [];
+            
+            // Filter for open trades (those without an order_close_at date)
+            const openMasters = masterOrders.filter((o: any) => !o.order_close_at);
 
-            for (const master of masters) {
-                try {
-                    const [detailRes, slavesRes, connectionsRes] = await Promise.all([
-                        axiosClient.get(`/trader/account/${master.id}/detail`),
-                        axiosClient.get(`/trader/account/${master.id}/slave-orders`),
-                        axiosClient.get(`/trader/master-slave`, { params: { MasterId: master.id } }),
-                    ]);
-                    const orders = detailRes.data?.orders || [];
-                    const slaveOrders: any[] = slavesRes.data || [];
-                    const configuredSlaves: number = (connectionsRes.data || []).length;
+            const all: MasterTrade[] = openMasters.map((o: any) => {
+                const slaveCount = o.slave_count || 0;
+                const successCnt = o.slave_success_count || 0;
+                const failCnt = o.slave_failure_count || 0;
+                const progressCnt = Math.max(0, slaveCount - (successCnt + failCnt));
 
-                    for (const o of orders) {
-                        // A slave order is "copied" when it has a non-zero orderTicket
-                        // Ticket = 0 means the copy failed or hasn't happened yet
-                        // Count how many slaves have successfully copied this master order
-                        // Each slave object in slaveOrders has an 'orders' array
-                        const copiedForThisOrder = slaveOrders.filter((slave: any) => {
-                            return slave.orders?.some((so: any) => {
-                                const ticket = Number(so.order_ticket ?? so.orderTicket ?? 0);
-                                const masterTicket = Number(so.master_order?.order_ticket ?? so.masterOrderTicket ?? 0);
-                                // Match by master ticket and ensure slave has a real ticket
-                                return masterTicket === o.orderTicket && ticket > 0;
-                            });
-                        }).length;
-
-                        all.push({
-                            id: o.id,
-                            orderSymbol: o.orderSymbol,
-                            orderType: o.orderType,
-                            orderTicket: o.orderTicket,
-                            orderLot: o.orderLot,
-                            orderPrice: o.orderPrice,
-                            copiedOrders: copiedForThisOrder,
-                            configuredSlaves,
-                            masterAccountNumber: master.account_number,
-                        });
-                    }
-                } catch (_) { }
-            }
+                return {
+                    id: o.id,
+                    orderSymbol: o.order_symbol || o.orderSymbol,
+                    orderType: o.order_type || o.orderType,
+                    orderTicket: o.order_ticket || o.orderTicket,
+                    orderLot: o.order_lot || o.orderLot || o.orderVolume,
+                    orderPrice: o.order_price || o.orderPrice || o.orderOpenPrice,
+                    copiedOrders: successCnt,
+                    progressOrders: progressCnt,
+                    configuredSlaves: slaveCount,
+                    masterAccountNumber: o.account?.account_number,
+                };
+            });
 
             setTrades(all);
         } catch (err) {

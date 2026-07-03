@@ -7,7 +7,7 @@ const AccountConnectionsTable = ({ accountId, role }: { accountId: number, role:
     const navigate = useNavigate();
     const [connections, setConnections] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isOpen, setIsOpen] = useState(true);
+    const [isOpen, setIsOpen] = useState(false);
 
     const fetchConnections = async () => {
         try {
