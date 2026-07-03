@@ -16,15 +16,35 @@ const AccountProfile = () => {
   const { accountId } = useParams();
 
   const [data, setData] = useState<any>(null);
+  const [livePositions, setLivePositions] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const liveFetchBusy = useRef(false);
+
+  const fetchLivePositions = async (account: any) => {
+    // live broker positions only for cTrader accounts with an API token
+    if (!account?.platform_name?.toLowerCase().includes("ctrader")) return;
+    if (liveFetchBusy.current) return;
+    liveFetchBusy.current = true;
+    try {
+      const res = await axiosClient.get(`/trader/account/${accountId}/live-positions`);
+      if (res.status) {
+        setLivePositions(res.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch live positions:", err);
+    } finally {
+      liveFetchBusy.current = false;
+    }
+  };
 
   const fetchDetail = async () => {
     try {
       const res = await axiosClient.get(`/trader/account/${accountId}/detail`);
       if (res.status) {
         setData(res.data);
+        fetchLivePositions(res.data.account);
       }
     } catch (err) {
       console.error("Failed to fetch account detail:", err);
@@ -96,12 +116,14 @@ const AccountProfile = () => {
       {/* CONNECTIONS (MASTER-SLAVE) */}
       <AccountConnectionsTable accountId={data.account.id} role={data.account.role} />
 
-      {data.orders && data.orders.length > 0 && (
+      {((data.orders && data.orders.length > 0) ||
+        (livePositions?.liveAvailable && livePositions?.positions?.length > 0)) && (
         <ActiveOrdersTable
           accountId={data.account.id}
           accountNumber={data.account.account_number}
           serverName={data.account.server_name}
           orders={data.orders}
+          live={livePositions}
           onRefresh={fetchDetail}
           role={data.account.role}
         />

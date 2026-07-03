@@ -10,9 +10,40 @@ const ActiveOrdersTable = ({
   serverName,
   onRefresh,
   role,
+  live,
 }: any) => {
   const [selected, setSelected] = useState<number[]>([]);
   const [openModal, setOpenModal] = useState(false);
+
+  // When live broker data (cTrader) is available, render broker positions
+  // merged with DB entries; positions without DB entry get a warning marker.
+  const useLive = !!(live?.liveAvailable && live?.positions);
+  const rows: any[] = useLive
+    ? [
+        ...live.positions.map((p: any) => ({
+          id: p.dbId ?? null,
+          orderTicket: p.positionId,
+          orderSymbol: p.symbol,
+          orderType: p.side === "SELL" ? "DEAL_TYPE_SELL" : "DEAL_TYPE_BUY",
+          orderLot: p.lot,
+          orderPrice: p.openPrice,
+          orderProfit: p.unrealizedPnl,
+          orderOpenAt: p.openTimestampMs ? new Date(p.openTimestampMs).toISOString() : null,
+          label: p.label,
+          untracked: !p.tracked,
+        })),
+        ...(live.dbOnly ?? []).map((o: any) => ({
+          id: o.id,
+          orderTicket: o.orderTicket,
+          orderSymbol: o.orderSymbol,
+          orderType: o.orderType,
+          orderLot: o.orderLot,
+          dbOnly: true,
+        })),
+      ]
+    : orders;
+
+  const selectableIds = rows.filter((o: any) => o.id && !o.dbOnly).map((o: any) => o.id);
 
   const toggleSelect = (id: number) => {
     setSelected((prev) =>
@@ -21,10 +52,10 @@ const ActiveOrdersTable = ({
   };
 
   const toggleSelectAll = () => {
-    if (selected.length === orders.length) {
+    if (selected.length === selectableIds.length) {
       setSelected([]);
     } else {
-      setSelected(orders.map((o: any) => o.id));
+      setSelected(selectableIds);
     }
   };
 
@@ -67,8 +98,8 @@ const ActiveOrdersTable = ({
     try {
       if (role === "SLAVE") {
         // For slaves: close each active order individually
-        for (const o of orders) {
-          if (o.id) {
+        for (const o of rows) {
+          if (o.id && !o.dbOnly) {
             await axiosClient.delete(`/trader/orders/active-order/${o.id}`);
           }
         }
@@ -97,6 +128,16 @@ const ActiveOrdersTable = ({
         <div className="flex items-center gap-2">
           <Icon icon="solar:list-bold" height={20} />
           <h4 className="text-lg font-semibold text-gray-200">Active Orders</h4>
+          {useLive && (
+            <span className="ml-2 px-2 py-0.5 rounded text-xs font-semibold bg-emerald-600/20 text-emerald-400 border border-emerald-600/40">
+              Broker Live
+            </span>
+          )}
+          {useLive && rows.some((o: any) => o.untracked) && (
+            <span className="px-2 py-0.5 rounded text-xs font-semibold bg-amber-600/20 text-amber-400 border border-amber-600/40">
+              {rows.filter((o: any) => o.untracked).length} not tracked
+            </span>
+          )}
         </div>
 
         <div className="flex gap-3">
@@ -129,7 +170,7 @@ const ActiveOrdersTable = ({
                 <input
                   type="checkbox"
                   checked={
-                    selected.length === orders.length && orders.length > 0
+                    selected.length === selectableIds.length && selectableIds.length > 0
                   }
                   onChange={toggleSelectAll}
                 />
@@ -145,20 +186,38 @@ const ActiveOrdersTable = ({
           </thead>
 
           <tbody>
-            {orders.filter((o: any) => (o.orderTicket ?? o.order_ticket ?? 0) > 0).map((o: any) => (
+            {rows.filter((o: any) => (o.orderTicket ?? o.order_ticket ?? 0) > 0).map((o: any) => (
               <tr
-                key={o.id}
-                className="border-b border-white/10 hover:bg-white/5 transition"
+                key={`${o.orderTicket}-${o.id ?? "live"}`}
+                className={`border-b border-white/10 hover:bg-white/5 transition ${o.dbOnly ? "opacity-50" : ""}`}
               >
                 <td className="px-4 py-3">
-                  <input
-                    type="checkbox"
-                    checked={selected.includes(o.id)}
-                    onChange={() => toggleSelect(o.id)}
-                  />
+                  {o.id && !o.dbOnly ? (
+                    <input
+                      type="checkbox"
+                      checked={selected.includes(o.id)}
+                      onChange={() => toggleSelect(o.id)}
+                    />
+                  ) : null}
                 </td>
 
-                <td className="px-4 py-3">{o.orderTicket}</td>
+                <td className="px-4 py-3">
+                  <span className="flex items-center gap-1.5">
+                    {o.untracked && (
+                      <span title="No DB entry for this broker position" className="shrink-0">
+                        <Icon
+                          icon="solar:danger-triangle-bold"
+                          height={16}
+                          className="text-amber-400"
+                        />
+                      </span>
+                    )}
+                    {o.orderTicket}
+                    {o.dbOnly && (
+                      <span className="text-[10px] uppercase text-gray-500">not on broker</span>
+                    )}
+                  </span>
+                </td>
                 <td className="px-4 py-3">{o.orderSymbol}</td>
 
                 <td className="px-4 py-3">
