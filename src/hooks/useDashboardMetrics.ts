@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import axiosClient from 'src/lib/axios';
-import { differenceInMinutes, parseISO } from 'date-fns';
 
 export interface DashboardMetrics {
     serversOnline: number;
