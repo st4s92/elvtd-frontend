@@ -53,6 +53,7 @@ const AccountTable = () => {
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [isRestartingBulk, setIsRestartingBulk] = useState(false);
+  const [isReinstallingBulk, setIsReinstallingBulk] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -91,7 +92,10 @@ const AccountTable = () => {
 
       // Platform
       if (platformFilter && platformFilter !== "") {
-        if (row.platform_name !== platformFilter) return false;
+        const pn = (row.platform_name || "").toLowerCase();
+        if (platformFilter === "MT4" && !pn.includes("metatrader 4") && !pn.includes("mt4")) return false;
+        if (platformFilter === "MT5" && !pn.includes("metatrader 5") && !pn.includes("mt5")) return false;
+        if (platformFilter === "cTrader" && !pn.includes("ctrader")) return false;
       }
 
       // Status
@@ -190,6 +194,27 @@ const AccountTable = () => {
     }
   };
 
+  const handleBulkReinstall = async () => {
+    if (selectedIds.length === 0) return;
+    if (!confirm(`Reinstall ${selectedIds.length} selected accounts?`)) return;
+
+    setIsReinstallingBulk(true);
+    try {
+      const results = await Promise.allSettled(selectedIds.map(id => axiosClient.post(`/trader/account/${id}/install`)));
+      const failed = results.filter(r => r.status === 'rejected');
+
+      if (failed.length > 0) {
+        alert(`${selectedIds.length - failed.length} reinstalls sent, ${failed.length} failed.`);
+      } else {
+        alert("All reinstall commands sent successfully");
+      }
+      setSelectedIds([]);
+      fetchData();
+    } finally {
+      setIsReinstallingBulk(false);
+    }
+  };
+
   const handleInstall = async (accountId: number) => {
     try {
       await axiosClient.post(`/trader/account/${accountId}/install`);
@@ -260,6 +285,13 @@ const AccountTable = () => {
       ),
       enableSorting: false,
       enableHiding: false,
+    },
+    {
+      accessorKey: "id",
+      header: "ID",
+      cell: ({ row }) => (
+        <span className="text-xs text-muted-foreground">{row.original.id}</span>
+      ),
     },
     {
       accessorKey: "platform_name",
@@ -580,6 +612,18 @@ const AccountTable = () => {
         >
           <Icon icon="solar:restart-bold" height={18} className={isRestartingBulk ? "animate-spin" : ""} />
           <span>Restart Selected ({selectedIds.length})</span>
+        </Button>
+      )}
+      {selectedIds.length > 0 && (
+        <Button
+          variant="destructive"
+          size="sm"
+          className="h-9 gap-2 shadow-lg animate-in fade-in slide-in-from-right-4"
+          onClick={handleBulkReinstall}
+          disabled={isReinstallingBulk}
+        >
+          <Icon icon="solar:download-bold" height={18} className={isReinstallingBulk ? "animate-spin" : ""} />
+          <span>Reinstall Selected ({selectedIds.length})</span>
         </Button>
       )}
       {roleFilterMenu}
