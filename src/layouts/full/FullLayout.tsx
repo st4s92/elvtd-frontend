@@ -17,7 +17,7 @@ const FullLayout: FC = () => {
             <Header />
 
             {/* Body Content  */}
-            <div className={'container mx-auto px-6 py-30'}>
+            <div className={'w-full max-w-full px-6 py-30'}>
               <main className="grow min-w-0">
                 <Outlet />
               </main>
